@@ -1,38 +1,34 @@
 import { Injectable } from '@angular/core';
 import { IFileMetadata } from '../../common/metadata/i-file-metadata';
-import { BaseSettings } from '../../common/settings/base-settings';
+import { SettingsBase } from '../../common/settings/settings.base';
 import { EmbeddedAlbumArtworkGetter } from './embedded-album-artwork-getter';
 import { ExternalAlbumArtworkGetter } from './external-album-artwork-getter';
 import { OnlineAlbumArtworkGetter } from './online-album-artwork-getter';
 
 @Injectable()
 export class AlbumArtworkGetter {
-    constructor(
+    public constructor(
         private embeddedAlbumArtworkGetter: EmbeddedAlbumArtworkGetter,
         private externalAlbumArtworkGetter: ExternalAlbumArtworkGetter,
         private onlineAlbumArtworkGetter: OnlineAlbumArtworkGetter,
-        private settings: BaseSettings
+        private settings: SettingsBase,
     ) {}
 
-    public async getAlbumArtworkAsync(fileMetadata: IFileMetadata, getOnlineArtwork: boolean): Promise<Buffer> {
-        if (fileMetadata == undefined) {
-            return undefined;
-        }
-
-        const embeddedArtwork: Buffer = this.embeddedAlbumArtworkGetter.getEmbeddedArtwork(fileMetadata);
+    public async getAlbumArtworkAsync(fileMetadata: IFileMetadata, getOnlineArtwork: boolean): Promise<Buffer | undefined> {
+        const embeddedArtwork: Buffer | undefined = this.embeddedAlbumArtworkGetter.getEmbeddedArtwork(fileMetadata);
 
         if (embeddedArtwork != undefined) {
             return embeddedArtwork;
         }
 
-        const externalArtwork: Buffer = await this.externalAlbumArtworkGetter.getExternalArtworkAsync(fileMetadata);
+        const externalArtwork: Buffer | undefined = await this.externalAlbumArtworkGetter.getExternalArtworkAsync(fileMetadata);
 
         if (externalArtwork != undefined) {
             return externalArtwork;
         }
 
         if (getOnlineArtwork && this.settings.downloadMissingAlbumCovers) {
-            const onlineArtwork: Buffer = await this.onlineAlbumArtworkGetter.getOnlineArtworkAsync(fileMetadata);
+            const onlineArtwork: Buffer | undefined = await this.onlineAlbumArtworkGetter.getOnlineArtworkAsync(fileMetadata);
 
             if (onlineArtwork != undefined) {
                 return onlineArtwork;

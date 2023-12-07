@@ -1,46 +1,46 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
-import { BaseAppearanceService } from '../appearance/base-appearance.service';
-import { BaseNavigationService } from './base-navigation.service';
+import {NavigationServiceBase} from "./navigation.service.base";
+import {AppearanceServiceBase} from "../appearance/appearance.service.base";
 
 @Injectable()
-export class NavigationService implements BaseNavigationService {
+export class NavigationService implements NavigationServiceBase {
     private showPlaybackQueueRequested: Subject<void> = new Subject();
 
-    constructor(private appearanceService: BaseAppearanceService, public router: Router) {}
+    public constructor(private appearanceService: AppearanceServiceBase, public router: Router) {}
 
     public showPlaybackQueueRequested$: Observable<void> = this.showPlaybackQueueRequested.asObservable();
 
-    public navigateToLoading(): void {
-        this.router.navigate(['/loading']);
+    public async navigateToLoadingAsync(): Promise<void> {
+        await this.router.navigate(['/loading']);
     }
 
-    public navigateToCollection(): void {
-        this.router.navigate(['/collection']);
+    public async navigateToCollectionAsync(): Promise<void> {
+        await this.router.navigate(['/collection']);
         this.appearanceService.applyMargins(true);
     }
 
-    public navigateToSettings(): void {
-        this.router.navigate(['/settings']);
+    public async navigateToSettingsAsync(): Promise<void> {
+        await this.router.navigate(['/settings']);
         this.appearanceService.applyMargins(false);
     }
 
-    public navigateToInformation(): void {
-        this.router.navigate(['/information']);
+    public async navigateToInformationAsync(): Promise<void> {
+        await this.router.navigate(['/information']);
         this.appearanceService.applyMargins(false);
     }
 
-    public navigateToWelcome(): void {
-        this.router.navigate(['/welcome']);
+    public async navigateToWelcomeAsync(): Promise<void> {
+        await this.router.navigate(['/welcome']);
     }
 
-    public navigateToManageCollection(): void {
-        this.router.navigate(['/managecollection']);
+    public async navigateToManageCollectionAsync(): Promise<void> {
+        await this.router.navigate(['/managecollection']);
     }
 
-    public navigateToNowPlaying(): void {
-        this.router.navigate(['/nowplaying']);
+    public async navigateToNowPlayingAsync(): Promise<void> {
+        await this.router.navigate(['/nowplaying']);
     }
 
     public showPlaybackQueue(): void {

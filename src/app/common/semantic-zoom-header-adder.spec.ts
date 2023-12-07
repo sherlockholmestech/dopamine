@@ -1,3 +1,5 @@
+import { IMock, Mock } from 'typemoq';
+import { GuidFactory } from './guid.factory';
 import { SemanticZoomHeaderAdder } from './semantic-zoom-header-adder';
 import { SemanticZoomable } from './semantic-zoomable';
 
@@ -7,6 +9,7 @@ export class SemanticZoomableImplementation extends SemanticZoomable {
 }
 
 describe('SemanticZoomHeaderAdder', () => {
+    let guidFactoryMock: IMock<GuidFactory>;
     let semanticZoomHeaderAdder: SemanticZoomHeaderAdder;
 
     const semanticZoomable1: SemanticZoomable = new SemanticZoomableImplementation();
@@ -19,16 +22,37 @@ describe('SemanticZoomHeaderAdder', () => {
     semanticZoomable4.name = 'Another zoomable 2';
 
     beforeEach(() => {
-        semanticZoomHeaderAdder = new SemanticZoomHeaderAdder();
+        guidFactoryMock = Mock.ofType<GuidFactory>();
+        semanticZoomHeaderAdder = new SemanticZoomHeaderAdder(guidFactoryMock.object);
     });
 
     describe('addZoomHeaders', () => {
-        it('should add zoom headers', () => {
+        it('should add zoom headers on a list without zoom headers', () => {
             // Arrange
-            const semanticZoomables: SemanticZoomable[] = [semanticZoomable1, semanticZoomable2, semanticZoomable3, semanticZoomable4];
+            let semanticZoomables: SemanticZoomable[] = [semanticZoomable1, semanticZoomable2, semanticZoomable3, semanticZoomable4];
 
             // Act
-            semanticZoomHeaderAdder.addZoomHeaders(semanticZoomables);
+            semanticZoomables = semanticZoomHeaderAdder.addZoomHeaders(semanticZoomables);
+
+            // Assert
+            expect(semanticZoomables.length).toEqual(6);
+            expect(semanticZoomables[0].isZoomHeader).toBeTruthy();
+            expect(semanticZoomables[0].zoomHeader).toEqual('z');
+            expect(semanticZoomables[1].isZoomHeader).toBeFalsy();
+            expect(semanticZoomables[2].isZoomHeader).toBeFalsy();
+            expect(semanticZoomables[3].isZoomHeader).toBeTruthy();
+            expect(semanticZoomables[3].zoomHeader).toEqual('a');
+            expect(semanticZoomables[4].isZoomHeader).toBeFalsy();
+            expect(semanticZoomables[5].isZoomHeader).toBeFalsy();
+        });
+
+        it('should not add additional zoom headers on a list which already has zoom headers', () => {
+            // Arrange
+            let semanticZoomables: SemanticZoomable[] = [semanticZoomable1, semanticZoomable2, semanticZoomable3, semanticZoomable4];
+
+            // Act
+            semanticZoomables = semanticZoomHeaderAdder.addZoomHeaders(semanticZoomables);
+            semanticZoomables = semanticZoomHeaderAdder.addZoomHeaders(semanticZoomables);
 
             // Assert
             expect(semanticZoomables.length).toEqual(6);

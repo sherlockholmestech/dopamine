@@ -3,28 +3,29 @@ import { Observable, Subject } from 'rxjs';
 import { IMock, Mock, Times } from 'typemoq';
 import { Constants } from '../../common/application/constants';
 import { FontSize } from '../../common/application/font-size';
-import { BaseApplication } from '../../common/io/base-application';
-import { BaseDesktop } from '../../common/io/base-desktop';
-import { BaseFileAccess } from '../../common/io/base-file-access';
 import { DocumentProxy } from '../../common/io/document-proxy';
 import { Logger } from '../../common/logger';
-import { BaseSettings } from '../../common/settings/base-settings';
+import { SettingsBase } from '../../common/settings/settings.base';
 import { AppearanceService } from './appearance.service';
-import { BaseAppearanceService } from './base-appearance.service';
 import { DefaultThemesCreator } from './default-themes-creator';
 import { Theme } from './theme/theme';
 import { ThemeCoreColors } from './theme/theme-core-colors';
 import { ThemeCreator } from './theme/theme-creator';
 import { ThemeNeutralColors } from './theme/theme-neutral-colors';
 import { ThemeOptions } from './theme/theme-options';
+import { DesktopBase } from '../../common/io/desktop.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
+import { ApplicationBase } from '../../common/io/application.base';
+import { AppearanceServiceBase } from './appearance.service.base';
+import { RgbColor } from '../../common/rgb-color';
 
 describe('AppearanceService', () => {
-    let settingsMock: IMock<BaseSettings>;
+    let settingsMock: IMock<SettingsBase>;
     let loggerMock: IMock<Logger>;
     let overlayContainerMock: IMock<OverlayContainer>;
-    let applicationMock: IMock<BaseApplication>;
-    let fileAccessMock: IMock<BaseFileAccess>;
-    let desktopMock: IMock<BaseDesktop>;
+    let applicationMock: IMock<ApplicationBase>;
+    let fileAccessMock: IMock<FileAccessBase>;
+    let desktopMock: IMock<DesktopBase>;
     let defaultThemesCreatorMock: IMock<DefaultThemesCreator>;
     let documentProxyMock: IMock<DocumentProxy>;
 
@@ -38,7 +39,7 @@ describe('AppearanceService', () => {
     let desktopAccentColorChangedMock: Subject<void>;
     let desktopNativeThemeUpdatedMock: Subject<void>;
 
-    function createService(): BaseAppearanceService {
+    function createService(): AppearanceServiceBase {
         return new AppearanceService(
             settingsMock.object,
             loggerMock.object,
@@ -47,7 +48,7 @@ describe('AppearanceService', () => {
             fileAccessMock.object,
             desktopMock.object,
             defaultThemesCreatorMock.object,
-            documentProxyMock.object
+            documentProxyMock.object,
         );
     }
 
@@ -80,7 +81,7 @@ describe('AppearanceService', () => {
             '#0fffff', // primaryButtonText
             '#0fffff', // secondaryButtonBackground
             '#0fffff', // secondaryButtonText
-            '#0fffff' // tooltipText
+            '#0fffff', // tooltipText
         );
     }
 
@@ -113,23 +114,21 @@ describe('AppearanceService', () => {
             '#1fffff', // primaryButtonText
             '#1fffff', // secondaryButtonBackground
             '#1fffff', // secondaryButtonText
-            '#1fffff' // tooltipText
+            '#1fffff', // tooltipText
         );
     }
 
-    function createTheme(name: string, selectedItemText: string): Theme {
+    function createTheme(name: string): Theme {
         const creator: ThemeCreator = new ThemeCreator('My creator', 'my@email.com');
         const coreColors: ThemeCoreColors = new ThemeCoreColors('#fff', '#000', '#ccc');
         const darkColors: ThemeNeutralColors = createDarkColors();
         const lightColors: ThemeNeutralColors = createLightColors();
         const options: ThemeOptions = new ThemeOptions(false);
 
-        const theme: Theme = new Theme(name, creator, coreColors, darkColors, lightColors, options);
-
-        return theme;
+        return new Theme(name, creator, coreColors, darkColors, lightColors, options);
     }
 
-    function createServiceWithSettingsStub(settingsStub: any): BaseAppearanceService {
+    function createServiceWithSettingsStub(settingsStub: any): AppearanceServiceBase {
         return new AppearanceService(
             settingsStub,
             loggerMock.object,
@@ -138,7 +137,7 @@ describe('AppearanceService', () => {
             fileAccessMock.object,
             desktopMock.object,
             defaultThemesCreatorMock.object,
-            documentProxyMock.object
+            documentProxyMock.object,
         );
     }
 
@@ -282,17 +281,17 @@ describe('AppearanceService', () => {
     }
 
     beforeEach(() => {
-        settingsMock = Mock.ofType<BaseSettings>();
+        settingsMock = Mock.ofType<SettingsBase>();
         loggerMock = Mock.ofType<Logger>();
         overlayContainerMock = Mock.ofType<OverlayContainer>();
-        applicationMock = Mock.ofType<BaseApplication>();
-        fileAccessMock = Mock.ofType<BaseFileAccess>();
-        desktopMock = Mock.ofType<BaseDesktop>();
+        applicationMock = Mock.ofType<ApplicationBase>();
+        fileAccessMock = Mock.ofType<FileAccessBase>();
+        desktopMock = Mock.ofType<DesktopBase>();
         defaultThemesCreatorMock = Mock.ofType<DefaultThemesCreator>();
         documentProxyMock = Mock.ofType<DocumentProxy>();
 
-        theme1 = createTheme('Theme 1', '');
-        theme2 = createTheme('Theme 2', '#ffffff');
+        theme1 = createTheme('Theme 1');
+        theme2 = createTheme('Theme 2');
 
         resetDefaultThemesCreatorMock();
         resetFileAccessMock();
@@ -320,10 +319,34 @@ describe('AppearanceService', () => {
             // Arrange
 
             // Act
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Assert
             expect(service).toBeDefined();
+        });
+
+        it('should set default accentRgbColor', () => {
+            // Arrange
+
+            // Act
+            const service: AppearanceServiceBase = createService();
+
+            // Assert
+            expect(service.accentRgbColor.red).toEqual(RgbColor.default().red);
+            expect(service.accentRgbColor.green).toEqual(RgbColor.default().green);
+            expect(service.accentRgbColor.blue).toEqual(RgbColor.default().blue);
+        });
+
+        it('should set default backgroundRgbColor', () => {
+            // Arrange
+
+            // Act
+            const service: AppearanceServiceBase = createService();
+
+            // Assert
+            expect(service.backgroundRgbColor.red).toEqual(RgbColor.default().red);
+            expect(service.backgroundRgbColor.green).toEqual(RgbColor.default().green);
+            expect(service.backgroundRgbColor.blue).toEqual(RgbColor.default().blue);
         });
 
         it('should set windowHasNativeTitleBar to true if the window has a frame', () => {
@@ -332,7 +355,7 @@ describe('AppearanceService', () => {
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => true);
 
             // Act
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Assert
             expect(service.windowHasNativeTitleBar).toBeTruthy();
@@ -344,37 +367,31 @@ describe('AppearanceService', () => {
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => false);
 
             // Act
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Assert
             expect(service.windowHasNativeTitleBar).toBeFalsy();
         });
 
         it('should set the themes directory path', () => {
-            // Arrange
-
-            // Act
-            const service: BaseAppearanceService = createService();
+            // Arrange, Act
+            const service: AppearanceServiceBase = createService();
 
             // Assert
             expect(service.themesDirectoryPath).toEqual('/home/user/.config/Dopamine/Themes');
         });
 
         it('should ensure that the themes directory exists', () => {
-            // Arrange
-
-            // Act
-            const service: BaseAppearanceService = createService();
+            // Arrange, Act
+            createService();
 
             // Assert
             fileAccessMock.verify((x) => x.createFullDirectoryPathIfDoesNotExist('/home/user/.config/Dopamine/Themes'), Times.once());
         });
 
         it('should ensure that the default themes exist', () => {
-            // Arrange
-
-            // Act
-            const service: BaseAppearanceService = createService();
+            // Arrange, Act
+            createService();
 
             // Assert
             defaultThemesCreatorMock.verify((x) => x.createAllThemes(), Times.once());
@@ -385,20 +402,18 @@ describe('AppearanceService', () => {
             fileAccessMock.verify(
                 (x) =>
                     x.writeToFile('/home/user/.config/Dopamine/Themes/Theme 1.theme', JSON.stringify(theme1WithoutIsBroken, undefined, 2)),
-                Times.once()
+                Times.once(),
             );
             fileAccessMock.verify(
                 (x) =>
                     x.writeToFile('/home/user/.config/Dopamine/Themes/Theme 2.theme', JSON.stringify(theme2WithoutIsBroken, undefined, 2)),
-                Times.once()
+                Times.once(),
             );
         });
 
         it('should get themes from the themes directory', () => {
-            // Arrange
-
-            // Act
-            const service: BaseAppearanceService = createService();
+            // Arrange, Act
+            createService();
 
             // Assert
             fileAccessMock.verify((x) => x.getFilesInDirectory('/home/user/.config/Dopamine/Themes'), Times.once());
@@ -412,7 +427,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
 
             // Act
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Assert
             expect(service.selectedTheme).toEqual(theme2);
@@ -424,7 +439,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.fontSize).returns(() => 14);
 
             // Act
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Assert
             expect(service.selectedFontSize).toEqual(new FontSize(14));
@@ -435,11 +450,12 @@ describe('AppearanceService', () => {
             const settingsStub: any = { theme: 'Theme 2' };
 
             // Act
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
             desktopAccentColorChangedMock.next();
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
         });
 
         it('should listen to native theme updates of the OS and apply the theme', () => {
@@ -447,11 +463,12 @@ describe('AppearanceService', () => {
             const settingsStub: any = { theme: 'Theme 2' };
 
             // Act
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
             desktopNativeThemeUpdatedMock.next();
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
         });
     });
 
@@ -460,7 +477,7 @@ describe('AppearanceService', () => {
             // Arrange
             applicationMock.reset();
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => true);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const windowHasNativeTitleBar: boolean = service.windowHasNativeTitleBar;
@@ -473,7 +490,7 @@ describe('AppearanceService', () => {
             // Arrange
             applicationMock.reset();
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => false);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const windowHasNativeTitleBar: boolean = service.windowHasNativeTitleBar;
@@ -489,7 +506,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
             settingsMock.setup((x) => x.useLightBackgroundTheme).returns(() => true);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const isUsingLightTheme: boolean = service.isUsingLightTheme;
@@ -503,7 +520,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
             settingsMock.setup((x) => x.useLightBackgroundTheme).returns(() => false);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const isUsingLightTheme: boolean = service.isUsingLightTheme;
@@ -517,7 +534,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemTheme).returns(() => true);
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const isUsingLightTheme: boolean = service.isUsingLightTheme;
@@ -531,7 +548,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemTheme).returns(() => true);
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => true);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const isUsingLightTheme: boolean = service.isUsingLightTheme;
@@ -546,7 +563,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const followSystemTheme: boolean = service.followSystemTheme;
@@ -559,7 +576,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.setup((x) => x.followSystemTheme).returns(() => true);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const followSystemTheme: boolean = service.followSystemTheme;
@@ -572,8 +589,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemTheme: false };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
 
             // Act
             service.followSystemTheme = true;
@@ -586,8 +603,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: true };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -595,7 +612,9 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertLightColorCssProperties('#1fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-light');
             expect(bodyMock.classList).toContain('default-theme-light');
         });
@@ -604,8 +623,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: false };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -613,7 +632,9 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertDarkColorCssProperties('#0fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-dark');
             expect(bodyMock.classList).toContain('default-theme-dark');
         });
@@ -624,7 +645,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.setup((x) => x.useLightBackgroundTheme).returns(() => false);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const useLightBackgroundTheme: boolean = service.useLightBackgroundTheme;
@@ -637,7 +658,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.setup((x) => x.useLightBackgroundTheme).returns(() => true);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const useLightBackgroundTheme: boolean = service.useLightBackgroundTheme;
@@ -650,8 +671,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { useLightBackgroundTheme: false };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
 
             // Act
             service.useLightBackgroundTheme = true;
@@ -664,8 +685,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: true };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -673,7 +694,9 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertLightColorCssProperties('#1fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-light');
             expect(bodyMock.classList).toContain('default-theme-light');
         });
@@ -682,8 +705,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: false };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -691,7 +714,9 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertDarkColorCssProperties('#0fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-dark');
             expect(bodyMock.classList).toContain('default-theme-dark');
         });
@@ -702,7 +727,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const followSystemColor: boolean = service.followSystemColor;
@@ -715,7 +740,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.setup((x) => x.followSystemColor).returns(() => true);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const followSystemColor: boolean = service.followSystemColor;
@@ -728,8 +753,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemColor: false };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
 
             // Act
             service.followSystemColor = true;
@@ -742,8 +767,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: true };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -751,7 +776,9 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertLightColorCssProperties('#1fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-light');
             expect(bodyMock.classList).toContain('default-theme-light');
         });
@@ -760,8 +787,8 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: false };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -769,7 +796,9 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertDarkColorCssProperties('#0fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-dark');
             expect(bodyMock.classList).toContain('default-theme-dark');
         });
@@ -780,7 +809,7 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { theme: '' };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
 
             // Act
             const themes: Theme[] = service.themes;
@@ -795,7 +824,7 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { theme: '' };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
 
             // Act
             service.themes = [theme1, theme2];
@@ -810,10 +839,10 @@ describe('AppearanceService', () => {
     describe('selectedTheme', () => {
         it('should return the selected theme', () => {
             // Arrange
-            const theme: Theme = createTheme('My theme', '');
+            const theme: Theme = createTheme('My theme');
             const settingsStub: any = { theme: '' };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
 
             service.selectedTheme = theme;
 
@@ -826,10 +855,10 @@ describe('AppearanceService', () => {
 
         it('should save the theme in the settings', () => {
             // Arrange
-            const theme: Theme = createTheme('My theme', '');
+            const theme: Theme = createTheme('My theme');
             const settingsStub: any = { theme: '' };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
 
             // Act
             service.selectedTheme = theme;
@@ -840,11 +869,11 @@ describe('AppearanceService', () => {
 
         it('should apply the light theme if using the light theme', () => {
             // Arrange
-            const theme: Theme = createTheme('My theme', '');
+            const theme: Theme = createTheme('My theme');
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: true, theme: '' };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -852,18 +881,20 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertLightColorCssProperties('#1fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-light');
             expect(bodyMock.classList).toContain('default-theme-light');
         });
 
         it('should apply the dark theme if using the dark theme', () => {
             // Arrange
-            const theme: Theme = createTheme('My theme', '');
+            const theme: Theme = createTheme('My theme');
             const settingsStub: any = { followSystemTheme: false, useLightBackgroundTheme: false, theme: '' };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
-            service.selectedTheme = createTheme('My theme', '');
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
+            service.selectedTheme = createTheme('My theme');
             resetElements();
 
             // Act
@@ -871,7 +902,9 @@ describe('AppearanceService', () => {
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
             assertDarkColorCssProperties('#0fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
             expect(containerElementMock.classList).toContain('default-theme-dark');
             expect(bodyMock.classList).toContain('default-theme-dark');
         });
@@ -880,7 +913,7 @@ describe('AppearanceService', () => {
     describe('fontSizes', () => {
         it('should return the font sizes', () => {
             // Arrange
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const fontSizes: FontSize[] = service.fontSizes;
@@ -893,7 +926,7 @@ describe('AppearanceService', () => {
     describe('selectedFontSize', () => {
         it('should return the selected font size', () => {
             // Arrange
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const fontSizes: FontSize[] = service.fontSizes;
@@ -906,7 +939,7 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { fontSize: 15 };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
 
             // Act
             service.selectedFontSize = new FontSize(13);
@@ -919,7 +952,7 @@ describe('AppearanceService', () => {
             // Arrange
             const settingsStub: any = { fontSize: 15 };
 
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
             resetElements();
 
             // Act
@@ -937,7 +970,7 @@ describe('AppearanceService', () => {
     describe('themesDirectoryPath', () => {
         it('should return the themes directory path', () => {
             // Arrange
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             const themesDirectoryPath: string = service.themesDirectoryPath;
@@ -950,7 +983,7 @@ describe('AppearanceService', () => {
     describe('refreshThemes', () => {
         it('should ensure that the default themes exist', () => {
             // Arrange
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetDefaultThemesCreatorMock();
             resetFileAccessMock();
 
@@ -965,18 +998,18 @@ describe('AppearanceService', () => {
             fileAccessMock.verify(
                 (x) =>
                     x.writeToFile('/home/user/.config/Dopamine/Themes/Theme 1.theme', JSON.stringify(theme1WithoutIsBroken, undefined, 2)),
-                Times.once()
+                Times.once(),
             );
             fileAccessMock.verify(
                 (x) =>
                     x.writeToFile('/home/user/.config/Dopamine/Themes/Theme 2.theme', JSON.stringify(theme2WithoutIsBroken, undefined, 2)),
-                Times.once()
+                Times.once(),
             );
         });
 
         it('should get themes from the themes directory', () => {
             // Arrange
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetFileAccessMock();
 
             // Act
@@ -991,7 +1024,7 @@ describe('AppearanceService', () => {
         it('should set the selected theme from the settings', () => {
             // Arrange
             const settingsStub: any = { theme: 'Theme 2' };
-            const service: BaseAppearanceService = createServiceWithSettingsStub(settingsStub);
+            const service: AppearanceServiceBase = createServiceWithSettingsStub(settingsStub);
 
             service.selectedTheme = theme1;
             settingsStub.theme = 'Theme 2';
@@ -1008,13 +1041,14 @@ describe('AppearanceService', () => {
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             // Act
             service.refreshThemes();
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
         });
     });
 
@@ -1025,7 +1059,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
             settingsMock.setup((x) => x.fontSize).returns(() => 13);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             resetElements();
 
@@ -1050,7 +1084,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             resetElements();
 
@@ -1059,6 +1093,7 @@ describe('AppearanceService', () => {
 
             // Assert
             assertDarkColorCssProperties('#0fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
         it('should apply the light theme of the selected theme when follow the system theme is disabled and use light background theme is enabled', () => {
@@ -1071,7 +1106,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             resetElements();
 
@@ -1080,6 +1115,7 @@ describe('AppearanceService', () => {
 
             // Assert
             assertLightColorCssProperties('#1fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
         });
 
         it('should apply the dark theme of the selected theme when follow the system theme is enabled and the desktop is using a dark theme', () => {
@@ -1092,7 +1128,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => true);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             resetElements();
 
@@ -1101,6 +1137,7 @@ describe('AppearanceService', () => {
 
             // Assert
             assertDarkColorCssProperties('#0fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
         it('should apply the light theme of the selected theme when follow the system theme is enabled and the desktop is using a light theme', () => {
@@ -1113,7 +1150,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => true);
 
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
 
             resetElements();
 
@@ -1122,6 +1159,7 @@ describe('AppearanceService', () => {
 
             // Assert
             assertLightColorCssProperties('#1fffff');
+            expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
         });
 
         it('should apply the colors of the selected theme when follow the system color is disabled', () => {
@@ -1133,7 +1171,7 @@ describe('AppearanceService', () => {
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
@@ -1142,6 +1180,8 @@ describe('AppearanceService', () => {
             // Assert
             assertSelectedThemeAccentColorCssProperties();
             assertDarkColorCssProperties('#0fffff');
+            expect(service.accentRgbColor.equals(new RgbColor(204, 204, 204))).toBeTruthy();
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
         it('should apply the colors of the system when follow the system color is enabled', () => {
@@ -1154,7 +1194,7 @@ describe('AppearanceService', () => {
             desktopMock.setup((x) => x.getAccentColor()).returns(() => '00ff00ff');
             settingsMock.setup((x) => x.followSystemColor).returns(() => true);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
@@ -1163,6 +1203,8 @@ describe('AppearanceService', () => {
             // Assert
             assertSystemThemeAccentColorCssProperties();
             assertDarkColorCssProperties('#00ff00');
+            expect(service.accentRgbColor.equals(new RgbColor(0, 255, 0))).toBeTruthy();
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
         it('should apply a correct margin when not using system title bar search is visible', () => {
@@ -1171,7 +1213,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 1');
             settingsMock.setup((x) => x.fontSize).returns(() => 13);
             settingsMock.setup((x) => x.useSystemTitleBar).returns(() => false);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
@@ -1187,7 +1229,7 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 1');
             settingsMock.setup((x) => x.fontSize).returns(() => 13);
             settingsMock.setup((x) => x.useSystemTitleBar).returns(() => true);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
@@ -1203,7 +1245,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.useSystemTitleBar).returns(() => false);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
@@ -1217,7 +1259,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.useSystemTitleBar).returns(() => false);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
@@ -1231,7 +1273,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.useSystemTitleBar).returns(() => true);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
@@ -1245,7 +1287,7 @@ describe('AppearanceService', () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.useSystemTitleBar).returns(() => true);
-            const service: BaseAppearanceService = createService();
+            const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act

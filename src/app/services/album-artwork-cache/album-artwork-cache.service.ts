@@ -1,19 +1,19 @@
 import { Injectable } from '@angular/core';
 import { Constants } from '../../common/application/constants';
 import { ImageProcessor } from '../../common/image-processor';
-import { BaseFileAccess } from '../../common/io/base-file-access';
 import { Logger } from '../../common/logger';
 import { AlbumArtworkCacheId } from './album-artwork-cache-id';
 import { AlbumArtworkCacheIdFactory } from './album-artwork-cache-id-factory';
-import { BaseAlbumArtworkCacheService } from './base-album-artwork-cache.service';
+import { AlbumArtworkCacheServiceBase } from './album-artwork-cache.service.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
 
 @Injectable()
-export class AlbumArtworkCacheService implements BaseAlbumArtworkCacheService {
-    constructor(
+export class AlbumArtworkCacheService implements AlbumArtworkCacheServiceBase {
+    public constructor(
         private albumArtworkCacheIdFactory: AlbumArtworkCacheIdFactory,
         private imageProcessor: ImageProcessor,
-        private fileAccess: BaseFileAccess,
-        private logger: Logger
+        private fileAccess: FileAccessBase,
+        private logger: Logger,
     ) {
         this.createCoverArtCacheOnDisk();
     }
@@ -22,16 +22,12 @@ export class AlbumArtworkCacheService implements BaseAlbumArtworkCacheService {
         try {
             const cachedArtworkFilePath: string = this.fileAccess.coverArtFullPath(artworkId);
             await this.fileAccess.deleteFileIfExistsAsync(cachedArtworkFilePath);
-        } catch (e) {
-            this.logger.error(
-                `Could not remove artwork data from cache. Error: ${e.message}`,
-                'AlbumArtworkCacheService',
-                'removeArtworkDataFromCacheAsync'
-            );
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not remove artwork data from cache', 'AlbumArtworkCacheService', 'removeArtworkDataFromCacheAsync');
         }
     }
 
-    public async addArtworkDataToCacheAsync(imageBuffer: Buffer): Promise<AlbumArtworkCacheId> {
+    public async addArtworkDataToCacheAsync(imageBuffer: Buffer | undefined): Promise<AlbumArtworkCacheId | undefined> {
         if (imageBuffer == undefined) {
             return undefined;
         }
@@ -43,21 +39,17 @@ export class AlbumArtworkCacheService implements BaseAlbumArtworkCacheService {
         try {
             const albumArtworkCacheId: AlbumArtworkCacheId = this.albumArtworkCacheIdFactory.create();
             const cachedArtworkFilePath: string = this.fileAccess.coverArtFullPath(albumArtworkCacheId.id);
-            const resizedImageBuffer: Buffer = await this.imageProcessor.resizeImageAsync(
+            const resizedImageBuffer: Buffer = this.imageProcessor.resizeImage(
                 imageBuffer,
                 Constants.cachedCoverArtMaximumSize,
                 Constants.cachedCoverArtMaximumSize,
-                Constants.cachedCoverArtJpegQuality
+                Constants.cachedCoverArtJpegQuality,
             );
             await this.imageProcessor.convertImageBufferToFileAsync(resizedImageBuffer, cachedArtworkFilePath);
 
             return albumArtworkCacheId;
-        } catch (e) {
-            this.logger.error(
-                `Could not add artwork data to cache. Error: ${e.message}`,
-                'AlbumArtworkCacheService',
-                'addArtworkDataToCacheAsync'
-            );
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not add artwork data to cache', 'AlbumArtworkCacheService', 'addArtworkDataToCacheAsync');
         }
 
         return undefined;
@@ -66,12 +58,8 @@ export class AlbumArtworkCacheService implements BaseAlbumArtworkCacheService {
     private createCoverArtCacheOnDisk(): void {
         try {
             this.fileAccess.createFullDirectoryPathIfDoesNotExist(this.fileAccess.coverArtCacheFullPath());
-        } catch (e) {
-            this.logger.error(
-                `Could not create artwork cache directory. Error: ${e.message}`,
-                'AlbumArtworkCacheService',
-                'createDirectories'
-            );
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not create artwork cache directory', 'AlbumArtworkCacheService', 'createDirectories');
 
             // We cannot proceed if the above fails
             throw e;

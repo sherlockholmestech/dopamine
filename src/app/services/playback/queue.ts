@@ -8,14 +8,17 @@ export class Queue {
     private _tracks: TrackModel[] = [];
     private playbackOrder: number[] = [];
 
-    constructor(private shuffler: Shuffler, private logger: Logger) {}
+    public constructor(
+        private shuffler: Shuffler,
+        private logger: Logger,
+    ) {}
 
     public get tracks(): TrackModel[] {
         return this._tracks;
     }
 
     public get tracksInPlaybackOrder(): TrackModel[] {
-        let tracksInPlaybackOrder: TrackModel[] = [];
+        const tracksInPlaybackOrder: TrackModel[] = [];
 
         for (const trackIndex of this.playbackOrder) {
             tracksInPlaybackOrder.push(this._tracks[trackIndex]);
@@ -28,8 +31,8 @@ export class Queue {
         return this._tracks.length;
     }
 
-    public setTracks(tracksToSet: TrackModel[], shuffle: boolean): void {
-        this._tracks = tracksToSet;
+    public setTracks(tracksToSet: TrackModel[], shuffle: boolean): TrackModel[] {
+        this._tracks = tracksToSet.map((x) => x.clone());
 
         if (shuffle) {
             this.shuffle();
@@ -38,18 +41,20 @@ export class Queue {
         }
 
         this.logger.info(`Set '${tracksToSet?.length}' tracks. Shuffle=${shuffle}`, 'Queue', 'setTracks');
+
+        return this._tracks;
     }
 
     public addTracks(tracksToAdd: TrackModel[]): void {
         for (const trackToAdd of tracksToAdd) {
-            this._tracks.push(trackToAdd);
+            this._tracks.push(trackToAdd.clone());
             this.playbackOrder.push(this._tracks.length - 1);
         }
 
         this.logger.info(`Added '${tracksToAdd?.length}' tracks`, 'Queue', 'addTracks');
     }
 
-    public removeTracks(tracksToRemove: TrackModel[]): void {
+    public removeTracks(tracksToRemove: TrackModel[] | undefined): void {
         if (tracksToRemove == undefined) {
             return;
         }
@@ -77,7 +82,7 @@ export class Queue {
         this.populatePlayBackOrder();
     }
 
-    public getFirstTrack(): TrackModel {
+    public getFirstTrack(): TrackModel | undefined {
         if (this.playbackOrder == undefined) {
             return undefined;
         }
@@ -89,14 +94,13 @@ export class Queue {
         return this._tracks[this.playbackOrder[0]];
     }
 
-    public getPreviousTrack(currentTrack: TrackModel, allowWrapAround: boolean): TrackModel {
+    public getPreviousTrack(currentTrack: TrackModel | undefined, allowWrapAround: boolean): TrackModel | undefined {
         if (this._tracks.length === 0) {
             return undefined;
         }
 
         const minimumIndex: number = 0;
         const maximumIndex: number = this.playbackOrder.length - 1;
-        const currentIndex: number = this.findPlaybackOrderIndex(currentTrack);
 
         if (currentTrack == undefined) {
             return this._tracks[this.playbackOrder[minimumIndex]];
@@ -105,6 +109,8 @@ export class Queue {
         if (!this._tracks.includes(currentTrack)) {
             return this._tracks[this.playbackOrder[minimumIndex]];
         }
+
+        const currentIndex: number = this.findPlaybackOrderIndex(currentTrack);
 
         if (currentIndex > minimumIndex) {
             return this._tracks[this.playbackOrder[currentIndex - 1]];
@@ -117,14 +123,13 @@ export class Queue {
         return undefined;
     }
 
-    public getNextTrack(currentTrack: TrackModel, allowWrapAround: boolean): TrackModel {
+    public getNextTrack(currentTrack: TrackModel | undefined, allowWrapAround: boolean): TrackModel | undefined {
         if (this._tracks.length === 0) {
             return undefined;
         }
 
         const minimumIndex: number = 0;
         const maximumIndex: number = this.playbackOrder.length - 1;
-        const currentIndex: number = this.findPlaybackOrderIndex(currentTrack);
 
         if (currentTrack == undefined) {
             return this._tracks[this.playbackOrder[minimumIndex]];
@@ -133,6 +138,8 @@ export class Queue {
         if (!this._tracks.includes(currentTrack)) {
             return this._tracks[this.playbackOrder[minimumIndex]];
         }
+
+        const currentIndex: number = this.findPlaybackOrderIndex(currentTrack);
 
         if (currentIndex < maximumIndex) {
             return this._tracks[this.playbackOrder[currentIndex + 1]];
@@ -154,7 +161,7 @@ export class Queue {
     }
 
     private shufflePlaybackOrder(): void {
-        this.playbackOrder = this.shuffler.shuffle(this.playbackOrder);
+        this.playbackOrder = this.shuffler.shuffle<number>(this.playbackOrder);
     }
 
     private findPlaybackOrderIndex(track: TrackModel): number {

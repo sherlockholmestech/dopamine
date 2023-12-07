@@ -1,23 +1,11 @@
 import { Injectable } from '@angular/core';
 import * as remote from '@electron/remote';
-import { ipcRenderer } from 'electron';
-import { Observable, Subject } from 'rxjs';
-import { BaseApplication } from './base-application';
 import { WindowSize } from './window-size';
+import { ApplicationBase } from './application.base';
 
 @Injectable()
-export class Application implements BaseApplication {
-    private argumentsReceived: Subject<string[]> = new Subject();
-
-    constructor() {
-        ipcRenderer.on('arguments-received', (event, argv) => {
-            this.argumentsReceived.next(argv);
-        });
-    }
-
-    public argumentsReceived$: Observable<string[]> = this.argumentsReceived.asObservable();
-
-    public getGlobal(name: string): any {
+export class Application implements ApplicationBase {
+    public getGlobal(name: string): unknown {
         return remote.getGlobal(name);
     }
 
@@ -30,6 +18,10 @@ export class Application implements BaseApplication {
     }
 
     public getParameters(): string[] {
-        return remote.process.argv;
+        if (remote?.process?.argv != undefined) {
+            return remote.process.argv;
+        }
+
+        return [];
     }
 }

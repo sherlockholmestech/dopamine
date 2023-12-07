@@ -1,42 +1,51 @@
-import { Component, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, HostListener, OnInit, ViewChild } from '@angular/core';
 import { MatDrawer } from '@angular/material/sidenav';
 import log from 'electron-log';
 import * as path from 'path';
 import { Subscription } from 'rxjs';
 import { ProductInformation } from './common/application/product-information';
-import { BaseDesktop } from './common/io/base-desktop';
 import { Logger } from './common/logger';
-import { AddToPlaylistMenu } from './components/add-to-playlist-menu';
-import { BaseAppearanceService } from './services/appearance/base-appearance.service';
-import { BaseDialogService } from './services/dialog/base-dialog.service';
-import { BaseDiscordService } from './services/discord/base-discord.service';
-import { BaseMediaSessionService } from './services/media-session/base-media-session.service';
-import { BaseNavigationService } from './services/navigation/base-navigation.service';
-import { BaseScrobblingService } from './services/scrobbling/base-scrobbling.service';
-import { BaseSearchService } from './services/search/base-search.service';
-import { BaseTranslatorService } from './services/translator/base-translator.service';
-import { BaseTrayService } from './services/tray/base-tray.service';
+import { PromiseUtils } from './common/utils/promise-utils';
+import { IntegrationTestRunner } from './testing/integration-test-runner';
+import { AppConfig } from '../environments/environment';
+import { NavigationServiceBase } from './services/navigation/navigation.service.base';
+import { AppearanceServiceBase } from './services/appearance/appearance.service.base';
+import { TranslatorServiceBase } from './services/translator/translator.service.base';
+import { DialogServiceBase } from './services/dialog/dialog.service.base';
+import { DiscordServiceBase } from './services/discord/discord.service.base';
+import { ScrobblingServiceBase } from './services/scrobbling/scrobbling.service.base';
+import { TrayServiceBase } from './services/tray/tray.service.base';
+import { SearchServiceBase } from './services/search/search.service.base';
+import { MediaSessionServiceBase } from './services/media-session/media-session.service.base';
+import { EventListenerServiceBase } from './services/event-listener/event-listener.service.base';
+import { AddToPlaylistMenu } from './ui/components/add-to-playlist-menu';
+import { DesktopBase } from './common/io/desktop.base';
+import { AudioVisualizer } from './services/playback/audio-visualizer';
+
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit {
     private subscription: Subscription = new Subscription();
 
-    constructor(
-        private navigationService: BaseNavigationService,
-        private appearanceService: BaseAppearanceService,
-        private translatorService: BaseTranslatorService,
-        private dialogService: BaseDialogService,
-        private discordService: BaseDiscordService,
-        private scrobblingService: BaseScrobblingService,
-        private trayService: BaseTrayService,
-        private searchService: BaseSearchService,
-        private mediaSessionService: BaseMediaSessionService,
+    public constructor(
+        private navigationService: NavigationServiceBase,
+        private appearanceService: AppearanceServiceBase,
+        private translatorService: TranslatorServiceBase,
+        private dialogService: DialogServiceBase,
+        private discordService: DiscordServiceBase,
+        private scrobblingService: ScrobblingServiceBase,
+        private trayService: TrayServiceBase,
+        private searchService: SearchServiceBase,
+        private mediaSessionService: MediaSessionServiceBase,
+        private eventListenerService: EventListenerServiceBase,
         private addToPlaylistMenu: AddToPlaylistMenu,
-        private desktop: BaseDesktop,
-        private logger: Logger
+        private desktop: DesktopBase,
+        private logger: Logger,
+        private integrationTestRunner: IntegrationTestRunner,
+        private audioVisualizer: AudioVisualizer,
     ) {
         log.create('renderer');
         log.transports.file.resolvePath = () => path.join(this.desktop.getApplicationDataDirectory(), 'logs', 'Dopamine.log');
@@ -52,31 +61,36 @@ export class AppComponent implements OnInit, OnDestroy {
         }
     }
 
-    public ngOnDestroy(): void {}
-
     public async ngOnInit(): Promise<void> {
+        this.audioVisualizer.connectAudioElement();
+
+        if (!AppConfig.production) {
+            this.logger.info('Executing integration tests', 'AppComponent', 'ngOnInit');
+            await this.integrationTestRunner.executeTestsAsync();
+        }
+
         this.logger.info(
             `+++ Started ${ProductInformation.applicationName} ${ProductInformation.applicationVersion} +++`,
             'AppComponent',
-            'ngOnInit'
+            'ngOnInit',
         );
 
         this.subscription.add(
             this.navigationService.showPlaybackQueueRequested$.subscribe(() => {
                 if (this.playbackQueueDrawer != undefined) {
-                    this.playbackQueueDrawer.toggle();
+                    PromiseUtils.noAwait(this.playbackQueueDrawer.toggle());
                 }
-            })
+            }),
         );
 
-        this.addToPlaylistMenu.initializeAsync();
+        await this.addToPlaylistMenu.initializeAsync();
         this.discordService.setRichPresenceFromSettings();
         this.appearanceService.applyAppearance();
-        await this.translatorService.applyLanguageAsync();
+        this.translatorService.applyLanguage();
         this.trayService.updateTrayContextMenu();
         this.mediaSessionService.initialize();
         this.scrobblingService.initialize();
-
-        this.navigationService.navigateToLoading();
+        this.eventListenerService.listenToEvents();
+        await this.navigationService.navigateToLoadingAsync();
     }
 }

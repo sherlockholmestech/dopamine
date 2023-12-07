@@ -1,29 +1,29 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { BaseFileAccess } from '../../common/io/base-file-access';
-import { Strings } from '../../common/strings';
+import { StringUtils } from '../../common/utils/string-utils';
 import { TextSanitizer } from '../../common/text-sanitizer';
-import { BasePlaylistService } from '../playlist/base-playlist.service';
-import { BasePlaylistFolderService } from './base-playlist-folder.service';
 import { PlaylistFolderModel } from './playlist-folder-model';
 import { PlaylistFolderModelFactory } from './playlist-folder-model-factory';
+import { PlaylistFolderServiceBase } from './playlist-folder.service.base';
+import { PlaylistServiceBase } from '../playlist/playlist.service.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
 
 @Injectable()
-export class PlaylistFolderService implements BasePlaylistFolderService {
+export class PlaylistFolderService implements PlaylistFolderServiceBase {
     private playlistFoldersChanged: Subject<void> = new Subject();
 
-    constructor(
-        private playlistService: BasePlaylistService,
+    public constructor(
+        private playlistService: PlaylistServiceBase,
         private playlistFolderModelFactory: PlaylistFolderModelFactory,
-        private fileAccess: BaseFileAccess,
-        private textSanitizer: TextSanitizer
+        private fileAccess: FileAccessBase,
+        private textSanitizer: TextSanitizer,
     ) {}
 
     public playlistFoldersChanged$: Observable<void> = this.playlistFoldersChanged.asObservable();
 
     public async getPlaylistFoldersAsync(): Promise<PlaylistFolderModel[]> {
         const playlistFolderPaths: string[] = await this.fileAccess.getDirectoriesInDirectoryAsync(
-            this.playlistService.playlistsParentFolderPath
+            this.playlistService.playlistsParentFolderPath,
         );
         const playlistFolders: PlaylistFolderModel[] = [];
 
@@ -51,7 +51,7 @@ export class PlaylistFolderService implements BasePlaylistFolderService {
     }
 
     public createPlaylistFolder(playlistFolderName: string): void {
-        if (Strings.isNullOrWhiteSpace(playlistFolderName)) {
+        if (StringUtils.isNullOrWhiteSpace(playlistFolderName)) {
             throw new Error(`playlistFolderName is empty`);
         }
 

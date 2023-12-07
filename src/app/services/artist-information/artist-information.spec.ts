@@ -1,12 +1,12 @@
 import { IMock, It, Mock, Times } from 'typemoq';
-import { BaseDesktop } from '../../common/io/base-desktop';
 import { ArtistInformation } from './artist-information';
+import { DesktopBase } from '../../common/io/desktop.base';
 
 describe('ArtistInformation', () => {
-    let desktopMock: IMock<BaseDesktop>;
+    let desktopMock: IMock<DesktopBase>;
 
     beforeEach(() => {
-        desktopMock = Mock.ofType<BaseDesktop>();
+        desktopMock = Mock.ofType<DesktopBase>();
     });
 
     describe('constructor', () => {
@@ -102,27 +102,27 @@ describe('ArtistInformation', () => {
         });
     });
 
-    describe('browseToUrl', () => {
-        it('should browse to url when not empty', () => {
+    describe('browseToUrlAsync', () => {
+        it('should browse to url when not empty', async () => {
             // Arrange
             const artist: ArtistInformation = new ArtistInformation(desktopMock.object, 'name', 'url', 'imageUrl', 'biography');
 
             // Act
-            artist.browseToUrl();
+            await artist.browseToUrlAsync();
 
             // Assert
-            desktopMock.verify((x) => x.openLink('url'), Times.once());
+            desktopMock.verify((x) => x.openLinkAsync('url'), Times.once());
         });
 
-        it('should not browse to url when empty', () => {
+        it('should not browse to url when empty', async () => {
             // Arrange
             const artist: ArtistInformation = ArtistInformation.empty();
 
             // Act
-            artist.browseToUrl();
+            await artist.browseToUrlAsync();
 
             // Assert
-            desktopMock.verify((x) => x.openLink(It.isAny()), Times.never());
+            desktopMock.verify((x) => x.openLinkAsync(It.isAny()), Times.never());
         });
     });
 });

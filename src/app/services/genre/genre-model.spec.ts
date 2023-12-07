@@ -1,13 +1,13 @@
 import { IMock, Mock } from 'typemoq';
-import { BaseTranslatorService } from '../translator/base-translator.service';
 import { GenreModel } from './genre-model';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
 
 describe('GenreModel', () => {
-    let translatorServiceMock: IMock<BaseTranslatorService>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
     let genreModel: GenreModel;
 
     beforeEach(() => {
-        translatorServiceMock = Mock.ofType<BaseTranslatorService>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
 
         translatorServiceMock.setup((x) => x.get('unknown-genre')).returns(() => 'Unknown genre');
         genreModel = new GenreModel('My genre', translatorServiceMock.object);
@@ -70,18 +70,6 @@ describe('GenreModel', () => {
     });
 
     describe('name', () => {
-        it('should return "Unknown genre" if genre is undefined', () => {
-            // Arrange
-            const genre: string = undefined;
-            genreModel = new GenreModel(genre, translatorServiceMock.object);
-
-            // Act
-            const name: string = genreModel.displayName;
-
-            // Assert
-            expect(name).toEqual('Unknown genre');
-        });
-
         it('should return "Unknown genre" if genre is empty', () => {
             // Arrange
             const genre: string = '';

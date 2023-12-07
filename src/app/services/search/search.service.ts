@@ -2,17 +2,17 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Constants } from '../../common/application/constants';
-import { Strings } from '../../common/strings';
-import { BaseSearchService } from './base-search.service';
+import { StringUtils } from '../../common/utils/string-utils';
+import { SearchServiceBase } from './search.service.base';
 
 @Injectable()
-export class SearchService implements BaseSearchService {
+export class SearchService implements SearchServiceBase {
     private updateDelayedSearchText: Subject<string> = new Subject<string>();
     private _isSearching: boolean = false;
     private _searchText: string = '';
     private _delayedSearchText: string = '';
 
-    constructor() {
+    public constructor() {
         this.updateDelayedSearchText
             .pipe(debounceTime(Constants.searchDelayMilliseconds), distinctUntilChanged())
             .subscribe((searchText) => {
@@ -34,7 +34,7 @@ export class SearchService implements BaseSearchService {
     }
 
     public get hasSearchText(): boolean {
-        return !Strings.isNullOrWhiteSpace(this.searchText);
+        return !StringUtils.isNullOrWhiteSpace(this.searchText);
     }
 
     public get isSearching(): boolean {
@@ -50,11 +50,11 @@ export class SearchService implements BaseSearchService {
     }
 
     public matchesSearchText(originalText: string, searchText: string): boolean {
-        if (Strings.isNullOrWhiteSpace(originalText)) {
+        if (StringUtils.isNullOrWhiteSpace(originalText)) {
             return false;
         }
 
-        if (Strings.removeAccents(originalText).toLowerCase().includes(searchText.toLowerCase())) {
+        if (StringUtils.removeAccents(originalText).toLowerCase().includes(searchText.toLowerCase())) {
             return true;
         }
 

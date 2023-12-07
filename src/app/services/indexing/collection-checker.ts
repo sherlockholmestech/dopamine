@@ -1,12 +1,16 @@
 import { Injectable } from '@angular/core';
-import { BaseTrackRepository } from '../../common/data/repositories/base-track-repository';
 import { Logger } from '../../common/logger';
 import { IndexablePath } from './indexable-path';
 import { IndexablePathFetcher } from './indexable-path-fetcher';
+import {TrackRepositoryBase} from "../../data/repositories/track-repository.base";
 
 @Injectable()
 export class CollectionChecker {
-    constructor(private indexablePathFetcher: IndexablePathFetcher, private trackRepository: BaseTrackRepository, private logger: Logger) {}
+    public constructor(
+        private indexablePathFetcher: IndexablePathFetcher,
+        private trackRepository: TrackRepositoryBase,
+        private logger: Logger,
+    ) {}
 
     public async isCollectionOutdatedAsync(): Promise<boolean> {
         let collectionIsOutdated: boolean = false;
@@ -27,13 +31,14 @@ export class CollectionChecker {
             this.logger.info(
                 `collectionIsOutdated=${collectionIsOutdated}, tracksNeedIndexing=${tracksNeedIndexing}, numberOfTracksHasChanged=${numberOfTracksHasChanged}, lastDateModifiedHasChanged=${lastDateModifiedHasChanged}`,
                 'CollectionChecker',
-                'isCollectionOutdatedAsync'
+                'isCollectionOutdatedAsync',
             );
-        } catch (e) {
+        } catch (e: unknown) {
             this.logger.error(
-                `An error occurred while checking if collection is outdated. Error ${e.message}`,
+                e,
+                'An error occurred while checking if collection is outdated',
                 'CollectionChecker',
-                'isCollectionOutdatedAsync'
+                'isCollectionOutdatedAsync',
             );
         }
 
@@ -46,7 +51,7 @@ export class CollectionChecker {
         }
 
         const indexablePathsSortedByDateModifiedTicksDescending: IndexablePath[] = indexablePathsOnDisk.sort((a, b) =>
-            a.dateModifiedTicks > b.dateModifiedTicks ? -1 : 1
+            a.dateModifiedTicks > b.dateModifiedTicks ? -1 : 1,
         );
 
         return indexablePathsSortedByDateModifiedTicksDescending[0].dateModifiedTicks;

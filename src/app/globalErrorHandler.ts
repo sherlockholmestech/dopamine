@@ -1,16 +1,22 @@
 import { ErrorHandler, Injectable, NgZone } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { BrowserWindow } from 'electron';
-import { BaseApplication } from './common/io/base-application';
 import { Logger } from './common/logger';
-import { ErrorDialogComponent } from './components/dialogs/error-dialog/error-dialog.component';
+import { ErrorDialogComponent } from './ui/components/dialogs/error-dialog/error-dialog.component';
+import { ErrorData } from './services/dialog/error-data';
+import { ApplicationBase } from './common/io/application.base';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-    constructor(private application: BaseApplication, private logger: Logger, private dialog: MatDialog, private zone: NgZone) {}
+    public constructor(
+        private application: ApplicationBase,
+        private logger: Logger,
+        private dialog: MatDialog,
+        private zone: NgZone,
+    ) {}
 
     public handleError(e: Error): void {
-        this.logger.error(`Handling global error. Error: ${e.message}.`, 'GlobalErrorHandler', 'handleError');
+        this.logger.error(e, 'Handling global error', 'GlobalErrorHandler', 'handleError');
         this.showGlobalErrorDialog();
     }
 
@@ -22,10 +28,10 @@ export class GlobalErrorHandler implements ErrorHandler {
                 // TranslationService is not able to provide the translation of texts in this class.
                 // So we use a workaround where the translation happens in the error dialog itself.
                 width: '450px',
-                data: { isGlobalError: true },
+                data: new ErrorData('', true),
             });
 
-            dialogRef.afterClosed().subscribe((result) => {
+            dialogRef.afterClosed().subscribe(() => {
                 // Quit the application
                 this.logger.info('Closing application', 'GlobalErrorHandler', 'showGlobalErrorDialog');
                 const win: BrowserWindow = this.application.getCurrentWindow();

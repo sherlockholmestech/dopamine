@@ -2,24 +2,23 @@ import { Injectable } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { DateProxy } from '../../common/io/date-proxy';
 import { Logger } from '../../common/logger';
-import { BaseSettings } from '../../common/settings/base-settings';
-import { BasePlaybackService } from '../playback/base-playback.service';
-import { PlaybackStarted } from '../playback/playback-started';
-import { BaseTranslatorService } from '../translator/base-translator.service';
-import { BaseDiscordService } from './base-discord.service';
+import { SettingsBase } from '../../common/settings/settings.base';
 import { PresenceUpdater } from './presence-updater';
+import { DiscordServiceBase } from './discord.service.base';
+import { PlaybackServiceBase } from '../playback/playback.service.base';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
 
 @Injectable()
-export class DiscordService implements BaseDiscordService {
+export class DiscordService implements DiscordServiceBase {
     private subscription: Subscription = new Subscription();
 
-    constructor(
-        private playbackService: BasePlaybackService,
-        private translatorService: BaseTranslatorService,
+    public constructor(
+        private playbackService: PlaybackServiceBase,
+        private translatorService: TranslatorServiceBase,
         private presenceUpdater: PresenceUpdater,
         private dateProxy: DateProxy,
-        private settings: BaseSettings,
-        private logger: Logger
+        private settings: SettingsBase,
+        private logger: Logger,
     ) {}
 
     public setRichPresenceFromSettings(): void {
@@ -43,33 +42,33 @@ export class DiscordService implements BaseDiscordService {
 
     private addSubscriptions(): void {
         this.subscription.add(
-            this.playbackService.playbackStarted$.subscribe((playbackStarted: PlaybackStarted) => {
+            this.playbackService.playbackStarted$.subscribe(() => {
                 this.updatePresence();
-            })
+            }),
         );
 
         this.subscription.add(
             this.playbackService.playbackPaused$.subscribe(() => {
                 this.updatePresence();
-            })
+            }),
         );
 
         this.subscription.add(
             this.playbackService.playbackResumed$.subscribe(() => {
                 this.updatePresence();
-            })
+            }),
         );
 
         this.subscription.add(
             this.playbackService.playbackStopped$.subscribe(() => {
                 this.presenceUpdater.clearPresence();
-            })
+            }),
         );
 
         this.subscription.add(
             this.playbackService.playbackSkipped$.subscribe(() => {
                 this.updatePresence();
-            })
+            }),
         );
     }
 
@@ -82,7 +81,7 @@ export class DiscordService implements BaseDiscordService {
             (this.playbackService.progress.totalSeconds - this.playbackService.progress.progressSeconds) * 1000;
 
         // AudioPlayer does not fill in its progress immediately, so progress is (0,0) when a track starts playing.
-        if (timeRemainingInMilliseconds === 0) {
+        if (timeRemainingInMilliseconds === 0 && this.playbackService.currentTrack != undefined) {
             return this.playbackService.currentTrack.durationInMilliseconds;
         }
 
@@ -121,7 +120,7 @@ export class DiscordService implements BaseDiscordService {
             largeImageText,
             shouldSendTimestamps,
             startTime,
-            endTime
+            endTime,
         );
     }
 }

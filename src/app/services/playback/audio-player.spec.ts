@@ -1,16 +1,19 @@
 import { IMock, Mock } from 'typemoq';
 import { Logger } from '../../common/logger';
+import { MathExtensions } from '../../common/math-extensions';
 import { AudioPlayer } from './audio-player';
-import { BaseAudioPlayer } from './base-audio-player';
+import { AudioPlayerBase } from './audio-player.base';
 
 describe('AudioPlayer', () => {
-    let player: BaseAudioPlayer;
+    let player: AudioPlayerBase;
+    let mathExtensionsMock: IMock<MathExtensions>;
     let loggerMock: IMock<Logger>;
 
     beforeEach(() => {
+        mathExtensionsMock = Mock.ofType<MathExtensions>();
         loggerMock = Mock.ofType<Logger>();
 
-        player = new AudioPlayer(loggerMock.object);
+        player = new AudioPlayer(mathExtensionsMock.object, loggerMock.object);
     });
 
     describe('constructor', () => {
@@ -120,6 +123,15 @@ describe('AudioPlayer', () => {
 
             // Assert
             expect(player.skipToSeconds).toBeDefined();
+        });
+
+        it('should define audio', () => {
+            // Arrange
+
+            // Act
+
+            // Assert
+            expect(player.audio).toBeDefined();
         });
     });
 });

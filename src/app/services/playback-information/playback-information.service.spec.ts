@@ -1,20 +1,20 @@
 import { Observable, Subject, Subscription } from 'rxjs';
 import { IMock, Mock } from 'typemoq';
-import { Track } from '../../common/data/entities/track';
 import { DateTime } from '../../common/date-time';
-import { BaseMetadataService } from '../metadata/base-metadata.service';
-import { BasePlaybackService } from '../playback/base-playback.service';
 import { PlaybackStarted } from '../playback/playback-started';
 import { TrackModel } from '../track/track-model';
-import { BaseTranslatorService } from '../translator/base-translator.service';
-import { BasePlaybackInformationService } from './base-playback-information.service';
 import { PlaybackInformation } from './playback-information';
 import { PlaybackInformationService } from './playback-information.service';
+import { PlaybackServiceBase } from '../playback/playback.service.base';
+import { MetadataServiceBase } from '../metadata/metadata.service.base';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { Track } from '../../data/entities/track';
+import { PlaybackInformationServiceBase } from './playback-information.service.base';
 
 describe('PlaybackInformationService', () => {
-    let playbackServiceMock: IMock<BasePlaybackService>;
-    let metadataServiceMock: IMock<BaseMetadataService>;
-    let translatorServiceMock: IMock<BaseTranslatorService>;
+    let playbackServiceMock: IMock<PlaybackServiceBase>;
+    let metadataServiceMock: IMock<MetadataServiceBase>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
     let dateTimeMock: IMock<DateTime>;
     let playbackService_PlaybackStartedMock: Subject<PlaybackStarted>;
     let playbackService_PlaybackStoppedMock: Subject<void>;
@@ -25,9 +25,9 @@ describe('PlaybackInformationService', () => {
     const flushPromises = () => new Promise(process.nextTick);
 
     beforeEach(() => {
-        playbackServiceMock = Mock.ofType<BasePlaybackService>();
-        metadataServiceMock = Mock.ofType<BaseMetadataService>();
-        translatorServiceMock = Mock.ofType<BaseTranslatorService>();
+        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
+        metadataServiceMock = Mock.ofType<MetadataServiceBase>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         dateTimeMock = Mock.ofType<DateTime>();
         playbackService_PlaybackStartedMock = new Subject();
         const playbackService_PlaybackStartedMock$: Observable<PlaybackStarted> = playbackService_PlaybackStartedMock.asObservable();
@@ -41,7 +41,7 @@ describe('PlaybackInformationService', () => {
         track = new Track('Path');
         trackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
 
-        metadataServiceMock.setup((x) => x.createImageUrlAsync(trackModel)).returns(async () => 'imageUrl');
+        metadataServiceMock.setup((x) => x.createImageUrlAsync(trackModel)).returns(() => Promise.resolve('imageUrl'));
     });
 
     describe('constructor', () => {
@@ -49,9 +49,9 @@ describe('PlaybackInformationService', () => {
             // Arrange
 
             // Act
-            const service: BasePlaybackInformationService = new PlaybackInformationService(
+            const service: PlaybackInformationServiceBase = new PlaybackInformationService(
                 playbackServiceMock.object,
-                metadataServiceMock.object
+                metadataServiceMock.object,
             );
 
             // Assert
@@ -62,9 +62,9 @@ describe('PlaybackInformationService', () => {
             // Arrange
 
             // Act
-            const service: BasePlaybackInformationService = new PlaybackInformationService(
+            const service: PlaybackInformationServiceBase = new PlaybackInformationService(
                 playbackServiceMock.object,
-                metadataServiceMock.object
+                metadataServiceMock.object,
             );
 
             // Assert
@@ -73,18 +73,18 @@ describe('PlaybackInformationService', () => {
 
         it('should subscribe to playbackService.playbackStarted and raise playingPreviousTrack containing defined playback information when playing a previous track', async () => {
             // Arrange
-            const service: BasePlaybackInformationService = new PlaybackInformationService(
+            const service: PlaybackInformationServiceBase = new PlaybackInformationService(
                 playbackServiceMock.object,
-                metadataServiceMock.object
+                metadataServiceMock.object,
             );
 
-            let receivedPlaybackInformation: PlaybackInformation;
+            let receivedPlaybackInformation: PlaybackInformation | undefined;
             const subscription: Subscription = new Subscription();
 
             subscription.add(
                 service.playingPreviousTrack$.subscribe((playbackInformation: PlaybackInformation) => {
                     receivedPlaybackInformation = playbackInformation;
-                })
+                }),
             );
 
             // Act
@@ -93,24 +93,24 @@ describe('PlaybackInformationService', () => {
 
             // Assert
             expect(receivedPlaybackInformation).toBeDefined();
-            expect(receivedPlaybackInformation.track).toBe(trackModel);
-            expect(receivedPlaybackInformation.imageUrl).toEqual('imageUrl');
+            expect(receivedPlaybackInformation!.track).toBe(trackModel);
+            expect(receivedPlaybackInformation!.imageUrl).toEqual('imageUrl');
         });
 
         it('should subscribe to playbackService.playbackStarted and raise playingNextTrack containing defined playback information when playing a next track', async () => {
             // Arrange
-            const service: BasePlaybackInformationService = new PlaybackInformationService(
+            const service: PlaybackInformationServiceBase = new PlaybackInformationService(
                 playbackServiceMock.object,
-                metadataServiceMock.object
+                metadataServiceMock.object,
             );
 
-            let receivedPlaybackInformation: PlaybackInformation;
+            let receivedPlaybackInformation: PlaybackInformation | undefined;
             const subscription: Subscription = new Subscription();
 
             subscription.add(
                 service.playingNextTrack$.subscribe((playbackInformation: PlaybackInformation) => {
                     receivedPlaybackInformation = playbackInformation;
-                })
+                }),
             );
 
             // Act
@@ -119,24 +119,24 @@ describe('PlaybackInformationService', () => {
 
             // Assert
             expect(receivedPlaybackInformation).toBeDefined();
-            expect(receivedPlaybackInformation.track).toBe(trackModel);
-            expect(receivedPlaybackInformation.imageUrl).toEqual('imageUrl');
+            expect(receivedPlaybackInformation!.track).toBe(trackModel);
+            expect(receivedPlaybackInformation!.imageUrl).toEqual('imageUrl');
         });
 
         it('should subscribe to playbackService.playbackStopped and raise playingNoTrack containing undefined playback information when playing a no track', async () => {
             // Arrange
-            const service: BasePlaybackInformationService = new PlaybackInformationService(
+            const service: PlaybackInformationServiceBase = new PlaybackInformationService(
                 playbackServiceMock.object,
-                metadataServiceMock.object
+                metadataServiceMock.object,
             );
 
-            let receivedPlaybackInformation: PlaybackInformation;
+            let receivedPlaybackInformation: PlaybackInformation | undefined;
             const subscription: Subscription = new Subscription();
 
             subscription.add(
                 service.playingNoTrack$.subscribe((playbackInformation: PlaybackInformation) => {
                     receivedPlaybackInformation = playbackInformation;
-                })
+                }),
             );
 
             // Act
@@ -145,17 +145,17 @@ describe('PlaybackInformationService', () => {
 
             // Assert
             expect(receivedPlaybackInformation).toBeDefined();
-            expect(receivedPlaybackInformation.track).toBeUndefined();
-            expect(receivedPlaybackInformation.imageUrl).toEqual('');
+            expect(receivedPlaybackInformation!.track).toBeUndefined();
+            expect(receivedPlaybackInformation!.imageUrl).toEqual('');
         });
     });
 
     describe('getCurrentPlaybackInformationAsync', () => {
         it('should return the current playback information', async () => {
             // Arrange
-            const service: BasePlaybackInformationService = new PlaybackInformationService(
+            const service: PlaybackInformationServiceBase = new PlaybackInformationService(
                 playbackServiceMock.object,
-                metadataServiceMock.object
+                metadataServiceMock.object,
             );
 
             // Act

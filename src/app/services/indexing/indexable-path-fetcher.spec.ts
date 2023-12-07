@@ -1,30 +1,30 @@
 import { IMock, It, Mock } from 'typemoq';
-import { Folder } from '../../common/data/entities/folder';
-import { BaseFolderRepository } from '../../common/data/repositories/base-folder-repository';
-import { BaseFileAccess } from '../../common/io/base-file-access';
 import { Logger } from '../../common/logger';
 import { DirectoryWalkResult } from './directory-walk-result';
 import { DirectoryWalker } from './directory-walker';
 import { IndexablePath } from './indexable-path';
 import { IndexablePathFetcher } from './indexable-path-fetcher';
+import { FileAccessBase } from '../../common/io/file-access.base';
+import { FolderRepositoryBase } from '../../data/repositories/folder-repository.base';
+import { Folder } from '../../data/entities/folder';
 
 describe('IndexablePathFetcher', () => {
-    let fileAccessMock: IMock<BaseFileAccess>;
+    let fileAccessMock: IMock<FileAccessBase>;
     let directoryWalkerMock: IMock<DirectoryWalker>;
-    let folderRepositoryMock: IMock<BaseFolderRepository>;
+    let folderRepositoryMock: IMock<FolderRepositoryBase>;
     let loggerMock: IMock<Logger>;
     let indexablePathFetcher: IndexablePathFetcher;
 
     beforeEach(() => {
-        fileAccessMock = Mock.ofType<BaseFileAccess>();
+        fileAccessMock = Mock.ofType<FileAccessBase>();
         directoryWalkerMock = Mock.ofType<DirectoryWalker>();
-        folderRepositoryMock = Mock.ofType<BaseFolderRepository>();
+        folderRepositoryMock = Mock.ofType<FolderRepositoryBase>();
         loggerMock = Mock.ofType<Logger>();
         indexablePathFetcher = new IndexablePathFetcher(
             fileAccessMock.object,
             directoryWalkerMock.object,
             loggerMock.object,
-            folderRepositoryMock.object
+            folderRepositoryMock.object,
         );
 
         const folder1: Folder = new Folder('/home/user/Music');
@@ -59,8 +59,8 @@ describe('IndexablePathFetcher', () => {
 
         const directoryWalkResult2: DirectoryWalkResult = new DirectoryWalkResult(filePaths2, errors2);
 
-        directoryWalkerMock.setup((x) => x.getFilesInDirectoryAsync(folder1.path)).returns(async () => directoryWalkResult1);
-        directoryWalkerMock.setup((x) => x.getFilesInDirectoryAsync(folder2.path)).returns(async () => directoryWalkResult2);
+        directoryWalkerMock.setup((x) => x.getFilesInDirectoryAsync(folder1.path)).returns(() => Promise.resolve(directoryWalkResult1));
+        directoryWalkerMock.setup((x) => x.getFilesInDirectoryAsync(folder2.path)).returns(() => Promise.resolve(directoryWalkResult2));
 
         fileAccessMock.setup((x) => x.getFileExtension('/home/user/Music/Track 1.mp3')).returns(() => '.mp3');
         fileAccessMock.setup((x) => x.getFileExtension('/home/user/Music/Track 2.mp3')).returns(() => '.mp3');
@@ -72,7 +72,7 @@ describe('IndexablePathFetcher', () => {
         fileAccessMock.setup((x) => x.getFileExtension('/home/user/Downloads/Image 2')).returns(() => '');
         fileAccessMock.setup((x) => x.pathExists('/home/user/Music')).returns(() => true);
         fileAccessMock.setup((x) => x.pathExists('/home/user/Downloads')).returns(() => true);
-        fileAccessMock.setup((x) => x.getDateModifiedInTicksAsync(It.isAny())).returns(async () => 100);
+        fileAccessMock.setup((x) => x.getDateModifiedInTicks(It.isAny())).returns(() => 100);
     });
 
     describe('getIndexablePathsForAllFoldersAsync', () => {

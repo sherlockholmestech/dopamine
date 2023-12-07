@@ -1,20 +1,20 @@
 import { Injectable } from '@angular/core';
-import { Track } from '../../common/data/entities/track';
-import { BaseTrackRepository } from '../../common/data/repositories/base-track-repository';
+import { Track } from '../../data/entities/track';
 import { Logger } from '../../common/logger';
 import { Timer } from '../../common/scheduling/timer';
-import { BaseSnackBarService } from '../snack-bar/base-snack-bar.service';
 import { TrackFiller } from './track-filler';
 import { TrackVerifier } from './track-verifier';
+import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
+import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
 
 @Injectable()
 export class TrackUpdater {
-    constructor(
-        private trackRepository: BaseTrackRepository,
+    public constructor(
+        private trackRepository: TrackRepositoryBase,
         private trackFiller: TrackFiller,
         private trackVerifier: TrackVerifier,
-        private snackBarService: BaseSnackBarService,
-        private logger: Logger
+        private snackBarService: SnackBarServiceBase,
+        private logger: Logger,
     ) {}
 
     public async updateTracksThatAreOutOfDateAsync(): Promise<void> {
@@ -22,14 +22,14 @@ export class TrackUpdater {
         timer.start();
 
         try {
-            const tracks: Track[] = this.trackRepository.getAllTracks();
+            const tracks: Track[] = this.trackRepository.getAllTracks() ?? [];
 
             let numberOfUpdatedTracks: number = 0;
 
             for (const track of tracks) {
                 try {
-                    if (this.trackVerifier.doesTrackNeedIndexing(track) || (await this.trackVerifier.isTrackOutOfDateAsync(track))) {
-                        const filledTrack: Track = await this.trackFiller.addFileMetadataToTrackAsync(track);
+                    if (this.trackVerifier.doesTrackNeedIndexing(track) || this.trackVerifier.isTrackOutOfDate(track)) {
+                        const filledTrack: Track = await this.trackFiller.addFileMetadataToTrackAsync(track, false);
                         this.trackRepository.updateTrack(filledTrack);
                         numberOfUpdatedTracks++;
 
@@ -38,11 +38,12 @@ export class TrackUpdater {
                             await this.snackBarService.updatingTracksAsync();
                         }
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     this.logger.error(
-                        `A problem occurred while updating track with path='${track.path}'. Error: ${e.message}`,
+                        e,
+                        `A problem occurred while updating track with path='${track.path}'`,
                         'TrackUpdater',
-                        'updateTracksThatAreOutOfDateAsync'
+                        'updateTracksThatAreOutOfDateAsync',
                     );
                 }
             }
@@ -52,16 +53,12 @@ export class TrackUpdater {
             this.logger.info(
                 `Updated tracks: ${numberOfUpdatedTracks}. Time required: ${timer.elapsedMilliseconds} ms`,
                 'TrackUpdater',
-                'updateTracksThatAreOutOfDateAsync'
+                'updateTracksThatAreOutOfDateAsync',
             );
-        } catch (e) {
+        } catch (e: unknown) {
             timer.stop();
 
-            this.logger.error(
-                `A problem occurred while updating tracks. Error: ${e.message}`,
-                'TrackUpdater',
-                'updateTracksThatAreOutOfDateAsync'
-            );
+            this.logger.error(e, 'A problem occurred while updating tracks', 'TrackUpdater', 'updateTracksThatAreOutOfDateAsync');
         }
     }
 }

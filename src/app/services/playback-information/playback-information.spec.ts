@@ -1,17 +1,17 @@
 import { IMock, Mock } from 'typemoq';
-import { Track } from '../../common/data/entities/track';
 import { DateTime } from '../../common/date-time';
 import { TrackModel } from '../track/track-model';
-import { BaseTranslatorService } from '../translator/base-translator.service';
 import { PlaybackInformation } from './playback-information';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { Track } from '../../data/entities/track';
 
 describe('PlaybackInformation', () => {
     let dateTimeMock: IMock<DateTime>;
-    let translatorServiceMock: IMock<BaseTranslatorService>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
 
     beforeEach(() => {
         dateTimeMock = Mock.ofType<DateTime>();
-        translatorServiceMock = Mock.ofType<BaseTranslatorService>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
     });
 
     describe('constructor', () => {
@@ -19,10 +19,9 @@ describe('PlaybackInformation', () => {
             // Arrange
             const track: Track = new Track('Path');
             const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
-            let playbackInformation: PlaybackInformation;
 
             // Act
-            playbackInformation = new PlaybackInformation(trackModel, 'imageUrl');
+            const playbackInformation = new PlaybackInformation(trackModel, 'imageUrl');
 
             // Assert
             expect(playbackInformation).toBeDefined();
@@ -32,10 +31,9 @@ describe('PlaybackInformation', () => {
             // Arrange
             const track: Track = new Track('Path');
             const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
-            let playbackInformation: PlaybackInformation;
 
             // Act
-            playbackInformation = new PlaybackInformation(trackModel, 'imageUrl');
+            const playbackInformation = new PlaybackInformation(trackModel, 'imageUrl');
 
             // Assert
             expect(playbackInformation.track).toEqual(trackModel);
@@ -45,10 +43,9 @@ describe('PlaybackInformation', () => {
             // Arrange
             const track: Track = new Track('Path');
             const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
-            let playbackInformation: PlaybackInformation;
 
             // Act
-            playbackInformation = new PlaybackInformation(trackModel, 'imageUrl');
+            const playbackInformation = new PlaybackInformation(trackModel, 'imageUrl');
 
             // Assert
             expect(playbackInformation.imageUrl).toEqual('imageUrl');

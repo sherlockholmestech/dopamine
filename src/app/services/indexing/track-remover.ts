@@ -1,23 +1,23 @@
 import { Injectable } from '@angular/core';
-import { Track } from '../../common/data/entities/track';
-import { BaseFolderTrackRepository } from '../../common/data/repositories/base-folder-track-repository';
-import { BaseTrackRepository } from '../../common/data/repositories/base-track-repository';
-import { BaseFileAccess } from '../../common/io/base-file-access';
+import { Track } from '../../data/entities/track';
 import { Logger } from '../../common/logger';
 import { Timer } from '../../common/scheduling/timer';
-import { BaseSnackBarService } from '../snack-bar/base-snack-bar.service';
+import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
+import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
+import { FolderTrackRepositoryBase } from '../../data/repositories/folder-track-repository.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
 
 @Injectable()
 export class TrackRemover {
-    constructor(
-        private trackRepository: BaseTrackRepository,
-        private folderTrackRepository: BaseFolderTrackRepository,
-        private snackBarService: BaseSnackBarService,
-        private fileAccess: BaseFileAccess,
-        private logger: Logger
+    public constructor(
+        private trackRepository: TrackRepositoryBase,
+        private folderTrackRepository: FolderTrackRepositoryBase,
+        private snackBarService: SnackBarServiceBase,
+        private fileAccess: FileAccessBase,
+        private logger: Logger,
     ) {}
 
-    public removeTracksThatDoNoNotBelongToFolders(): void {
+    public async removeTracksThatDoNoNotBelongToFoldersAsync(): Promise<void> {
         const timer: Timer = new Timer();
         timer.start();
 
@@ -30,15 +30,19 @@ export class TrackRemover {
                 this.logger.info(
                     `There are no tracks to remove. Time required: ${timer.elapsedMilliseconds} ms`,
                     'TrackRemover',
-                    'removeTracksThatDoNoNotBelongToFolders'
+                    'removeTracksThatDoNoNotBelongToFoldersAsync',
                 );
 
                 return;
             }
 
-            this.logger.info(`Found ${numberOfTracksToRemove} tracks to remove.`, 'TrackRemover', 'removeTracksThatDoNoNotBelongToFolders');
+            this.logger.info(
+                `Found ${numberOfTracksToRemove} tracks to remove.`,
+                'TrackRemover',
+                'removeTracksThatDoNoNotBelongToFoldersAsync',
+            );
 
-            this.snackBarService.removingTracksAsync();
+            await this.snackBarService.removingTracksAsync();
 
             const numberOfRemovedTracks: number = this.trackRepository.deleteTracksThatDoNotBelongFolders();
 
@@ -47,12 +51,12 @@ export class TrackRemover {
             this.logger.info(
                 `Removed ${numberOfRemovedTracks} tracks. Time required: ${timer.elapsedMilliseconds} ms`,
                 'TrackRemover',
-                'removeTracksThatDoNoNotBelongToFolders'
+                'removeTracksThatDoNoNotBelongToFoldersAsync',
             );
-        } catch (e) {
+        } catch (e: unknown) {
             timer.stop();
 
-            this.logger.error(`Could not remove tracks. Error: ${e.message}`, 'TrackRemover', 'removeTracksThatDoNoNotBelongToFolders');
+            this.logger.error(e, 'Could not remove tracks', 'TrackRemover', 'removeTracksThatDoNoNotBelongToFoldersAsync');
         }
     }
 
@@ -61,9 +65,9 @@ export class TrackRemover {
         timer.start();
 
         try {
-            const tracks: Track[] = this.trackRepository.getAllTracks();
+            const tracks: Track[] = this.trackRepository.getAllTracks() ?? [];
 
-            this.logger.info(`Found ${tracks.length} tracks.`, 'TrackRemover', 'removeTracksThatAreNotFoundOnDisk');
+            this.logger.info(`Found ${tracks.length} tracks.`, 'TrackRemover', 'removeTracksThatAreNotFoundOnDiskAsync');
 
             let numberOfRemovedTracks: number = 0;
 
@@ -73,8 +77,8 @@ export class TrackRemover {
                     numberOfRemovedTracks++;
                 }
 
+                // Only trigger the snack bar once
                 if (numberOfRemovedTracks === 1) {
-                    // Only trigger the snack bar once
                     await this.snackBarService.removingTracksAsync();
                 }
             }
@@ -84,16 +88,16 @@ export class TrackRemover {
             this.logger.info(
                 `Removed ${numberOfRemovedTracks} tracks. Time required: ${timer.elapsedMilliseconds} ms`,
                 'TrackRemover',
-                'removeTracksThatAreNotFoundOnDisk'
+                'removeTracksThatAreNotFoundOnDiskAsync',
             );
-        } catch (e) {
+        } catch (e: unknown) {
             timer.stop();
 
-            this.logger.error(`Could not remove tracks. Error: ${e.message}`, 'TrackRemover', 'removeTracksThatAreNotFoundOnDisk');
+            this.logger.error(e, 'Could not remove tracks', 'TrackRemover', 'removeTracksThatAreNotFoundOnDiskAsync');
         }
     }
 
-    public removeFolderTracksForInexistingTracks(): void {
+    public async removeFolderTracksForInexistingTracksAsync(): Promise<void> {
         const timer: Timer = new Timer();
         timer.start();
 
@@ -106,7 +110,7 @@ export class TrackRemover {
                 this.logger.info(
                     `There are no folder tracks to remove. Time required: ${timer.elapsedMilliseconds} ms`,
                     'TrackRemover',
-                    'removeFolderTracksForInexistingTracks'
+                    'removeFolderTracksForInexistingTracksAsync',
                 );
 
                 return;
@@ -115,10 +119,10 @@ export class TrackRemover {
             this.logger.info(
                 `Found ${numberOfFolderTracksToRemove} folder tracks to remove.`,
                 'TrackRemover',
-                'removeFolderTracksForInexistingTracks'
+                'removeFolderTracksForInexistingTracksAsync',
             );
 
-            this.snackBarService.removingTracksAsync();
+            await this.snackBarService.removingTracksAsync();
 
             const numberOfRemovedFolderTracks: number = this.folderTrackRepository.deleteFolderTracksForInexistingTracks();
 
@@ -127,16 +131,12 @@ export class TrackRemover {
             this.logger.info(
                 `Removed ${numberOfRemovedFolderTracks} folder tracks. Time required: ${timer.elapsedMilliseconds} ms`,
                 'TrackRemover',
-                'removeFolderTracksForInexistingTracks'
+                'removeFolderTracksForInexistingTracksAsync',
             );
-        } catch (e) {
+        } catch (e: unknown) {
             timer.stop();
 
-            this.logger.error(
-                `Could not remove folder tracks. Error: ${e.message}`,
-                'TrackRemover',
-                'removeFolderTracksForInexistingTracks'
-            );
+            this.logger.error(e, `Could not remove folder tracks`, 'TrackRemover', 'removeFolderTracksForInexistingTracks');
         }
     }
 }

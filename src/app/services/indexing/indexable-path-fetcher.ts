@@ -1,20 +1,20 @@
 import { Injectable } from '@angular/core';
 import { FileFormats } from '../../common/application/file-formats';
-import { Folder } from '../../common/data/entities/folder';
-import { BaseFolderRepository } from '../../common/data/repositories/base-folder-repository';
-import { BaseFileAccess } from '../../common/io/base-file-access';
+import { Folder } from '../../data/entities/folder';
 import { Logger } from '../../common/logger';
 import { DirectoryWalkResult } from './directory-walk-result';
 import { DirectoryWalker } from './directory-walker';
 import { IndexablePath } from './indexable-path';
+import { FolderRepositoryBase } from '../../data/repositories/folder-repository.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
 
 @Injectable()
 export class IndexablePathFetcher {
-    constructor(
-        private fileAccess: BaseFileAccess,
+    public constructor(
+        private fileAccess: FileAccessBase,
         private directoryWalker: DirectoryWalker,
         private logger: Logger,
-        private folderRepository: BaseFolderRepository
+        private folderRepository: FolderRepositoryBase,
     ) {}
 
     public async getIndexablePathsForAllFoldersAsync(): Promise<IndexablePath[]> {
@@ -22,13 +22,9 @@ export class IndexablePathFetcher {
         let folders: Folder[] = [];
 
         try {
-            folders = this.folderRepository.getFolders();
-        } catch (e) {
-            this.logger.error(
-                `An error occurred while getting folders. Error ${e.message}`,
-                'IndexablePathFetcher',
-                'getIndexablePathsForAllFoldersAsync'
-            );
+            folders = this.folderRepository.getFolders() ?? [];
+        } catch (e: unknown) {
+            this.logger.error(e, 'An error occurred while getting folders', 'IndexablePathFetcher', 'getIndexablePathsForAllFoldersAsync');
         }
 
         for (const folder of folders) {
@@ -36,15 +32,16 @@ export class IndexablePathFetcher {
                 try {
                     const indexablePathsForFolder: IndexablePath[] = await this.getIndexablePathsForSingleFolderAsync(
                         folder,
-                        FileFormats.supportedAudioExtensions
+                        FileFormats.supportedAudioExtensions,
                     );
 
                     indexablePaths.push(...indexablePathsForFolder);
-                } catch (e) {
+                } catch (e: unknown) {
                     this.logger.error(
-                        `Could not get indexable paths for folder '${folder.path}'. Error: ${e.message}`,
+                        e,
+                        `Could not get indexable paths for folder '${folder.path}'`,
                         'IndexablePathFetcher',
-                        'getIndexablePathsForAllFoldersAsync'
+                        'getIndexablePathsForAllFoldersAsync',
                     );
                 }
             }
@@ -61,9 +58,10 @@ export class IndexablePathFetcher {
 
             for (const e of directoryWalkResult.errors) {
                 this.logger.error(
-                    `Error occurred while getting files recursively for folder '${folder.path}'. Error ${e.message}`,
+                    e,
+                    `Error occurred while getting files recursively for folder '${folder.path}'`,
                     'IndexablePathFetcher',
-                    'getIndexablePathsForSingleFolderAsync'
+                    'getIndexablePathsForSingleFolderAsync',
                 );
             }
 
@@ -72,22 +70,24 @@ export class IndexablePathFetcher {
                     const fileExtension: string = this.fileAccess.getFileExtension(filePath);
 
                     if (validFileExtensions.includes(fileExtension.toLowerCase())) {
-                        const dateModifiedInTicks: number = await this.fileAccess.getDateModifiedInTicksAsync(filePath);
+                        const dateModifiedInTicks: number = this.fileAccess.getDateModifiedInTicks(filePath);
                         indexablePaths.push(new IndexablePath(filePath, dateModifiedInTicks, folder.folderId));
                     }
-                } catch (e) {
+                } catch (e: unknown) {
                     this.logger.error(
-                        `Error occurred while getting indexable path for file '${filePath}'. Error ${e.message}`,
+                        e,
+                        `Error occurred while getting indexable path for file '${filePath}'`,
                         'IndexablePathFetcher',
-                        'getIndexablePathsForSingleFolderAsync'
+                        'getIndexablePathsForSingleFolderAsync',
                     );
                 }
             }
-        } catch (e) {
+        } catch (e: unknown) {
             this.logger.error(
-                `An error occurred while fetching indexable paths for folder '${folder.path}'. Error ${e.message}`,
+                e,
+                `An error occurred while fetching indexable paths for folder '${folder.path}'`,
                 'IndexablePathFetcher',
-                'getIndexablePathsForSingleFolderAsync'
+                'getIndexablePathsForSingleFolderAsync',
             );
         }
 

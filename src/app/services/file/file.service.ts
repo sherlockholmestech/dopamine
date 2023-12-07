@@ -1,30 +1,39 @@
 import { Injectable } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { FileValidator } from '../../common/file-validator';
-import { BaseApplication } from '../../common/io/base-application';
 import { Logger } from '../../common/logger';
-import { BasePlaybackService } from '../playback/base-playback.service';
+import { PromiseUtils } from '../../common/utils/promise-utils';
 import { TrackModel } from '../track/track-model';
 import { TrackModelFactory } from '../track/track-model-factory';
-import { BaseFileService } from './base-file.service';
+import { FileServiceBase } from './file.service.base';
+import { PlaybackServiceBase } from '../playback/playback.service.base';
+import { EventListenerServiceBase } from '../event-listener/event-listener.service.base';
+import { ApplicationBase } from '../../common/io/application.base';
+import { FileValidator } from '../../common/validation/file-validator';
 
 @Injectable()
-export class FileService implements BaseFileService {
+export class FileService implements FileServiceBase {
     private subscription: Subscription = new Subscription();
 
-    constructor(
-        private playbackService: BasePlaybackService,
+    public constructor(
+        private playbackService: PlaybackServiceBase,
+        private eventListenerService: EventListenerServiceBase,
         private trackModelFactory: TrackModelFactory,
-        private application: BaseApplication,
+        private application: ApplicationBase,
         private fileValidator: FileValidator,
-        private logger: Logger
+        private logger: Logger,
     ) {
         this.subscription.add(
-            this.application.argumentsReceived$.subscribe((argv: string[]) => {
+            this.eventListenerService.argumentsReceived$.subscribe((argv: string[]) => {
                 if (this.hasPlayableFilesAsGivenParameters(argv)) {
-                    this.enqueueGivenParameterFilesAsync(argv);
+                    PromiseUtils.noAwait(this.enqueueGivenParameterFilesAsync(argv));
                 }
-            })
+            }),
+        );
+
+        this.subscription.add(
+            this.eventListenerService.filesDropped$.subscribe((filePaths: string[]) => {
+                PromiseUtils.noAwait(this.enqueueGivenParameterFilesAsync(filePaths));
+            }),
         );
     }
 
@@ -77,12 +86,8 @@ export class FileService implements BaseFileService {
             if (trackModels.length > 0) {
                 this.playbackService.enqueueAndPlayTracks(trackModels);
             }
-        } catch (e) {
-            this.logger.error(
-                `Could not enqueue given parameter files. Error: ${e.message}`,
-                'FileService',
-                'enqueueGivenParameterFilesAsync'
-            );
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not enqueue given parameter files', 'FileService', 'enqueueGivenParameterFilesAsync');
         }
     }
 }

@@ -1,26 +1,26 @@
 import { IMock, It, Mock, Times } from 'typemoq';
-import { GitHubApi } from '../../common/api/git-hub/git-hub-api';
 import { ProductInformation } from '../../common/application/product-information';
-import { BaseDesktop } from '../../common/io/base-desktop';
 import { Logger } from '../../common/logger';
-import { BaseSettings } from '../../common/settings/base-settings';
+import { SettingsBase } from '../../common/settings/settings.base';
 import { UpdateService } from './update.service';
+import { GitHubApi } from '../../common/api/git-hub/git-hub.api';
+import { DesktopBase } from '../../common/io/desktop.base';
 
 jest.mock('@electron/remote', () => ({ exec: jest.fn() }));
 
 describe('UpdateService', () => {
-    let settingsMock: IMock<BaseSettings>;
+    let settingsMock: IMock<SettingsBase>;
     let loggerMock: IMock<Logger>;
     let gitHubMock: IMock<GitHubApi>;
-    let desktopMock: IMock<BaseDesktop>;
+    let desktopMock: IMock<DesktopBase>;
 
     let service: UpdateService;
 
     beforeEach(() => {
-        settingsMock = Mock.ofType<BaseSettings>();
+        settingsMock = Mock.ofType<SettingsBase>();
         loggerMock = Mock.ofType<Logger>();
         gitHubMock = Mock.ofType<GitHubApi>();
-        desktopMock = Mock.ofType<BaseDesktop>();
+        desktopMock = Mock.ofType<DesktopBase>();
 
         service = new UpdateService(settingsMock.object, loggerMock.object, gitHubMock.object, desktopMock.object);
     });
@@ -96,7 +96,7 @@ describe('UpdateService', () => {
 
         it('should indicate that an update is available if the latest release is newer than the current release', async () => {
             // Arrange
-            gitHubMock.setup((x) => x.getLatestReleaseAsync('digimezzo', 'dopamine', false)).returns(async () => '1000.0.0.0');
+            gitHubMock.setup((x) => x.getLatestReleaseAsync('digimezzo', 'dopamine', false)).returns(() => Promise.resolve('1000.0.0.0'));
             settingsMock.setup((x) => x.checkForUpdatesIncludesPreReleases).returns(() => false);
             service = new UpdateService(settingsMock.object, loggerMock.object, gitHubMock.object, desktopMock.object);
 
@@ -112,7 +112,7 @@ describe('UpdateService', () => {
             // Arrange
             gitHubMock
                 .setup((x) => x.getLatestReleaseAsync('digimezzo', 'dopamine', false))
-                .returns(async () => ProductInformation.applicationVersion);
+                .returns(() => Promise.resolve(ProductInformation.applicationVersion));
             settingsMock.setup((x) => x.checkForUpdatesIncludesPreReleases).returns(() => false);
             service = new UpdateService(settingsMock.object, loggerMock.object, gitHubMock.object, desktopMock.object);
 
@@ -126,7 +126,7 @@ describe('UpdateService', () => {
 
         it('should not indicate that an update is available if the latest release is older than the current release', async () => {
             // Arrange
-            gitHubMock.setup((x) => x.getLatestReleaseAsync('digimezzo', 'dopamine', false)).returns(async () => '1.0.0');
+            gitHubMock.setup((x) => x.getLatestReleaseAsync('digimezzo', 'dopamine', false)).returns(() => Promise.resolve('1.0.0'));
             settingsMock.setup((x) => x.checkForUpdatesIncludesPreReleases).returns(() => false);
             service = new UpdateService(settingsMock.object, loggerMock.object, gitHubMock.object, desktopMock.object);
 
@@ -139,15 +139,15 @@ describe('UpdateService', () => {
         });
     });
 
-    describe('downloadLatestRelease', () => {
-        it('should download the latest release', () => {
+    describe('downloadLatestReleaseAsync', () => {
+        it('should download the latest release', async () => {
             // Arrange
 
             // Act
-            service.downloadLatestRelease();
+            await service.downloadLatestReleaseAsync();
 
             // Assert
-            desktopMock.verify((x) => x.openLink(It.isAny()), Times.exactly(1));
+            desktopMock.verify((x) => x.openLinkAsync(It.isAny()), Times.exactly(1));
         });
     });
 });

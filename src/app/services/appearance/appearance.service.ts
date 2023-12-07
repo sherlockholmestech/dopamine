@@ -5,21 +5,22 @@ import { ApplicationPaths } from '../../common/application/application-paths';
 import { Constants } from '../../common/application/constants';
 import { FontSize } from '../../common/application/font-size';
 import { ColorConverter } from '../../common/color-converter';
-import { BaseApplication } from '../../common/io/base-application';
-import { BaseDesktop } from '../../common/io/base-desktop';
-import { BaseFileAccess } from '../../common/io/base-file-access';
 import { DocumentProxy } from '../../common/io/document-proxy';
 import { Logger } from '../../common/logger';
-import { BaseSettings } from '../../common/settings/base-settings';
-import { Strings } from '../../common/strings';
-import { BaseAppearanceService } from './base-appearance.service';
+import { SettingsBase } from '../../common/settings/settings.base';
+import { StringUtils } from '../../common/utils/string-utils';
 import { DefaultThemesCreator } from './default-themes-creator';
 import { Palette } from './palette';
 import { Theme } from './theme/theme';
 import { ThemeNeutralColors } from './theme/theme-neutral-colors';
+import { AppearanceServiceBase } from './appearance.service.base';
+import { ApplicationBase } from '../../common/io/application.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
+import { DesktopBase } from '../../common/io/desktop.base';
+import { RgbColor } from '../../common/rgb-color';
 
 @Injectable()
-export class AppearanceService implements BaseAppearanceService {
+export class AppearanceService implements AppearanceServiceBase {
     private interval: number;
     private _themes: Theme[] = [];
 
@@ -30,17 +31,28 @@ export class AppearanceService implements BaseAppearanceService {
 
     private _themesDirectoryPath: string;
 
-    constructor(
-        private settings: BaseSettings,
+    private _accentRgbColor: RgbColor = RgbColor.default();
+    private _backgroundRgbColor: RgbColor = RgbColor.default();
+
+    public constructor(
+        private settings: SettingsBase,
         private logger: Logger,
         private overlayContainer: OverlayContainer,
-        private application: BaseApplication,
-        private fileAccess: BaseFileAccess,
-        private desktop: BaseDesktop,
+        private application: ApplicationBase,
+        private fileAccess: FileAccessBase,
+        private desktop: DesktopBase,
         private defaultThemesCreator: DefaultThemesCreator,
-        private documentProxy: DocumentProxy
+        private documentProxy: DocumentProxy,
     ) {
         this.initialize();
+    }
+
+    public get accentRgbColor(): RgbColor {
+        return this._accentRgbColor;
+    }
+
+    public get backgroundRgbColor(): RgbColor {
+        return this._backgroundRgbColor;
     }
 
     public get windowHasNativeTitleBar(): boolean {
@@ -139,7 +151,7 @@ export class AppearanceService implements BaseAppearanceService {
     }
 
     private initialize(): void {
-        this._windowHasNativeTitleBar = this.application.getGlobal('windowHasFrame');
+        this._windowHasNativeTitleBar = this.application.getGlobal('windowHasFrame') as boolean;
 
         this._themesDirectoryPath = this.getThemesDirectoryPath();
         this.ensureThemesDirectoryExists();
@@ -161,11 +173,11 @@ export class AppearanceService implements BaseAppearanceService {
 
     private applyFontSize(): void {
         const element: HTMLElement = this.documentProxy.getDocumentElement();
-        element.style.setProperty('--fontsize-normal', this._selectedFontSize.normalSize + 'px');
-        element.style.setProperty('--fontsize-medium', this._selectedFontSize.mediumSize + 'px');
-        element.style.setProperty('--fontsize-large', this._selectedFontSize.largeSize + 'px');
-        element.style.setProperty('--fontsize-extra-large', this._selectedFontSize.extraLargeSize + 'px');
-        element.style.setProperty('--fontsize-mega', this._selectedFontSize.megaSize + 'px');
+        element.style.setProperty('--fontsize-normal', `${this._selectedFontSize.normalSize}px`);
+        element.style.setProperty('--fontsize-medium', `${this._selectedFontSize.mediumSize}px`);
+        element.style.setProperty('--fontsize-large', `${this._selectedFontSize.largeSize}px`);
+        element.style.setProperty('--fontsize-extra-large', `${this._selectedFontSize.extraLargeSize}px`);
+        element.style.setProperty('--fontsize-mega', `${this._selectedFontSize.megaSize}px`);
     }
 
     public applyMargins(isSearchVisible: boolean): void {
@@ -185,19 +197,19 @@ export class AppearanceService implements BaseAppearanceService {
             totalMargin = totalMargin + searchBoxWidth;
         }
 
-        element.style.setProperty('--mat-tab-header-margin-right', totalMargin + 4 + 'px');
+        element.style.setProperty('--mat-tab-header-margin-right', `${totalMargin + 4}px`);
     }
 
     private addSubscriptions(): void {
         this.subscription.add(
             this.desktop.accentColorChanged$.subscribe(() => {
                 this.safeApplyTheme();
-            })
+            }),
         );
         this.subscription.add(
             this.desktop.nativeThemeUpdated$.subscribe(() => {
                 this.safeApplyTheme();
-            })
+            }),
         );
     }
 
@@ -206,17 +218,16 @@ export class AppearanceService implements BaseAppearanceService {
 
         try {
             this.applyTheme();
-        } catch (e) {
+        } catch (e: unknown) {
             this.selectedTheme.isBroken = true;
             this.settings.theme = 'Dopamine';
             this.setSelectedThemeFromSettings();
             this.applyTheme();
-            const fallbackThemeName: string = this.selectedTheme.name;
 
             this.logger.warn(
-                `Could not apply theme '${selectedThemeName}'. Applying theme '${fallbackThemeName}' instead.`,
+                `Could not apply theme '${selectedThemeName}'. Applying theme '${this.selectedTheme.name}' instead.`,
                 'AppearanceService',
-                'safeApplyTheme'
+                'safeApplyTheme',
             );
 
             return false;
@@ -241,13 +252,15 @@ export class AppearanceService implements BaseAppearanceService {
         if (this.settings.followSystemColor) {
             const systemAccentColor: string = this.getSystemAccentColor();
 
-            if (!Strings.isNullOrWhiteSpace(systemAccentColor)) {
+            if (!StringUtils.isNullOrWhiteSpace(systemAccentColor)) {
                 primaryColorToApply = systemAccentColor;
                 secondaryColorToApply = systemAccentColor;
                 accentColorToApply = systemAccentColor;
                 scrollBarColorToApply = systemAccentColor;
             }
         }
+
+        this._accentRgbColor = ColorConverter.stringToRgbColor(accentColorToApply);
 
         const palette: Palette = new Palette(accentColorToApply);
 
@@ -256,8 +269,7 @@ export class AppearanceService implements BaseAppearanceService {
         element.style.setProperty('--theme-secondary-color', secondaryColorToApply);
         element.style.setProperty('--theme-accent-color', accentColorToApply);
 
-        const accentRgbArray: number[] = ColorConverter.stringToRgb(accentColorToApply);
-        element.style.setProperty('--theme-rgb-accent', accentRgbArray.join(','));
+        element.style.setProperty('--theme-rgb-accent', this._accentRgbColor.toString());
 
         element.style.setProperty('--theme-accent-color-50', palette.color50);
         element.style.setProperty('--theme-accent-color-100', palette.color100);
@@ -277,10 +289,12 @@ export class AppearanceService implements BaseAppearanceService {
         // Neutral colors
         let themeName: string = 'default-theme-dark';
         this.applyNeutralColors(element, this.selectedTheme.darkColors, scrollBarColorToApply);
+        this._backgroundRgbColor = ColorConverter.stringToRgbColor(this.selectedTheme.darkColors.mainBackground);
 
         if (this.isUsingLightTheme) {
             themeName = 'default-theme-light';
             this.applyNeutralColors(element, this.selectedTheme.lightColors, scrollBarColorToApply);
+            this._backgroundRgbColor = ColorConverter.stringToRgbColor(this.selectedTheme.lightColors.mainBackground);
         }
 
         // Options
@@ -295,14 +309,14 @@ export class AppearanceService implements BaseAppearanceService {
         this.logger.info(
             `Applied theme name=${this.selectedTheme.name}' and theme classes='${themeName}'`,
             'AppearanceService',
-            'applyTheme'
+            'applyTheme',
         );
     }
 
     private applyNeutralColors(element: HTMLElement, neutralColors: ThemeNeutralColors, scrollBarColor: string): void {
-        const primaryTextRgbArray: number[] = ColorConverter.stringToRgb(neutralColors.primaryText);
+        const primaryTextRgbColor: RgbColor = ColorConverter.stringToRgbColor(neutralColors.primaryText);
 
-        element.style.setProperty('--theme-rgb-base', primaryTextRgbArray.join(','));
+        element.style.setProperty('--theme-rgb-base', primaryTextRgbColor.toString());
         element.style.setProperty('--theme-window-button-icon', neutralColors.windowButtonIcon);
         element.style.setProperty('--theme-hovered-item-background', neutralColors.hoveredItemBackground);
         element.style.setProperty('--theme-selected-item-background', neutralColors.selectedItemBackground);
@@ -334,7 +348,7 @@ export class AppearanceService implements BaseAppearanceService {
     }
 
     private setSelectedThemeFromSettings(): void {
-        let themeFromSettings: Theme = this.themes.find((x) => x.name === this.settings.theme);
+        let themeFromSettings: Theme | undefined = this.themes.find((x) => x.name === this.settings.theme);
 
         if (themeFromSettings == undefined) {
             themeFromSettings = this.themes.find((x) => x.name === 'Dopamine');
@@ -346,7 +360,7 @@ export class AppearanceService implements BaseAppearanceService {
             this.logger.info(
                 `Theme '${this.settings.theme}' from settings was not found. Applied theme '${themeFromSettings.name}' instead.`,
                 'AppearanceService',
-                'setSelectedThemeFromSettings'
+                'setSelectedThemeFromSettings',
             );
         }
 
@@ -354,7 +368,7 @@ export class AppearanceService implements BaseAppearanceService {
     }
 
     private setSelectedFontSizeFromSettings(): void {
-        this._selectedFontSize = this.fontSizes.find((x) => x.normalSize === this.settings.fontSize);
+        this._selectedFontSize = this.fontSizes.find((x) => x.normalSize === this.settings.fontSize)!;
     }
 
     private isSystemUsingDarkTheme(): boolean {
@@ -363,8 +377,8 @@ export class AppearanceService implements BaseAppearanceService {
         if (this.settings.followSystemTheme) {
             try {
                 systemIsUsingDarkTheme = this.desktop.shouldUseDarkColors();
-            } catch (e) {
-                this.logger.error(`Could not get system dark mode. Error: ${e.message}`, 'AppearanceService', 'isSystemUsingDarkTheme');
+            } catch (e: unknown) {
+                this.logger.error(e, 'Could not get system dark mode', 'AppearanceService', 'isSystemUsingDarkTheme');
             }
         }
 
@@ -387,8 +401,8 @@ export class AppearanceService implements BaseAppearanceService {
         try {
             const systemAccentColorWithTransparency: string = this.desktop.getAccentColor();
             systemAccentColor = '#' + systemAccentColorWithTransparency.substr(0, 6);
-        } catch (e) {
-            this.logger.error(`Could not get system accent color. Error: ${e.message}`, 'AppearanceService', 'getSystemAccentColor');
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not get system accent color', 'AppearanceService', 'getSystemAccentColor');
         }
 
         return systemAccentColor;
@@ -419,10 +433,10 @@ export class AppearanceService implements BaseAppearanceService {
             const themeFileContent: string = this.fileAccess.getFileContentAsString(themeFile);
 
             try {
-                const theme: Theme = JSON.parse(themeFileContent);
+                const theme: Theme = JSON.parse(themeFileContent) as Theme;
                 themes.push(theme);
-            } catch (e) {
-                this.logger.error(`Could not parse theme file. Error: ${e.message}`, 'AppearanceService', 'getThemesFromThemesDirectory');
+            } catch (e: unknown) {
+                this.logger.error(e, 'Could not parse theme file', 'AppearanceService', 'getThemesFromThemesDirectory');
             }
         }
 

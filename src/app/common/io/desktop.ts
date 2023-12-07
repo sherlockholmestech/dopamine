@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import * as remote from '@electron/remote';
 import { OpenDialogReturnValue } from 'electron';
 import { Observable, Subject } from 'rxjs';
-import { BaseDesktop } from './base-desktop';
+import { DesktopBase } from './desktop.base';
 
 @Injectable()
-export class Desktop implements BaseDesktop {
+export class Desktop implements DesktopBase {
     private accentColorChanged: Subject<void> = new Subject();
     private nativeThemeUpdated: Subject<void> = new Subject();
 
-    constructor() {
+    public constructor() {
         if (remote.systemPreferences != undefined) {
             remote.systemPreferences.on('accent-color-changed', () => this.accentColorChanged.next());
         }
@@ -56,12 +56,12 @@ export class Desktop implements BaseDesktop {
         return '';
     }
 
-    public openLink(url: string): void {
-        remote.shell.openExternal(url);
+    public async openLinkAsync(url: string): Promise<void> {
+        await remote.shell.openExternal(url);
     }
 
-    public openPath(path: string): void {
-        remote.shell.openPath(path);
+    public async openPathAsync(path: string): Promise<void> {
+        await remote.shell.openPath(path);
     }
 
     public showFileInDirectory(filePath: string): void {

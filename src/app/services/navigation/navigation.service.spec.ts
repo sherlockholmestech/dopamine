@@ -1,23 +1,23 @@
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { IMock, Mock, Times } from 'typemoq';
-import { BaseAppearanceService } from '../appearance/base-appearance.service';
-import { BaseNavigationService } from './base-navigation.service';
 import { NavigationService } from './navigation.service';
+import { AppearanceServiceBase } from '../appearance/appearance.service.base';
+import { NavigationServiceBase } from './navigation.service.base';
 
 describe('NavigationService', () => {
-    let appearanceServiceMock: IMock<BaseAppearanceService>;
+    let appearanceServiceMock: IMock<AppearanceServiceBase>;
     let routerMock: IMock<Router>;
-    let service: BaseNavigationService;
+    let service: NavigationServiceBase;
 
     beforeEach(() => {
         routerMock = Mock.ofType<Router>();
-        appearanceServiceMock = Mock.ofType<BaseAppearanceService>();
+        appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
         service = new NavigationService(appearanceServiceMock.object, routerMock.object);
     });
 
     describe('constructor', () => {
-        it('should create', async () => {
+        it('should create', () => {
             // Arrange
 
             // Act
@@ -32,7 +32,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToLoading();
+            await service.navigateToLoadingAsync();
 
             // Assert
             routerMock.verify((x) => x.navigate(['/loading']), Times.exactly(1));
@@ -44,7 +44,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToCollection();
+            await service.navigateToCollectionAsync();
 
             // Assert
             routerMock.verify((x) => x.navigate(['/collection']), Times.exactly(1));
@@ -54,7 +54,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToCollection();
+            await service.navigateToCollectionAsync();
 
             // Assert
             appearanceServiceMock.verify((x) => x.applyMargins(true), Times.exactly(1));
@@ -66,7 +66,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToSettings();
+            await service.navigateToSettingsAsync();
 
             // Assert
             routerMock.verify((x) => x.navigate(['/settings']), Times.exactly(1));
@@ -76,7 +76,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToSettings();
+            await service.navigateToSettingsAsync();
 
             // Assert
             appearanceServiceMock.verify((x) => x.applyMargins(false), Times.exactly(1));
@@ -88,7 +88,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToInformation();
+            await service.navigateToInformationAsync();
 
             // Assert
             routerMock.verify((x) => x.navigate(['/information']), Times.exactly(1));
@@ -98,7 +98,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToInformation();
+            await service.navigateToInformationAsync();
 
             // Assert
             appearanceServiceMock.verify((x) => x.applyMargins(false), Times.exactly(1));
@@ -110,7 +110,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToWelcome();
+            await service.navigateToWelcomeAsync();
 
             // Assert
             routerMock.verify((x) => x.navigate(['/welcome']), Times.exactly(1));
@@ -122,7 +122,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToManageCollection();
+            await service.navigateToManageCollectionAsync();
 
             // Assert
             routerMock.verify((x) => x.navigate(['/managecollection']), Times.exactly(1));
@@ -134,7 +134,7 @@ describe('NavigationService', () => {
             // Arrange
 
             // Act
-            service.navigateToNowPlaying();
+            await service.navigateToNowPlayingAsync();
 
             // Assert
             routerMock.verify((x) => x.navigate(['/nowplaying']), Times.exactly(1));
@@ -150,7 +150,7 @@ describe('NavigationService', () => {
             subscription.add(
                 service.showPlaybackQueueRequested$.subscribe(() => {
                     isPlaybackQueueRequested = true;
-                })
+                }),
             );
 
             // Act

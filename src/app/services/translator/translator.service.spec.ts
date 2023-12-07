@@ -2,34 +2,36 @@ import { Subscription } from 'rxjs';
 import { IMock, Mock, Times } from 'typemoq';
 import { Constants } from '../../common/application/constants';
 import { Language } from '../../common/application/language';
-import { BaseTranslateServiceProxy } from '../../common/io/base-translate-service-proxy';
-import { BaseSettings } from '../../common/settings/base-settings';
+import { SettingsBase } from '../../common/settings/settings.base';
 import { TranslatorService } from './translator.service';
+import { TranslateServiceProxyBase } from '../../common/io/translate-service-proxy.base';
 
 describe('TranslatorService', () => {
-    let translateServiceProxyMock: IMock<BaseTranslateServiceProxy>;
-    let settingsMock: IMock<BaseSettings>;
+    let translateServiceProxyMock: IMock<TranslateServiceProxyBase>;
+    let settingsMock: IMock<SettingsBase>;
 
     beforeEach(() => {
-        translateServiceProxyMock = Mock.ofType<BaseTranslateServiceProxy>();
-        translateServiceProxyMock.setup((x) => x.get('welcome-to-dopamine', undefined)).returns(async () => 'Welcome to Dopamine');
+        translateServiceProxyMock = Mock.ofType<TranslateServiceProxyBase>();
+        translateServiceProxyMock
+            .setup((x) => x.get('welcome-to-dopamine', undefined))
+            .returns(() => Promise.resolve('Welcome to Dopamine'));
         translateServiceProxyMock.setup((x) => x.instant('welcome-to-dopamine', undefined)).returns(() => 'Welcome to Dopamine');
         translateServiceProxyMock
             .setup((x) =>
                 x.get('tracks-added', {
                     numberOfAddedTracks: 3,
-                })
+                }),
             )
-            .returns(async () => '3 tracks added');
+            .returns(() => Promise.resolve('3 tracks added'));
         translateServiceProxyMock
             .setup((x) =>
                 x.instant('tracks-added', {
                     numberOfAddedTracks: 3,
-                })
+                }),
             )
             .returns(() => '3 tracks added');
 
-        settingsMock = Mock.ofType<BaseSettings>();
+        settingsMock = Mock.ofType<SettingsBase>();
         settingsMock.setup((x) => x.defaultLanguage).returns(() => 'en');
         settingsMock.setup((x) => x.language).returns(() => 'fr');
     });
@@ -42,9 +44,7 @@ describe('TranslatorService', () => {
 
     describe('constructor', () => {
         it('should create', () => {
-            // Arrange
-
-            // Act
+            // Arrange, Act
             const service: TranslatorService = createService();
 
             // Assert
@@ -52,9 +52,7 @@ describe('TranslatorService', () => {
         });
 
         it('should define languageChanged$', () => {
-            // Arrange
-
-            // Act
+            // Arrange, Act
             const service: TranslatorService = createService();
 
             // Assert
@@ -62,19 +60,15 @@ describe('TranslatorService', () => {
         });
 
         it('should set the default language', () => {
-            // Arrange
-
-            // Act
-            const service: TranslatorService = createService();
+            // Arrange, Act
+            createService();
 
             // Assert
             translateServiceProxyMock.verify((x) => x.setDefaultLang('en'), Times.once());
         });
 
         it('should set languages from constants', () => {
-            // Arrange
-
-            // Act
+            // Arrange, Act
             const service: TranslatorService = createService();
 
             // Assert
@@ -85,7 +79,7 @@ describe('TranslatorService', () => {
     describe('selectedLanguage', () => {
         it('should return the language that corresponds to language code in settings', () => {
             // Arrange
-            const expectedLanguage: Language = Constants.languages.find((x) => x.code === 'fr');
+            const expectedLanguage: Language = Constants.languages.find((x) => x.code === 'fr')!;
             const service: TranslatorService = createService();
 
             // Act
@@ -133,7 +127,7 @@ describe('TranslatorService', () => {
             subscription.add(
                 service.languageChanged$.subscribe(() => {
                     languageChangedReceived = true;
-                })
+                }),
             );
 
             // Act

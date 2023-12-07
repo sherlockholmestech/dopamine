@@ -6,16 +6,19 @@ import * as path from 'path';
 import * as readline from 'readline';
 import { ApplicationPaths } from '../application/application-paths';
 import { DateTime } from '../date-time';
-import { BaseDesktop } from './base-desktop';
-import { BaseFileAccess } from './base-file-access';
+import { FileAccessBase } from './file-access.base';
+import { DesktopBase } from './desktop.base';
 
 @Injectable()
-export class FileAccess implements BaseFileAccess {
+export class FileAccess implements FileAccessBase {
     private _applicationDataDirectory: string = '';
     private _musicDirectory: string = '';
     private _pathSeparator: string = '';
 
-    constructor(private desktop: BaseDesktop, private dateTime: DateTime) {
+    public constructor(
+        private desktop: DesktopBase,
+        private dateTime: DateTime,
+    ) {
         this._applicationDataDirectory = this.desktop.getApplicationDataDirectory();
         this._musicDirectory = this.desktop.getMusicDirectory();
         this._pathSeparator = path.sep;
@@ -30,9 +33,7 @@ export class FileAccess implements BaseFileAccess {
             return pathPieces[0];
         }
 
-        const combinedPath: string = pathPieces.join(this._pathSeparator);
-
-        return combinedPath;
+        return pathPieces.join(this._pathSeparator);
     }
 
     public applicationDataDirectory(): string {
@@ -62,13 +63,15 @@ export class FileAccess implements BaseFileAccess {
                 if (fs.lstatSync(possibleFilePath).isFile()) {
                     confirmedFilePaths.push(possibleFilePath);
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 if (continueOnError == undefined || !continueOnError) {
                     throw e;
                 }
 
                 if (errors != undefined) {
-                    errors.push(e);
+                    if (e instanceof Error) {
+                        errors.push(e);
+                    }
                 }
             }
         }
@@ -87,13 +90,15 @@ export class FileAccess implements BaseFileAccess {
                 if (fs.lstatSync(possibleFilePath).isFile()) {
                     confirmedFilePaths.push(possibleFilePath);
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 if (continueOnError == undefined || !continueOnError) {
                     throw e;
                 }
 
                 if (errors != undefined) {
-                    errors.push(e);
+                    if (e instanceof Error) {
+                        errors.push(e);
+                    }
                 }
             }
         }
@@ -112,13 +117,15 @@ export class FileAccess implements BaseFileAccess {
                 if (fs.lstatSync(possibleDirectoryPath).isDirectory()) {
                     confirmedDirectoryPaths.push(possibleDirectoryPath);
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 if (continueOnError == undefined || !continueOnError) {
                     throw e;
                 }
 
                 if (errors != undefined) {
-                    errors.push(e);
+                    if (e instanceof Error) {
+                        errors.push(e);
+                    }
                 }
             }
         }
@@ -147,15 +154,15 @@ export class FileAccess implements BaseFileAccess {
         return pathWithNewFileExtension;
     }
 
-    public async getDateModifiedInTicksAsync(fileOrDirectory: string): Promise<number> {
-        const stat = await fs.stat(fileOrDirectory);
+    public getDateModifiedInTicks(fileOrDirectory: string): number {
+        const stat = fs.statSync(fileOrDirectory);
         const dateModified: Date = stat.mtime;
 
         return this.dateTime.convertDateToTicks(dateModified);
     }
 
-    public async getDateCreatedInTicksAsync(fileOrDirectory: string): Promise<number> {
-        const stat = await fs.stat(fileOrDirectory);
+    public getDateCreatedInTicks(fileOrDirectory: string): number {
+        const stat = fs.statSync(fileOrDirectory);
         const dateCreated: Date = stat.birthtime;
 
         return this.dateTime.convertDateToTicks(dateCreated);
@@ -165,8 +172,8 @@ export class FileAccess implements BaseFileAccess {
         return fs.existsSync(pathToCheck);
     }
 
-    public async getFileSizeInBytesAsync(filePath: string): Promise<number> {
-        const stats = await fs.stat(filePath);
+    public getFileSizeInBytes(filePath: string): number {
+        const stats = fs.statSync(filePath);
         const fileSizeInBytes = stats.size;
 
         return fileSizeInBytes;

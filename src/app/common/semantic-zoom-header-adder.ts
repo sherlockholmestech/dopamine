@@ -1,28 +1,28 @@
 import { Injectable } from '@angular/core';
-import { v4 as uuidv4 } from 'uuid';
+import { GuidFactory } from './guid.factory';
 import { SemanticZoomable } from './semantic-zoomable';
 import { SemanticZoomableModel } from './semantic-zoomable-model';
 
 @Injectable()
 export class SemanticZoomHeaderAdder {
-    constructor() {}
+    public constructor(private guidFactory: GuidFactory) {}
 
-    public addZoomHeaders(semanticZoomables: SemanticZoomable[]): void {
-        let previousZoomHeader: string = uuidv4();
+    public addZoomHeaders(semanticZoomables: SemanticZoomable[]): SemanticZoomable[] {
+        const localSemanticZoomables: SemanticZoomable[] = [];
+        let previousZoomHeader: string = this.guidFactory.create();
 
         for (const semanticZoomable of semanticZoomables) {
-            semanticZoomable.isZoomHeader = false;
-
-            if (semanticZoomable.zoomHeader !== previousZoomHeader) {
-                const index = semanticZoomables.indexOf(semanticZoomable);
-
-                if (index > -1) {
+            if (!semanticZoomable.isZoomHeader) {
+                if (semanticZoomable.zoomHeader !== previousZoomHeader) {
                     const newSemanticZoomable: SemanticZoomableModel = new SemanticZoomableModel(semanticZoomable);
-                    semanticZoomables.splice(index, 0, newSemanticZoomable);
+                    localSemanticZoomables.push(newSemanticZoomable);
                 }
-            }
 
-            previousZoomHeader = semanticZoomable.zoomHeader;
+                previousZoomHeader = semanticZoomable.zoomHeader;
+                localSemanticZoomables.push(semanticZoomable);
+            }
         }
+
+        return localSemanticZoomables;
     }
 }

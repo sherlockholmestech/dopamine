@@ -1,51 +1,58 @@
 import { Observable, Subject } from 'rxjs';
 import { IMock, It, Mock, Times } from 'typemoq';
-import { Track } from '../../common/data/entities/track';
 import { DateTime } from '../../common/date-time';
-import { FileValidator } from '../../common/file-validator';
-import { BaseApplication } from '../../common/io/base-application';
 import { Logger } from '../../common/logger';
-import { BasePlaybackService } from '../playback/base-playback.service';
 import { TrackModel } from '../track/track-model';
 import { TrackModelFactory } from '../track/track-model-factory';
-import { BaseTranslatorService } from '../translator/base-translator.service';
-import { BaseFileService } from './base-file.service';
 import { FileService } from './file.service';
+import { PlaybackServiceBase } from '../playback/playback.service.base';
+import { EventListenerServiceBase } from '../event-listener/event-listener.service.base';
+import { FileValidator } from '../../common/validation/file-validator';
+import { ApplicationBase } from '../../common/io/application.base';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { FileServiceBase } from './file.service.base';
+import { Track } from '../../data/entities/track';
 
 describe('FileService', () => {
-    let playbackServiceMock: IMock<BasePlaybackService>;
+    let playbackServiceMock: IMock<PlaybackServiceBase>;
+    let eventListenerServiceMock: IMock<EventListenerServiceBase>;
     let trackModelFactoryMock: IMock<TrackModelFactory>;
     let fileValidatorMock: IMock<FileValidator>;
-    let applicationMock: IMock<BaseApplication>;
+    let applicationMock: IMock<ApplicationBase>;
     let loggerMock: IMock<Logger>;
 
     let dateTimeMock: IMock<DateTime>;
-    let translatorServiceMock: IMock<BaseTranslatorService>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
 
     let argumentsReceivedMock: Subject<string[]>;
     let argumentsReceivedMock$: Observable<string[]>;
 
+    let filesDroppedMock: Subject<string[]>;
+    let filesDroppedMock$: Observable<string[]>;
+
     const flushPromises = () => new Promise(process.nextTick);
 
-    function createService(): BaseFileService {
+    function createService(): FileServiceBase {
         return new FileService(
             playbackServiceMock.object,
+            eventListenerServiceMock.object,
             trackModelFactoryMock.object,
             applicationMock.object,
             fileValidatorMock.object,
-            loggerMock.object
+            loggerMock.object,
         );
     }
 
     beforeEach(() => {
-        playbackServiceMock = Mock.ofType<BasePlaybackService>();
+        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
+        eventListenerServiceMock = Mock.ofType<EventListenerServiceBase>();
         trackModelFactoryMock = Mock.ofType<TrackModelFactory>();
         fileValidatorMock = Mock.ofType<FileValidator>();
-        applicationMock = Mock.ofType<BaseApplication>();
+        applicationMock = Mock.ofType<ApplicationBase>();
         loggerMock = Mock.ofType<Logger>();
 
         dateTimeMock = Mock.ofType<DateTime>();
-        translatorServiceMock = Mock.ofType<BaseTranslatorService>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
 
         fileValidatorMock.setup((x) => x.isPlayableAudioFile('file 1.mp3')).returns(() => true);
         fileValidatorMock.setup((x) => x.isPlayableAudioFile('file 1.png')).returns(() => false);
@@ -55,16 +62,20 @@ describe('FileService', () => {
 
         trackModelFactoryMock
             .setup((x) => x.createFromFileAsync('file 1.mp3'))
-            .returns(async () => new TrackModel(new Track('file 1.mp3'), dateTimeMock.object, translatorServiceMock.object));
+            .returns(() => Promise.resolve(new TrackModel(new Track('file 1.mp3'), dateTimeMock.object, translatorServiceMock.object)));
 
         trackModelFactoryMock
             .setup((x) => x.createFromFileAsync('file 2.ogg'))
-            .returns(async () => new TrackModel(new Track('file 2.ogg'), dateTimeMock.object, translatorServiceMock.object));
+            .returns(() => Promise.resolve(new TrackModel(new Track('file 2.ogg'), dateTimeMock.object, translatorServiceMock.object)));
 
         argumentsReceivedMock = new Subject();
         argumentsReceivedMock$ = argumentsReceivedMock.asObservable();
 
-        applicationMock.setup((x) => x.argumentsReceived$).returns(() => argumentsReceivedMock$);
+        filesDroppedMock = new Subject();
+        filesDroppedMock$ = filesDroppedMock.asObservable();
+
+        eventListenerServiceMock.setup((x) => x.argumentsReceived$).returns(() => argumentsReceivedMock$);
+        eventListenerServiceMock.setup((x) => x.filesDropped$).returns(() => filesDroppedMock$);
     });
 
     describe('constructor', () => {
@@ -72,7 +83,7 @@ describe('FileService', () => {
             // Arrange
 
             // Act
-            const service: BaseFileService = createService();
+            const service: FileServiceBase = createService();
 
             // Assert
             expect(service).toBeDefined();
@@ -80,7 +91,7 @@ describe('FileService', () => {
 
         it('should enqueue all playable tracks that are found as parameters', async () => {
             // Arrange
-            const service: BaseFileService = createService();
+            createService();
 
             // Act
             argumentsReceivedMock.next(['file 1.mp3', 'file 2.ogg', 'file 3.bmp']);
@@ -92,16 +103,16 @@ describe('FileService', () => {
                     x.enqueueAndPlayTracks(
                         It.is<TrackModel[]>(
                             (trackModels: TrackModel[]) =>
-                                trackModels.length === 2 && trackModels[0].path === 'file 1.mp3' && trackModels[1].path === 'file 2.ogg'
-                        )
+                                trackModels.length === 2 && trackModels[0].path === 'file 1.mp3' && trackModels[1].path === 'file 2.ogg',
+                        ),
                     ),
-                Times.once()
+                Times.once(),
             );
         });
 
         it('should not enqueue anything if parameters are undefined when arguments are received', async () => {
             // Arrange
-            const service: BaseFileService = createService();
+            createService();
 
             // Act
             argumentsReceivedMock.next(undefined);
@@ -113,7 +124,7 @@ describe('FileService', () => {
 
         it('should not enqueue anything if parameters are empty when arguments are received', async () => {
             // Arrange
-            const service: BaseFileService = createService();
+            createService();
 
             // Act
             argumentsReceivedMock.next([]);
@@ -125,7 +136,7 @@ describe('FileService', () => {
 
         it('should not enqueue anything if there are no playable tracks found as parameters when arguments are received', async () => {
             // Arrange
-            const service: BaseFileService = createService();
+            createService();
 
             // Act
             argumentsReceivedMock.next(['file 1.png', 'file 2.mkv', 'file 3.bmp']);
@@ -134,13 +145,34 @@ describe('FileService', () => {
             // Assert
             playbackServiceMock.verify((x) => x.enqueueAndPlayTracks(It.isAny()), Times.never());
         });
+
+        it('should enqueue all playable tracks that are dropped', async () => {
+            // Arrange
+            createService();
+
+            // Act
+            filesDroppedMock.next(['file 1.mp3', 'file 2.ogg', 'file 3.bmp']);
+            await flushPromises();
+
+            // Assert
+            playbackServiceMock.verify(
+                (x) =>
+                    x.enqueueAndPlayTracks(
+                        It.is<TrackModel[]>(
+                            (trackModels: TrackModel[]) =>
+                                trackModels.length === 2 && trackModels[0].path === 'file 1.mp3' && trackModels[1].path === 'file 2.ogg',
+                        ),
+                    ),
+                Times.once(),
+            );
+        });
     });
 
     describe('hasPlayableFilesAsParameters', () => {
         it('should return true if there is at least 1 playable file as parameter', () => {
             // Arrange
             applicationMock.setup((x) => x.getParameters()).returns(() => ['file 1.png', 'file 2.ogg', 'file 3.bmp']);
-            const service: BaseFileService = createService();
+            const service: FileServiceBase = createService();
 
             // Act
             const hasPlayableFilesAsParameters: boolean = service.hasPlayableFilesAsParameters();
@@ -153,7 +185,7 @@ describe('FileService', () => {
             applicationMock.setup((x) => x.getParameters()).returns(() => ['file 1.png', 'file 2.mkv', 'file 3.bmp']);
 
             // Arrange
-            const service: BaseFileService = createService();
+            const service: FileServiceBase = createService();
 
             // Act
             const hasPlayableFilesAsParameters: boolean = service.hasPlayableFilesAsParameters();
@@ -167,7 +199,7 @@ describe('FileService', () => {
         it('should enqueue all playable tracks found as parameters', async () => {
             // Arrange
             applicationMock.setup((x) => x.getParameters()).returns(() => ['file 1.mp3', 'file 2.ogg', 'file 3.bmp']);
-            const service: BaseFileService = createService();
+            const service: FileServiceBase = createService();
 
             // Act
             await service.enqueueParameterFilesAsync();
@@ -178,29 +210,17 @@ describe('FileService', () => {
                     x.enqueueAndPlayTracks(
                         It.is<TrackModel[]>(
                             (trackModels: TrackModel[]) =>
-                                trackModels.length === 2 && trackModels[0].path === 'file 1.mp3' && trackModels[1].path === 'file 2.ogg'
-                        )
+                                trackModels.length === 2 && trackModels[0].path === 'file 1.mp3' && trackModels[1].path === 'file 2.ogg',
+                        ),
                     ),
-                Times.once()
+                Times.once(),
             );
-        });
-
-        it('should not enqueue anything if parameters are undefined', async () => {
-            // Arrange
-            applicationMock.setup((x) => x.getParameters()).returns(() => undefined);
-            const service: BaseFileService = createService();
-
-            // Act
-            await service.enqueueParameterFilesAsync();
-
-            // Assert
-            playbackServiceMock.verify((x) => x.enqueueAndPlayTracks(It.isAny()), Times.never());
         });
 
         it('should not enqueue anything if parameters are empty', async () => {
             // Arrange
             applicationMock.setup((x) => x.getParameters()).returns(() => []);
-            const service: BaseFileService = createService();
+            const service: FileServiceBase = createService();
 
             // Act
             await service.enqueueParameterFilesAsync();
@@ -212,7 +232,7 @@ describe('FileService', () => {
         it('should not enqueue anything if there are no playable tracks found as parameters', async () => {
             // Arrange
             applicationMock.setup((x) => x.getParameters()).returns(() => ['file 1.png', 'file 2.mkv', 'file 3.bmp']);
-            const service: BaseFileService = createService();
+            const service: FileServiceBase = createService();
 
             // Act
             await service.enqueueParameterFilesAsync();

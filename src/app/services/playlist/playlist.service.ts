@@ -1,8 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { Collections } from '../../common/collections';
-import { FileValidator } from '../../common/file-validator';
-import { BaseFileAccess } from '../../common/io/base-file-access';
 import { Logger } from '../../common/logger';
 import { AlbumModel } from '../album/album-model';
 import { ArtistModel } from '../artist/artist-model';
@@ -10,34 +7,36 @@ import { ArtistType } from '../artist/artist-type';
 import { GenreModel } from '../genre/genre-model';
 import { PlaylistFolderModel } from '../playlist-folder/playlist-folder-model';
 import { PlaylistFolderModelFactory } from '../playlist-folder/playlist-folder-model-factory';
-import { BaseSnackBarService } from '../snack-bar/base-snack-bar.service';
-import { BaseTrackService } from '../track/base-track.service';
 import { TrackModel } from '../track/track-model';
 import { TrackModelFactory } from '../track/track-model-factory';
 import { TrackModels } from '../track/track-models';
-import { BasePlaylistService } from './base-playlist.service';
 import { PlaylistDecoder } from './playlist-decoder';
 import { PlaylistEntry } from './playlist-entry';
 import { PlaylistFileManager } from './playlist-file-manager';
 import { PlaylistModel } from './playlist-model';
-
+import { PlaylistServiceBase } from './playlist.service.base';
+import { TrackServiceBase } from '../track/track.service.base';
+import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
+import { CollectionUtils } from '../../common/utils/collections-utils';
+import { FileValidator } from '../../common/validation/file-validator';
 @Injectable()
-export class PlaylistService implements BasePlaylistService {
+export class PlaylistService implements PlaylistServiceBase {
     private _playlistsParentFolderPath: string = '';
     private _activePlaylistFolder: PlaylistFolderModel = this.playlistFolderModelFactory.createDefault();
     private playlistsChanged: Subject<void> = new Subject();
     private playlistTracksChanged: Subject<void> = new Subject();
 
-    constructor(
-        private trackService: BaseTrackService,
-        private snackBarService: BaseSnackBarService,
+    public constructor(
+        private trackService: TrackServiceBase,
+        private snackBarService: SnackBarServiceBase,
         private playlistFolderModelFactory: PlaylistFolderModelFactory,
         private playlistFileManager: PlaylistFileManager,
         private playlistDecoder: PlaylistDecoder,
         private trackModelFactory: TrackModelFactory,
         private fileValidator: FileValidator,
-        private fileAccess: BaseFileAccess,
-        private logger: Logger
+        private fileAccess: FileAccessBase,
+        private logger: Logger,
     ) {
         this.initialize();
     }
@@ -118,13 +117,9 @@ export class PlaylistService implements BasePlaylistService {
             } else {
                 await this.snackBarService.multipleTracksAddedToPlaylistAsync(playlistName, tracksToAdd.length);
             }
-        } catch (e) {
-            this.logger.error(
-                `Could not add tracks to playlist '${playlistPath}'. Error: ${e.message}`,
-                'PlaylistService',
-                'addTracksToPlaylist'
-            );
-            throw new Error(e.message);
+        } catch (e: unknown) {
+            this.logger.error(e, `Could not add tracks to playlist '${playlistPath}'`, 'PlaylistService', 'addTracksToPlaylist');
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
     }
 
@@ -134,23 +129,20 @@ export class PlaylistService implements BasePlaylistService {
         }
 
         try {
-            const tracksToRemoveGroupedByPlaylistPath: Map<string, TrackModel[]> = Collections.groupBy(
+            const tracksToRemoveGroupedByPlaylistPath: Map<string, TrackModel[]> = CollectionUtils.groupBy(
                 tracksToRemove,
-                (track) => track.playlistPath
+                (track: TrackModel) => track.playlistPath,
             );
 
             for (const playlistPath of Array.from(tracksToRemoveGroupedByPlaylistPath.keys())) {
-                const tracksToRemoveForSinglePlaylist: TrackModel[] = tracksToRemoveGroupedByPlaylistPath.get(playlistPath);
+                const tracksToRemoveForSinglePlaylist: TrackModel[] = tracksToRemoveGroupedByPlaylistPath.get(playlistPath) ?? [];
 
                 await this.removeTracksFromSinglePlaylistAsync(playlistPath, tracksToRemoveForSinglePlaylist);
             }
-        } catch (e) {
-            this.logger.error(
-                `Could not remove tracks from playlists. Error: ${e.message}`,
-                'PlaylistService',
-                'removeTracksFromPlaylistsAsync'
-            );
-            throw new Error(e.message);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not remove tracks from playlists.', 'PlaylistService', 'removeTracksFromPlaylistsAsync');
+
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
 
         this.playlistTracksChanged.next();
@@ -181,13 +173,14 @@ export class PlaylistService implements BasePlaylistService {
             for (const playlistTrack of playlistTracksAfterRemoval) {
                 await this.fileAccess.appendTextToFileAsync(playlistPath, playlistTrack.path);
             }
-        } catch (e) {
+        } catch (e: unknown) {
             this.logger.error(
-                `Could not remove tracks from playlist '${playlistPath}'. Error: ${e.message}`,
+                e,
+                `Could not remove tracks from playlist '${playlistPath}'`,
                 'PlaylistService',
-                'removeTracksFromPlaylistAsync'
+                'removeTracksFromPlaylistAsync',
             );
-            throw new Error(e.message);
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
     }
 
@@ -230,15 +223,15 @@ export class PlaylistService implements BasePlaylistService {
             await this.playlistFileManager.updatePlaylistAsync(playlist, newName, newImagePath);
 
             this.playlistsChanged.next();
-        } catch (e) {
-            this.logger.error(`Could not update playlist details. Error: ${e.message}`, 'PlaylistService', 'updatePlaylistDetailsAsync');
-            throw new Error(e.message);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not update playlist details', 'PlaylistService', 'updatePlaylistDetailsAsync');
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
     }
 
     public async getTracksAsync(playlists: PlaylistModel[]): Promise<TrackModels> {
         if (this.playlistsParentFolderPath == undefined) {
-            this.logger.error(`Playlists is undefined. Returning empty array of tracks`, 'PlaylistService', 'getTracksAsync');
+            this.logger.warn(`Playlists is undefined. Returning empty array of tracks`, 'PlaylistService', 'getTracksAsync');
 
             return new TrackModels();
         }
@@ -268,9 +261,9 @@ export class PlaylistService implements BasePlaylistService {
 
         try {
             playlistEntries = await this.playlistDecoder.decodePlaylistAsync(playlistPath);
-        } catch (e) {
-            this.logger.error(`Could not decode playlist with path='${playlistPath}'`, 'PlaylistService', 'decodePlaylistAsync');
-            throw new Error(e.message);
+        } catch (e: unknown) {
+            this.logger.error(e, `Could not decode playlist with path='${playlistPath}'`, 'PlaylistService', 'decodePlaylistAsync');
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
 
         for (const playlistEntry of playlistEntries) {
@@ -311,13 +304,9 @@ export class PlaylistService implements BasePlaylistService {
             for (const path of tracks.map((x) => x.path)) {
                 await this.fileAccess.replaceTextInFileAsync(playlistPath, path);
             }
-        } catch (e) {
-            this.logger.error(
-                `Could not update tracks in playlist '${playlistPath}'. Error: ${e.message}`,
-                'PlaylistService',
-                'updateTracksInPlaylistAsync'
-            );
-            throw new Error(e.message);
+        } catch (e: unknown) {
+            this.logger.error(e, `Could not update tracks in playlist '${playlistPath}'`, 'PlaylistService', 'updateTracksInPlaylistAsync');
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
     }
 }

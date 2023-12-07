@@ -1,0 +1,45 @@
+<div class="app-track">
+    <div class="app-track__header mt-3 mb-1" *ngIf="this.canShowHeader && track.showHeader">
+        <div class="app-track__header__top pb-2 ellipsis" matTooltip="{{ track.albumArtists }}">{{ track.albumArtists }}</div>
+        <div class="secondary-text ellipsis" *ngIf="!(track.discNumber > 0 && track.discCount > 1)" matTooltip="{{ track.albumTitle }}">
+            {{ track.albumTitle }}
+        </div>
+        <div
+            class="secondary-text ellipsis"
+            *ngIf="track.discNumber > 0 && track.discCount > 1"
+            matTooltip="{{ track.albumTitle }} ({{ track.discNumber }}/{{ track.discCount }})"
+        >
+            {{ track.albumTitle }} ({{ track.discNumber }}/{{ track.discCount }})
+        </div>
+    </div>
+    <div
+        class="app-track__body px-1"
+        [ngClass]="{ 'selected-item-background-important': track.isSelected }"
+        matRipple
+        [matRippleTrigger]="trigger"
+        #trigger
+    >
+        <div class="app-track__left accent-color">
+            {{ track.number | formatTrackNumber }}
+        </div>
+        <div class="app-track__right">
+            <div class="app-track__top">
+                <span class="app-track__top__title ellipsis" [ngClass]="{ 'accent-color': track.isPlaying }">{{ track.title }}</span>
+                <div class="app-track__playback__and__duration">
+                    <app-playback-indicator *ngIf="track.isPlaying" class="mx-2" [isSelected]="track.isSelected"></app-playback-indicator>
+                    <div [ngClass]="{ 'accent-color': track.isPlaying }">
+                        {{ track.durationInMilliseconds | formatTrackDuration }}
+                    </div>
+                </div>
+            </div>
+            <div class="app-track__bottom">
+                <span class="ellipsis secondary-text">{{ track.artists }}</span>
+                <span></span>
+                <div class="d-flex flex-row align-items-center">
+                    <app-rating [track]="track" *ngIf="this.settings.showRating"></app-rating>
+                    <app-love [track]="track" class="ml-2" *ngIf="this.settings.showLove"></app-love>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

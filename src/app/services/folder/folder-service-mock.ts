@@ -1,9 +1,9 @@
 import { Observable, Subject } from 'rxjs';
-import { BaseFolderService } from './base-folder.service';
 import { FolderModel } from './folder-model';
 import { SubfolderModel } from './subfolder-model';
+import {FolderServiceBase} from "./folder.service.base";
 
-export class FolderServiceMock implements BaseFolderService {
+export class FolderServiceMock implements FolderServiceBase {
     private foldersChanged: Subject<void> = new Subject();
     public collectionHasFolders: boolean = false;
     public foldersChanged$: Observable<void> = this.foldersChanged.asObservable();
@@ -19,10 +19,10 @@ export class FolderServiceMock implements BaseFolderService {
     }
 
     public async getSubfoldersAsync(rootFolder: FolderModel, subfolder: SubfolderModel): Promise<SubfolderModel[]> {
-        return [];
+        return Promise.resolve([]);
     }
 
-    public async getSubfolderBreadCrumbsAsync(rootFolder: FolderModel, openedSubfolderPath: string): Promise<SubfolderModel[]> {
+    public getSubfolderBreadCrumbs(rootFolder: FolderModel, openedSubfolderPath: string): SubfolderModel[] {
         return [];
     }
 

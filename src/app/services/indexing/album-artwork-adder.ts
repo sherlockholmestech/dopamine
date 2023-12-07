@@ -1,38 +1,38 @@
 import { Injectable } from '@angular/core';
-import { AlbumArtwork } from '../../common/data/entities/album-artwork';
-import { AlbumData } from '../../common/data/entities/album-data';
-import { Track } from '../../common/data/entities/track';
-import { BaseAlbumArtworkRepository } from '../../common/data/repositories/base-album-artwork-repository';
-import { BaseTrackRepository } from '../../common/data/repositories/base-track-repository';
+import { AlbumArtwork } from '../../data/entities/album-artwork';
+import { AlbumData } from '../../data/entities/album-data';
+import { Track } from '../../data/entities/track';
 import { Logger } from '../../common/logger';
-import { BaseFileMetadataFactory } from '../../common/metadata/base-file-metadata-factory';
 import { IFileMetadata } from '../../common/metadata/i-file-metadata';
 import { AlbumArtworkCacheId } from '../album-artwork-cache/album-artwork-cache-id';
-import { BaseAlbumArtworkCacheService } from '../album-artwork-cache/base-album-artwork-cache.service';
-import { BaseSnackBarService } from '../snack-bar/base-snack-bar.service';
 import { AlbumArtworkGetter } from './album-artwork-getter';
+import { AlbumArtworkCacheServiceBase } from '../album-artwork-cache/album-artwork-cache.service.base';
+import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
+import { AlbumArtworkRepositoryBase } from '../../data/repositories/album-artwork-repository.base';
+import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
+import { FileMetadataFactoryBase } from '../../common/metadata/file-metadata.factory.base';
 
 @Injectable()
 export class AlbumArtworkAdder {
-    constructor(
-        private albumArtworkCacheService: BaseAlbumArtworkCacheService,
-        private albumArtworkRepository: BaseAlbumArtworkRepository,
-        private trackRepository: BaseTrackRepository,
-        private fileMetadataFactory: BaseFileMetadataFactory,
-        private snackbarService: BaseSnackBarService,
+    public constructor(
+        private albumArtworkCacheService: AlbumArtworkCacheServiceBase,
+        private albumArtworkRepository: AlbumArtworkRepositoryBase,
+        private trackRepository: TrackRepositoryBase,
+        private fileMetadataFactory: FileMetadataFactoryBase,
+        private snackbarService: SnackBarServiceBase,
         private logger: Logger,
-        private albumArtworkGetter: AlbumArtworkGetter
+        private albumArtworkGetter: AlbumArtworkGetter,
     ) {}
 
     public async addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync(): Promise<void> {
         try {
-            const albumDataThatNeedsIndexing: AlbumData[] = this.trackRepository.getAlbumDataThatNeedsIndexing();
+            const albumDataThatNeedsIndexing: AlbumData[] = this.trackRepository.getAlbumDataThatNeedsIndexing() ?? [];
 
             if (albumDataThatNeedsIndexing.length === 0) {
                 this.logger.info(
                     `Found no album data that needs indexing`,
                     'AlbumArtworkAdder',
-                    'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync'
+                    'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync',
                 );
 
                 return;
@@ -41,7 +41,7 @@ export class AlbumArtworkAdder {
             this.logger.info(
                 `Found ${albumDataThatNeedsIndexing.length} album data that needs indexing`,
                 'AlbumArtworkAdder',
-                'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync'
+                'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync',
             );
 
             const numberOfAlbumArtwork: number = this.albumArtworkRepository.getNumberOfAlbumArtwork();
@@ -49,65 +49,59 @@ export class AlbumArtworkAdder {
             // TODO: remove this when album artwork fetching is async
             // For now, as a workaround, we only show this notification the 1st time indexing runs.
             if (numberOfAlbumArtwork === 0) {
-                this.snackbarService.updatingAlbumArtworkAsync();
+                await this.snackbarService.updatingAlbumArtworkAsync();
             }
 
             for (const albumData of albumDataThatNeedsIndexing) {
                 try {
                     await this.addAlbumArtworkAsync(albumData.albumKey);
-                } catch (e) {
+                } catch (e: unknown) {
                     this.logger.error(
-                        `Could not add album artwork for albumKey=${albumData.albumKey}. Error: ${e.message}`,
+                        e,
+                        `Could not add album artwork for albumKey=${albumData.albumKey}`,
                         'AlbumArtworkAdder',
-                        'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync'
+                        'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync',
                     );
                 }
             }
-        } catch (e) {
-            this.logger.info(
-                `Could not add album artwork for tracks that need album artwork indexing. Error: ${e.message}`,
+        } catch (e: unknown) {
+            this.logger.error(
+                e,
+                'Could not add album artwork for tracks that need album artwork indexing',
                 'AlbumArtworkAdder',
-                'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync'
+                'addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync',
             );
         }
     }
 
     private async addAlbumArtworkAsync(albumKey: string): Promise<void> {
-        const track: Track = this.trackRepository.getLastModifiedTrackForAlbumKeyAsync(albumKey);
+        const track: Track | undefined = this.trackRepository.getLastModifiedTrackForAlbumKeyAsync(albumKey);
 
         if (track == undefined) {
             return;
         }
 
-        let fileMetadata: IFileMetadata;
+        let albumArtwork: Buffer | undefined;
 
         try {
-            fileMetadata = await this.fileMetadataFactory.createAsync(track.path);
-        } catch (e) {
-            this.logger.info(
-                `Could not create file metadata for path='${track.path}'. Error: ${e.message}`,
-                'AlbumArtworkAdder',
-                'addAlbumArtworkAsync'
-            );
+            const fileMetadata: IFileMetadata = await this.fileMetadataFactory.createAsync(track.path);
+            albumArtwork = await this.albumArtworkGetter.getAlbumArtworkAsync(fileMetadata, true);
+        } catch (e: unknown) {
+            this.logger.error(e, `Could not create file metadata for path='${track.path}'`, 'AlbumArtworkAdder', 'addAlbumArtworkAsync');
         }
-
-        if (fileMetadata == undefined) {
-            return;
-        }
-
-        const albumArtwork: Buffer = await this.albumArtworkGetter.getAlbumArtworkAsync(fileMetadata, true);
 
         if (albumArtwork == undefined) {
             return;
         }
 
-        const albumArtworkCacheId: AlbumArtworkCacheId = await this.albumArtworkCacheService.addArtworkDataToCacheAsync(albumArtwork);
+        const albumArtworkCacheId: AlbumArtworkCacheId | undefined =
+            await this.albumArtworkCacheService.addArtworkDataToCacheAsync(albumArtwork);
 
         if (albumArtworkCacheId == undefined) {
             return;
         }
 
-        await this.trackRepository.disableNeedsAlbumArtworkIndexingAsync(albumKey);
+        this.trackRepository.disableNeedsAlbumArtworkIndexing(albumKey);
         const newAlbumArtwork: AlbumArtwork = new AlbumArtwork(albumKey, albumArtworkCacheId.id);
         this.albumArtworkRepository.addAlbumArtwork(newAlbumArtwork);
     }

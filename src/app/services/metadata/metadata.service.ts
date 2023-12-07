@@ -2,39 +2,39 @@ import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { Constants } from '../../common/application/constants';
 import { FileFormats } from '../../common/application/file-formats';
-import { BaseTrackRepository } from '../../common/data/repositories/base-track-repository';
 import { ImageProcessor } from '../../common/image-processor';
-import { BaseFileAccess } from '../../common/io/base-file-access';
 import { Logger } from '../../common/logger';
-import { BaseFileMetadataFactory } from '../../common/metadata/base-file-metadata-factory';
 import { IFileMetadata } from '../../common/metadata/i-file-metadata';
-import { BaseSettings } from '../../common/settings/base-settings';
-import { Strings } from '../../common/strings';
+import { StringUtils } from '../../common/utils/string-utils';
 import { AlbumArtworkGetter } from '../indexing/album-artwork-getter';
 import { TrackModel } from '../track/track-model';
-import { BaseMetadataService } from './base-metadata.service';
 import { CachedAlbumArtworkGetter } from './cached-album-artwork-getter';
+import { MetadataServiceBase } from './metadata.service.base';
+import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
+import { FileMetadataFactoryBase } from '../../common/metadata/file-metadata.factory.base';
+import { SettingsBase } from '../../common/settings/settings.base';
 
 @Injectable()
-export class MetadataService implements BaseMetadataService {
+export class MetadataService implements MetadataServiceBase {
     private ratingSaved: Subject<TrackModel> = new Subject();
     private loveSaved: Subject<TrackModel> = new Subject();
 
-    constructor(
-        private fileMetadataFactory: BaseFileMetadataFactory,
-        private trackRepository: BaseTrackRepository,
+    public constructor(
+        private fileMetadataFactory: FileMetadataFactoryBase,
+        private trackRepository: TrackRepositoryBase,
         private albumArtworkGetter: AlbumArtworkGetter,
         private cachedAlbumArtworkGetter: CachedAlbumArtworkGetter,
         private imageProcessor: ImageProcessor,
-        private fileAccess: BaseFileAccess,
-        private settings: BaseSettings,
-        private logger: Logger
+        private fileAccess: FileAccessBase,
+        private settings: SettingsBase,
+        private logger: Logger,
     ) {}
 
     public ratingSaved$: Observable<TrackModel> = this.ratingSaved.asObservable();
     public loveSaved$: Observable<TrackModel> = this.loveSaved.asObservable();
 
-    public async createImageUrlAsync(track: TrackModel): Promise<string> {
+    public async createImageUrlAsync(track: TrackModel | undefined): Promise<string> {
         if (track == undefined) {
             return Constants.emptyImage;
         }
@@ -43,26 +43,22 @@ export class MetadataService implements BaseMetadataService {
             const fileMetaData: IFileMetadata = await this.fileMetadataFactory.createAsync(track.path);
 
             if (fileMetaData != undefined) {
-                const coverArt: Buffer = await this.albumArtworkGetter.getAlbumArtworkAsync(fileMetaData, false);
+                const coverArt: Buffer | undefined = await this.albumArtworkGetter.getAlbumArtworkAsync(fileMetaData, false);
 
-                if (coverArt != undefined) {
+                if (coverArt != undefined && coverArt.length > 0) {
                     return this.imageProcessor.convertBufferToImageUrl(coverArt);
                 }
             }
 
             const cachedAlbumArtworkPath: string = this.cachedAlbumArtworkGetter.getCachedAlbumArtworkPath(track.albumKey);
 
-            if (!Strings.isNullOrWhiteSpace(cachedAlbumArtworkPath) && this.fileAccess.pathExists(cachedAlbumArtworkPath)) {
+            if (!StringUtils.isNullOrWhiteSpace(cachedAlbumArtworkPath) && this.fileAccess.pathExists(cachedAlbumArtworkPath)) {
                 return 'file:///' + cachedAlbumArtworkPath;
             }
 
             return Constants.emptyImage;
-        } catch (error) {
-            this.logger.error(
-                `Could not create image URL for track with path=${track.path}. Error: ${error.message}`,
-                'MetadataService',
-                'createImageUrlAsync'
-            );
+        } catch (e: unknown) {
+            this.logger.error(e, `Could not create image URL for track with path=${track.path}`, 'MetadataService', 'createImageUrlAsync');
         }
 
         return Constants.emptyImage;
@@ -80,19 +76,19 @@ export class MetadataService implements BaseMetadataService {
             }
 
             this.ratingSaved.next(track);
-        } catch (error) {
-            this.logger.error(`Could not save rating. Error: ${error.message}`, 'MetadataService', 'saveTrackRating');
-            throw new Error(error.message);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not save rating', 'MetadataService', 'saveTrackRating');
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
     }
 
-    public async saveTrackLoveAsync(track: TrackModel): Promise<void> {
+    public saveTrackLove(track: TrackModel): void {
         try {
             this.trackRepository.updateLove(track.id, track.love);
             this.loveSaved.next(track);
-        } catch (error) {
-            this.logger.error(`Could not save love. Error: ${error.message}`, 'MetadataService', 'saveTrackRatingAsync');
-            throw new Error(error.message);
+        } catch (e: unknown) {
+            this.logger.error(e, 'Could not save love', 'MetadataService', 'saveTrackRatingAsync');
+            throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
     }
 }

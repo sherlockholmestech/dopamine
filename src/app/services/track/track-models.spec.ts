@@ -1,18 +1,18 @@
 import { IMock, Mock } from 'typemoq';
-import { Track } from '../../common/data/entities/track';
 import { DateTime } from '../../common/date-time';
-import { BaseTranslatorService } from '../translator/base-translator.service';
 import { TrackModel } from './track-model';
 import { TrackModels } from './track-models';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { Track } from '../../data/entities/track';
 
 describe('TrackModel', () => {
     let trackModels: TrackModels;
     let dateTimeMock: IMock<DateTime>;
-    let translatorServiceMock: IMock<BaseTranslatorService>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
 
     beforeEach(() => {
         dateTimeMock = Mock.ofType<DateTime>();
-        translatorServiceMock = Mock.ofType<BaseTranslatorService>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         trackModels = new TrackModels();
     });
 
@@ -93,7 +93,7 @@ describe('TrackModel', () => {
     describe('addTrack', () => {
         it('should not add an undefined track', () => {
             // Arrange
-            const trackToAdd: TrackModel = undefined;
+            const trackToAdd: TrackModel | undefined = undefined;
             trackModels.tracks = [];
 
             // Act
@@ -105,7 +105,7 @@ describe('TrackModel', () => {
 
         it('should not change totalDurationInMilliseconds for an undefined track', () => {
             // Arrange
-            const trackToAdd: TrackModel = undefined;
+            const trackToAdd: TrackModel | undefined = undefined;
 
             // Act
             trackModels.addTrack(trackToAdd);
@@ -116,7 +116,7 @@ describe('TrackModel', () => {
 
         it('should not change totalFileSizeInBytes for an undefined track', () => {
             // Arrange
-            const trackToAdd: TrackModel = undefined;
+            const trackToAdd: TrackModel | undefined = undefined;
 
             // Act
             trackModels.addTrack(trackToAdd);
@@ -127,7 +127,7 @@ describe('TrackModel', () => {
 
         it('should not change numberOfTracks for an undefined track', () => {
             // Arrange
-            const trackToAdd: TrackModel = undefined;
+            const trackToAdd: TrackModel | undefined = undefined;
 
             // Act
             trackModels.addTrack(trackToAdd);

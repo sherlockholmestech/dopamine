@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
-import { PathValidator } from '../../common/path-validator';
 import { SubfolderModel } from '../folder/subfolder-model';
 import { TrackModel } from '../track/track-model';
-import { BasePlaybackIndicationService } from './base-playback-indication.service';
+import { PlaybackIndicationServiceBase } from './playback-indication.service.base';
+import { PathValidator } from '../../common/validation/path-validator';
 
 @Injectable()
-export class PlaybackIndicationService implements BasePlaybackIndicationService {
-    constructor(private pathValidator: PathValidator) {}
+export class PlaybackIndicationService implements PlaybackIndicationServiceBase {
+    public constructor(private pathValidator: PathValidator) {}
 
-    public setPlayingSubfolder(subfolders: SubfolderModel[], playingTrack: TrackModel): void {
+    public setPlayingSubfolder(subfolders: SubfolderModel[] | undefined, playingTrack: TrackModel | undefined): void {
         if (subfolders == undefined) {
             return;
         }
@@ -26,7 +26,7 @@ export class PlaybackIndicationService implements BasePlaybackIndicationService 
         }
     }
 
-    public clearPlayingSubfolder(subfolders: SubfolderModel[]): void {
+    public clearPlayingSubfolder(subfolders: SubfolderModel[] | undefined): void {
         if (subfolders == undefined) {
             return;
         }
@@ -36,7 +36,7 @@ export class PlaybackIndicationService implements BasePlaybackIndicationService 
         }
     }
 
-    public setPlayingTrack(tracks: TrackModel[], playingTrack: TrackModel): void {
+    public setPlayingTrack(tracks: TrackModel[] | undefined, playingTrack: TrackModel | undefined): void {
         if (tracks == undefined) {
             return;
         }
@@ -54,7 +54,7 @@ export class PlaybackIndicationService implements BasePlaybackIndicationService 
         }
     }
 
-    public clearPlayingTrack(tracks: TrackModel[]): void {
+    public clearPlayingTrack(tracks: TrackModel[] | undefined): void {
         if (tracks == undefined) {
             return;
         }

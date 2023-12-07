@@ -1,16 +1,16 @@
 import { Injectable } from '@angular/core';
 import { Logger } from '../../common/logger';
 import { Timer } from '../../common/scheduling/timer';
-import { BaseSnackBarService } from '../snack-bar/base-snack-bar.service';
 import { AlbumArtworkAdder } from './album-artwork-adder';
 import { AlbumArtworkRemover } from './album-artwork-remover';
+import {SnackBarServiceBase} from "../snack-bar/snack-bar.service.base";
 
 @Injectable()
 export class AlbumArtworkIndexer {
-    constructor(
+    public constructor(
         private albumArtworkRemover: AlbumArtworkRemover,
         private albumArtworkAdder: AlbumArtworkAdder,
-        private snackBarService: BaseSnackBarService,
+        private snackBarService: SnackBarServiceBase,
         private logger: Logger
     ) {}
 
@@ -20,10 +20,10 @@ export class AlbumArtworkIndexer {
         const timer: Timer = new Timer();
         timer.start();
 
-        this.albumArtworkRemover.removeAlbumArtworkThatHasNoTrack();
-        this.albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+        await this.albumArtworkRemover.removeAlbumArtworkThatHasNoTrackAsync();
+        await this.albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync();
         await this.albumArtworkAdder.addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync();
-        this.albumArtworkRemover.removeAlbumArtworkThatIsNotInTheDatabaseFromDiskAsync();
+        await this.albumArtworkRemover.removeAlbumArtworkThatIsNotInTheDatabaseFromDiskAsync();
 
         timer.stop();
 

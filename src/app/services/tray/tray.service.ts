@@ -1,19 +1,24 @@
 import { Injectable } from '@angular/core';
-import { Subscription } from 'rxjs';
 import * as os from 'os';
-import { BaseIpcProxy } from '../../common/io/base-ipc-proxy';
-import { BaseSettings } from '../../common/settings/base-settings';
-import { BaseTranslatorService } from '../translator/base-translator.service';
-import { BaseTrayService } from './base-tray.service';
+import { Subscription } from 'rxjs';
+import { TrayServiceBase } from './tray.service.base';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { IpcProxyBase } from '../../common/io/ipc-proxy.base';
+import { SettingsBase } from '../../common/settings/settings.base';
+
 @Injectable()
-export class TrayService implements BaseTrayService {
+export class TrayService implements TrayServiceBase {
     private subscription: Subscription = new Subscription();
 
-    constructor(private translatorService: BaseTranslatorService, private settings: BaseSettings, private ipcProxy: BaseIpcProxy) {
+    public constructor(
+        private translatorService: TranslatorServiceBase,
+        private settings: SettingsBase,
+        private ipcProxy: IpcProxyBase,
+    ) {
         this.subscription.add(
             this.translatorService.languageChanged$.subscribe(() => {
                 this.updateTrayContextMenu();
-            })
+            }),
         );
 
         this.updateTrayContextMenu();
@@ -33,7 +38,10 @@ export class TrayService implements BaseTrayService {
     }
 
     public updateTrayContextMenu(): void {
-        const arg: any = { showDopamineLabel: this.translatorService.get('show-dopamine'), exitLabel: this.translatorService.get('exit') };
+        const arg = {
+            showDopamineLabel: this.translatorService.get('show-dopamine'),
+            exitLabel: this.translatorService.get('exit'),
+        };
         this.ipcProxy.sendToMainProcess('update-tray-context-menu', arg);
     }
 

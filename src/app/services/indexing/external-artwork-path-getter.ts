@@ -1,18 +1,18 @@
 import { Injectable } from '@angular/core';
 import { Constants } from '../../common/application/constants';
-import { BaseFileAccess } from '../../common/io/base-file-access';
-import { Strings } from '../../common/strings';
+import { StringUtils } from '../../common/utils/string-utils';
+import { FileAccessBase } from '../../common/io/file-access.base';
 
 @Injectable()
 export class ExternalArtworkPathGetter {
-    constructor(private fileAccess: BaseFileAccess) {}
+    public constructor(private fileAccess: FileAccessBase) {}
 
-    public async getExternalArtworkPathAsync(audioFilePath: string): Promise<string> {
-        if (Strings.isNullOrWhiteSpace(audioFilePath)) {
-            return undefined;
+    public async getExternalArtworkPathAsync(audioFilePath: string | undefined): Promise<string> {
+        if (StringUtils.isNullOrWhiteSpace(audioFilePath)) {
+            return '';
         }
 
-        const directory: string = this.fileAccess.getDirectoryPath(audioFilePath);
+        const directory: string = this.fileAccess.getDirectoryPath(audioFilePath!);
         const filesInDirectory: string[] = await this.fileAccess.getFilesInDirectoryAsync(directory);
 
         for (const filePath of filesInDirectory) {
@@ -25,10 +25,10 @@ export class ExternalArtworkPathGetter {
             const fileNameWithoutExtension: string = this.fileAccess.getFileNameWithoutExtension(filePath);
 
             for (const externalCoverArtPattern of Constants.externalCoverArtPatterns) {
-                const externalCoverArtPatternReplacedByFileName: string = Strings.replaceAll(
+                const externalCoverArtPatternReplacedByFileName: string = StringUtils.replaceAll(
                     externalCoverArtPattern,
                     '%filename%',
-                    fileNameWithoutExtension
+                    fileNameWithoutExtension,
                 );
 
                 if (fileName.toLowerCase() === externalCoverArtPatternReplacedByFileName.toLowerCase()) {
@@ -37,6 +37,6 @@ export class ExternalArtworkPathGetter {
             }
         }
 
-        return undefined;
+        return '';
     }
 }

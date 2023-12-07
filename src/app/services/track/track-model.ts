@@ -1,11 +1,16 @@
-import { DataDelimiter } from '../../common/data/data-delimiter';
-import { Track } from '../../common/data/entities/track';
+import { DataDelimiter } from '../../data/data-delimiter';
+import { Track } from '../../data/entities/track';
 import { DateTime } from '../../common/date-time';
-import { Strings } from '../../common/strings';
-import { BaseTranslatorService } from '../translator/base-translator.service';
+import { StringUtils } from '../../common/utils/string-utils';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { ISelectable } from '../../ui/interfaces/i-selectable';
 
-export class TrackModel {
-    constructor(private track: Track, private dateTime: DateTime, private translatorService: BaseTranslatorService) {}
+export class TrackModel implements ISelectable {
+    public constructor(
+        private track: Track,
+        private dateTime: DateTime,
+        private translatorService: TranslatorServiceBase,
+    ) {}
 
     public isPlaying: boolean = false;
     public isSelected: boolean = false;
@@ -22,43 +27,43 @@ export class TrackModel {
     }
 
     public get fileName(): string {
-        return this.track.fileName;
+        return this.track.fileName ?? '';
     }
 
     public get number(): number {
-        return this.track.trackNumber;
+        return this.track.trackNumber ?? 0;
     }
 
     public get discNumber(): number {
-        return this.track.discNumber;
+        return this.track.discNumber ?? 0;
     }
 
     public get discCount(): number {
-        return this.track.discCount;
+        return this.track.discCount ?? 0;
     }
 
     public get year(): number {
-        return this.track.year;
+        return this.track.year ?? 0;
     }
 
     public get title(): string {
-        if (!Strings.isNullOrWhiteSpace(this.track.trackTitle)) {
-            return this.track.trackTitle;
+        if (!StringUtils.isNullOrWhiteSpace(this.track.trackTitle)) {
+            return this.track.trackTitle!;
         }
 
         return this.track.fileName;
     }
 
     public get rawTitle(): string {
-        if (Strings.isNullOrWhiteSpace(this.track.trackTitle)) {
+        if (StringUtils.isNullOrWhiteSpace(this.track.trackTitle)) {
             return '';
         }
 
-        return this.track.trackTitle;
+        return this.track.trackTitle!;
     }
 
     public get sortableTitle(): string {
-        return Strings.getSortableString(this.title, false);
+        return StringUtils.getSortableString(this.title, false);
     }
 
     public get artists(): string {
@@ -68,7 +73,7 @@ export class TrackModel {
             return this.translatorService.get('unknown-artist');
         }
 
-        const commaSeparatedArtists: string = trackArtists.filter((x) => !Strings.isNullOrWhiteSpace(x)).join(', ');
+        const commaSeparatedArtists: string = trackArtists.filter((x) => !StringUtils.isNullOrWhiteSpace(x)).map(x => x.trim()).join(', ');
 
         if (commaSeparatedArtists.length === 0) {
             return this.translatorService.get('unknown-artist');
@@ -84,7 +89,7 @@ export class TrackModel {
             return [];
         }
 
-        const nonEmptyArtists: string[] = trackArtists.filter((x) => !Strings.isNullOrWhiteSpace(x));
+        const nonEmptyArtists: string[] = trackArtists.filter((x) => !StringUtils.isNullOrWhiteSpace(x));
 
         return nonEmptyArtists;
     }
@@ -94,13 +99,13 @@ export class TrackModel {
             return '';
         }
 
-        const nonEmptyArtists: string[] = this.rawArtists.filter((x) => !Strings.isNullOrWhiteSpace(x));
+        const nonEmptyArtists: string[] = this.rawArtists.filter((x) => !StringUtils.isNullOrWhiteSpace(x));
 
         return nonEmptyArtists[0];
     }
 
     public get sortableArtists(): string {
-        return Strings.getSortableString(this.artists, false);
+        return StringUtils.getSortableString(this.artists, false);
     }
 
     public get genres(): string {
@@ -110,7 +115,7 @@ export class TrackModel {
             return this.translatorService.get('unknown-genre');
         }
 
-        const commaSeparatedGenres: string = trackGenres.filter((x) => !Strings.isNullOrWhiteSpace(x)).join(', ');
+        const commaSeparatedGenres: string = trackGenres.filter((x) => !StringUtils.isNullOrWhiteSpace(x)).join(', ');
 
         if (commaSeparatedGenres.length === 0) {
             return this.translatorService.get('unknown-genre');
@@ -120,27 +125,27 @@ export class TrackModel {
     }
 
     public get sortableGenres(): string {
-        return Strings.getSortableString(this.genres, false);
+        return StringUtils.getSortableString(this.genres, false);
     }
 
     public get albumKey(): string {
-        return this.track.albumKey;
+        return this.track.albumKey ?? '';
     }
 
     public get albumTitle(): string {
-        if (Strings.isNullOrWhiteSpace(this.track.albumTitle)) {
+        if (StringUtils.isNullOrWhiteSpace(this.track.albumTitle)) {
             return this.translatorService.get('unknown-album');
         }
 
-        return this.track.albumTitle;
+        return this.track.albumTitle!;
     }
 
     public get rawAlbumTitle(): string {
-        if (Strings.isNullOrWhiteSpace(this.track.albumTitle)) {
+        if (StringUtils.isNullOrWhiteSpace(this.track.albumTitle)) {
             return '';
         }
 
-        return this.track.albumTitle;
+        return this.track.albumTitle!;
     }
 
     public get albumArtists(): string {
@@ -160,57 +165,69 @@ export class TrackModel {
     }
 
     public get sortableAlbumArtists(): string {
-        return Strings.getSortableString(this.albumArtists, false);
+        return StringUtils.getSortableString(this.albumArtists, false);
     }
 
     public get sortableAlbumTitle(): string {
-        return Strings.getSortableString(this.albumTitle, false);
+        return StringUtils.getSortableString(this.albumTitle, false);
     }
 
     public get durationInMilliseconds(): number {
-        return this.track.duration;
+        return this.track.duration ?? 0;
     }
 
     public get fileSizeInBytes(): number {
-        return this.track.fileSize;
+        return this.track.fileSize ?? 0;
     }
 
     public get playCount(): number {
-        return this.track.playCount;
+        return this.track.playCount ?? 0;
     }
 
     public get skipCount(): number {
-        return this.track.skipCount;
+        return this.track.skipCount ?? 0;
     }
 
     public get rating(): number {
-        return this.track.rating;
+        return this.track.rating ?? 0;
     }
     public set rating(v: number) {
         this.track.rating = v;
     }
 
     public get love(): number {
-        return this.track.love;
+        return this.track.love ?? 0;
     }
     public set love(v: number) {
         this.track.love = v;
     }
 
     public get dateLastPlayed(): number {
-        return this.track.dateLastPlayed;
+        return this.track.dateLastPlayed ?? 0;
     }
 
     public get dateAdded(): number {
-        return this.track.dateAdded;
+        return this.track.dateAdded ?? 0;
     }
 
     public increasePlayCountAndDateLastPlayed(): void {
+        if (this.track.playCount == undefined) {
+            this.track.playCount = 0;
+        }
+
         this.track.playCount++;
         this.track.dateLastPlayed = this.dateTime.convertDateToTicks(new Date());
     }
 
     public increaseSkipCount(): void {
+        if (this.track.skipCount == undefined) {
+            this.track.skipCount = 0;
+        }
+
         this.track.skipCount++;
+    }
+
+    public clone(): TrackModel {
+        return new TrackModel(this.track, this.dateTime, this.translatorService);
     }
 }

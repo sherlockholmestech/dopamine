@@ -1,17 +1,21 @@
 import { Injectable } from '@angular/core';
-import { AlbumData } from '../../common/data/entities/album-data';
-import { BaseTrackRepository } from '../../common/data/repositories/base-track-repository';
-import { BaseFileAccess } from '../../common/io/base-file-access';
+import { AlbumData } from '../../data/entities/album-data';
+import { StringUtils } from '../../common/utils/string-utils';
+import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
 
 @Injectable()
 export class CachedAlbumArtworkGetter {
-    constructor(private trackRepository: BaseTrackRepository, private fileAccess: BaseFileAccess) {}
+    public constructor(
+        private trackRepository: TrackRepositoryBase,
+        private fileAccess: FileAccessBase,
+    ) {}
 
     public getCachedAlbumArtworkPath(albumKey: string): string {
-        const albumDataForAlbumKey: AlbumData[] = this.trackRepository.getAlbumDataForAlbumKey(albumKey);
+        const albumDataForAlbumKey: AlbumData[] = this.trackRepository.getAlbumDataForAlbumKey(albumKey) ?? [];
 
-        if (albumDataForAlbumKey.length > 0) {
-            return this.fileAccess.coverArtFullPath(albumDataForAlbumKey[0].artworkId);
+        if (albumDataForAlbumKey.length > 0 && !StringUtils.isNullOrWhiteSpace(albumDataForAlbumKey[0].artworkId)) {
+            return this.fileAccess.coverArtFullPath(albumDataForAlbumKey[0].artworkId!);
         }
 
         return '';

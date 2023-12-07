@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { BaseAudioPlayer } from './base-audio-player';
 import { PlaybackProgress } from './playback-progress';
+import {AudioPlayerBase} from "./audio-player.base";
 
 @Injectable()
 export class ProgressUpdater {
-    private interval: number;
+    private interval: number = 0;
     private shouldReportProgress: boolean = false;
     private progressChanged: Subject<PlaybackProgress> = new Subject();
 
-    constructor(private audioPlayer: BaseAudioPlayer) {}
+    public constructor(private audioPlayer: AudioPlayerBase) {}
 
     public progressChanged$: Observable<PlaybackProgress> = this.progressChanged.asObservable();
 
@@ -17,7 +17,7 @@ export class ProgressUpdater {
         this.reportProgress();
         this.shouldReportProgress = true;
 
-        if (!this.interval) {
+        if (this.interval === 0) {
             this.interval = window.setInterval(() => {
                 this.reportProgress();
             }, 500);

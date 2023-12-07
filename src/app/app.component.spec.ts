@@ -2,34 +2,41 @@ import { MatDrawer } from '@angular/material/sidenav';
 import { Observable, Subject } from 'rxjs';
 import { IMock, Mock, Times } from 'typemoq';
 import { AppComponent } from './app.component';
-import { BaseDesktop } from './common/io/base-desktop';
 import { Logger } from './common/logger';
-import { AddToPlaylistMenu } from './components/add-to-playlist-menu';
-import { BaseAppearanceService } from './services/appearance/base-appearance.service';
-import { BaseDialogService } from './services/dialog/base-dialog.service';
-import { BaseDiscordService } from './services/discord/base-discord.service';
-import { BaseMediaSessionService } from './services/media-session/base-media-session.service';
-import { BaseNavigationService } from './services/navigation/base-navigation.service';
-import { BaseScrobblingService } from './services/scrobbling/base-scrobbling.service';
-import { BaseSearchService } from './services/search/base-search.service';
-import { BaseTranslatorService } from './services/translator/base-translator.service';
-import { BaseTrayService } from './services/tray/base-tray.service';
+import { IntegrationTestRunner } from './testing/integration-test-runner';
+import { EventListenerServiceBase } from './services/event-listener/event-listener.service.base';
+import { MediaSessionServiceBase } from './services/media-session/media-session.service.base';
+import { SearchServiceBase } from './services/search/search.service.base';
+import { TrayServiceBase } from './services/tray/tray.service.base';
+import { ScrobblingServiceBase } from './services/scrobbling/scrobbling.service.base';
+import { DiscordServiceBase } from './services/discord/discord.service.base';
+import { DialogServiceBase } from './services/dialog/dialog.service.base';
+import { TranslatorServiceBase } from './services/translator/translator.service.base';
+import { AppearanceServiceBase } from './services/appearance/appearance.service.base';
+import { NavigationServiceBase } from './services/navigation/navigation.service.base';
+import { AddToPlaylistMenu } from './ui/components/add-to-playlist-menu';
+import { DesktopBase } from './common/io/desktop.base';
+import { AudioVisualizer } from './services/playback/audio-visualizer';
 
 describe('AppComponent', () => {
-    let navigationServiceMock: IMock<BaseNavigationService>;
-    let appearanceServiceMock: IMock<BaseAppearanceService>;
-    let translatorServiceMock: IMock<BaseTranslatorService>;
-    let dialogServiceMock: IMock<BaseDialogService>;
-    let discordServiceMock: IMock<BaseDiscordService>;
-    let scrobblingServiceMock: IMock<BaseScrobblingService>;
-    let trayServiceMock: IMock<BaseTrayService>;
-    let searchServiceMock: IMock<BaseSearchService>;
-    let mediaSessionServiceMock: IMock<BaseMediaSessionService>;
+    let navigationServiceMock: IMock<NavigationServiceBase>;
+    let appearanceServiceMock: IMock<AppearanceServiceBase>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
+    let dialogServiceMock: IMock<DialogServiceBase>;
+    let discordServiceMock: IMock<DiscordServiceBase>;
+    let scrobblingServiceMock: IMock<ScrobblingServiceBase>;
+    let trayServiceMock: IMock<TrayServiceBase>;
+    let searchServiceMock: IMock<SearchServiceBase>;
+    let mediaSessionServiceMock: IMock<MediaSessionServiceBase>;
+    let eventListenerServiceMock: IMock<EventListenerServiceBase>;
+    let audioVisualizerMock: IMock<AudioVisualizer>;
 
     let addToPlaylistMenuMock: IMock<AddToPlaylistMenu>;
-    let desktopMock: IMock<BaseDesktop>;
+    let desktopMock: IMock<DesktopBase>;
     let loggerMock: IMock<Logger>;
     let matDrawerMock: IMock<MatDrawer>;
+
+    let integrationTestRunnerMock: IMock<IntegrationTestRunner>;
 
     let showNowPlayingRequestedMock: Subject<void>;
     let showNowPlayingRequestedMock$: Observable<void>;
@@ -45,26 +52,32 @@ describe('AppComponent', () => {
             trayServiceMock.object,
             searchServiceMock.object,
             mediaSessionServiceMock.object,
+            eventListenerServiceMock.object,
             addToPlaylistMenuMock.object,
             desktopMock.object,
-            loggerMock.object
+            loggerMock.object,
+            integrationTestRunnerMock.object,
+            audioVisualizerMock.object,
         );
     }
 
     beforeEach(() => {
-        navigationServiceMock = Mock.ofType<BaseNavigationService>();
-        appearanceServiceMock = Mock.ofType<BaseAppearanceService>();
-        translatorServiceMock = Mock.ofType<BaseTranslatorService>();
-        dialogServiceMock = Mock.ofType<BaseDialogService>();
-        discordServiceMock = Mock.ofType<BaseDiscordService>();
-        scrobblingServiceMock = Mock.ofType<BaseScrobblingService>();
-        trayServiceMock = Mock.ofType<BaseTrayService>();
-        searchServiceMock = Mock.ofType<BaseSearchService>();
-        mediaSessionServiceMock = Mock.ofType<BaseMediaSessionService>();
+        navigationServiceMock = Mock.ofType<NavigationServiceBase>();
+        appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
+        dialogServiceMock = Mock.ofType<DialogServiceBase>();
+        discordServiceMock = Mock.ofType<DiscordServiceBase>();
+        scrobblingServiceMock = Mock.ofType<ScrobblingServiceBase>();
+        trayServiceMock = Mock.ofType<TrayServiceBase>();
+        searchServiceMock = Mock.ofType<SearchServiceBase>();
+        mediaSessionServiceMock = Mock.ofType<MediaSessionServiceBase>();
+        eventListenerServiceMock = Mock.ofType<EventListenerServiceBase>();
         addToPlaylistMenuMock = Mock.ofType<AddToPlaylistMenu>();
-        desktopMock = Mock.ofType<BaseDesktop>();
+        desktopMock = Mock.ofType<DesktopBase>();
         loggerMock = Mock.ofType<Logger>();
         matDrawerMock = Mock.ofType<MatDrawer>();
+        integrationTestRunnerMock = Mock.ofType<IntegrationTestRunner>();
+        audioVisualizerMock = Mock.ofType<AudioVisualizer>();
 
         showNowPlayingRequestedMock = new Subject();
         showNowPlayingRequestedMock$ = showNowPlayingRequestedMock.asObservable();
@@ -125,7 +138,7 @@ describe('AppComponent', () => {
             await app.ngOnInit();
 
             // Assert
-            translatorServiceMock.verify((x) => x.applyLanguageAsync(), Times.once());
+            translatorServiceMock.verify((x) => x.applyLanguage(), Times.once());
         });
 
         it('should update tray context menu', async () => {
@@ -147,7 +160,7 @@ describe('AppComponent', () => {
             await app.ngOnInit();
 
             // Assert
-            navigationServiceMock.verify((x) => x.navigateToLoading(), Times.once());
+            navigationServiceMock.verify((x) => x.navigateToLoadingAsync(), Times.once());
         });
 
         it('should initialize Discord', async () => {
@@ -194,6 +207,17 @@ describe('AppComponent', () => {
 
             // Assert
             scrobblingServiceMock.verify((x) => x.initialize(), Times.once());
+        });
+
+        it('should connect audio visualizer audio element', async () => {
+            // Arrange
+            const app: AppComponent = createComponent();
+
+            // Act
+            await app.ngOnInit();
+
+            // Assert
+            audioVisualizerMock.verify((x) => x.connectAudioElement(), Times.once());
         });
     });
 

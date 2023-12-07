@@ -15,6 +15,16 @@ Dopamine icons created by <a href="https://www.itssharl.ee/">Sharlee</a>.
 
 ![Dopaminescreenshot](Dopamine.screenshot.png)
 
+## Thank you JetBrains!
+
+ <img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" width="150" height="150">
+
+Thank you [JetBrains](https://www.jetbrains.com/community/opensource/?utm_campaign=opensource&utm_content=approved&utm_medium=email&utm_source=newsletter&utm_term=jblogo#support) for supporting this project!
+
+## Debugging
+
+I recommend using JetBrains Rider or WebStorm to debug this project. The **.run** folder contains a debugging configuration **Debug renderer** that allows you to attach to the Dopamine instance that is started when running `npm start`. Most of the code runs in the Electron renderer. That is why only a renderer configuration is provided for now.
+
 ## Build prerequisites
 
 -   rpm: required to build rpm package
@@ -22,41 +32,41 @@ Dopamine icons created by <a href="https://www.itssharl.ee/">Sharlee</a>.
 
 **Build prerequisites on Ubuntu:**
 
--   Install Node.js LTS
--   Install Visual Studio Code
+-   Install Node.js 16
+-   Install your IDE of choice (Rider, WebStorm, Visual Studio Code, ...)
 -   Install rpm (required to build rpm package) and libarchive-tools (contains bsdtar, which is required to build pacman package): `sudo apt install rpm libarchive-tools`
 
 Follow the build instructions below to start or build Dopamine for your platform.
 
 **Build prerequisites on Manjaro:**
 
--   Install Node.js LTS:
+-   Install Node.js 16:
     -   `yay -S nvm`
-    -   `nvm install 14`
--   Install Visual Studio Code: `yay -S visual-studio-code-bin`
+    -   `nvm install 16`
+-   Install your IDE of choice (Rider, WebStorm, Visual Studio Code, ...)
 -   Install rpm (required to build rpm package): `sudo pacman -S rpm-tools`
 
 Follow the build instructions below to start or build Dopamine for your platform.
 
 **Build prerequisites on Windows:**
 
--   Download and install Node.js LTS from https://nodejs.org (During the installation, select all features and check the box to install **Tools for Native Modules**).
+-   Download and install Node.js 16 from https://nodejs.org (During the installation, select all features and check the box to install **Tools for Native Modules**).
 -   After the installation of Node.js, restart computer to ensure that npm is added to the path.
--   Download and install Visual Studio Code from https://code.visualstudio.com/
+-   Install your IDE of choice (Rider, WebStorm, Visual Studio Code, ...)
 -   Download the Dopamine source code
--   Open Visual Studio Code and open the "dopamine" folder (the folder containing package.json)
+-   Open the "dopamine" folder (the folder containing package.json) in your IDE
 
 Follow the build instructions below to start or build Dopamine for your platform.
 
 **Build prerequisites on MacOS:**
 
--   Install Node.js LTS from https://nodejs.org (During the installation, select all features and check the box to install Tools for Native Modules).
+-   Install Node.js 16 from https://nodejs.org (During the installation, select all features and check the box to install Tools for Native Modules).
 -   Make sure npm is accessible via the console
     -   Press command + space and search for console
     -   Write `npm --v` and press enter, this should give you the version number if npm is properly installed.
--   Download and install Visual Studio Code from https://code.visualstudio.com/
+-   Install your IDE of choice (Rider, WebStorm, Visual Studio Code, ...)
 -   Download the Dopamine source code
--   Open Visual Studio Code and open the "dopamine" folder (the folder containing package.json)
+-   Open the "dopamine" folder (the folder containing package.json) in your IDE
 
 ## Build instructions
 

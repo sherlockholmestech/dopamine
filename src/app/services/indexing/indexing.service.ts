@@ -1,31 +1,31 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { Observable, Subject, Subscription } from 'rxjs';
-import { BaseTrackRepository } from '../../common/data/repositories/base-track-repository';
 import { Logger } from '../../common/logger';
-import { BaseFolderService } from '../folder/base-folder.service';
 import { AlbumArtworkIndexer } from './album-artwork-indexer';
-import { BaseIndexingService } from './base-indexing.service';
 import { CollectionChecker } from './collection-checker';
 import { TrackIndexer } from './track-indexer';
+import { IndexingServiceBase } from './indexing.service.base';
+import { FolderServiceBase } from '../folder/folder.service.base';
+import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
 
 @Injectable()
-export class IndexingService implements BaseIndexingService, OnDestroy {
+export class IndexingService implements IndexingServiceBase, OnDestroy {
     private indexingFinished: Subject<void> = new Subject();
     private subscription: Subscription = new Subscription();
     private foldersHaveChanged: boolean = false;
 
-    constructor(
+    public constructor(
         private collectionChecker: CollectionChecker,
         private trackIndexer: TrackIndexer,
         private albumArtworkIndexer: AlbumArtworkIndexer,
-        private trackRepository: BaseTrackRepository,
-        private folderService: BaseFolderService,
-        private logger: Logger
+        private trackRepository: TrackRepositoryBase,
+        private folderService: FolderServiceBase,
+        private logger: Logger,
     ) {
         this.subscription.add(
             this.folderService.foldersChanged$.subscribe(() => {
                 this.foldersHaveChanged = true;
-            })
+            }),
         );
     }
 

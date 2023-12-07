@@ -1,137 +1,137 @@
 import { IMock, It, Mock, Times } from 'typemoq';
-import { AlbumArtwork } from '../../common/data/entities/album-artwork';
-import { BaseAlbumArtworkRepository } from '../../common/data/repositories/base-album-artwork-repository';
-import { BaseFileAccess } from '../../common/io/base-file-access';
 import { Logger } from '../../common/logger';
-import { BaseSnackBarService } from '../snack-bar/base-snack-bar.service';
 import { AlbumArtworkRemover } from './album-artwork-remover';
+import { AlbumArtworkRepositoryBase } from '../../data/repositories/album-artwork-repository.base';
+import { FileAccessBase } from '../../common/io/file-access.base';
+import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
+import { AlbumArtwork } from '../../data/entities/album-artwork';
 
 describe('AlbumArtworkRemover', () => {
-    let albumArtworkRepositoryMock: IMock<BaseAlbumArtworkRepository>;
-    let fileAccessMock: IMock<BaseFileAccess>;
+    let albumArtworkRepositoryMock: IMock<AlbumArtworkRepositoryBase>;
+    let fileAccessMock: IMock<FileAccessBase>;
     let loggerMock: IMock<Logger>;
-    let snackBarServiceMock: IMock<BaseSnackBarService>;
+    let snackBarServiceMock: IMock<SnackBarServiceBase>;
     let albumArtworkRemover: AlbumArtworkRemover;
 
     beforeEach(() => {
-        albumArtworkRepositoryMock = Mock.ofType<BaseAlbumArtworkRepository>();
-        fileAccessMock = Mock.ofType<BaseFileAccess>();
+        albumArtworkRepositoryMock = Mock.ofType<AlbumArtworkRepositoryBase>();
+        fileAccessMock = Mock.ofType<FileAccessBase>();
         loggerMock = Mock.ofType<Logger>();
-        snackBarServiceMock = Mock.ofType<BaseSnackBarService>();
+        snackBarServiceMock = Mock.ofType<SnackBarServiceBase>();
         albumArtworkRemover = new AlbumArtworkRemover(
             albumArtworkRepositoryMock.object,
             fileAccessMock.object,
             snackBarServiceMock.object,
-            loggerMock.object
+            loggerMock.object,
         );
     });
 
-    describe('removeAlbumArtworkThatHasNoTrack', () => {
-        it('should get the number of album artwork that has no track from the database', () => {
+    describe('removeAlbumArtworkThatHasNoTrackAsync', () => {
+        it('should get the number of album artwork that has no track from the database', async () => {
             // Arrange
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkThatHasNoTrack();
+            await albumArtworkRemover.removeAlbumArtworkThatHasNoTrackAsync();
 
             // Assert
             albumArtworkRepositoryMock.verify((x) => x.getNumberOfAlbumArtworkThatHasNoTrack(), Times.exactly(1));
         });
 
-        it('should notify that album artwork is being updated, if there is album artwork that has no track.', () => {
+        it('should notify that album artwork is being updated, if there is album artwork that has no track.', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkThatHasNoTrack()).returns(() => 2);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkThatHasNoTrack();
+            await albumArtworkRemover.removeAlbumArtworkThatHasNoTrackAsync();
 
             // Assert
             snackBarServiceMock.verify((x) => x.updatingAlbumArtworkAsync(), Times.exactly(1));
         });
 
-        it('should not notify that album artwork is being updated, if there is no album artwork that has no track.', () => {
+        it('should not notify that album artwork is being updated, if there is no album artwork that has no track.', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkThatHasNoTrack()).returns(() => 0);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkThatHasNoTrack();
+            await albumArtworkRemover.removeAlbumArtworkThatHasNoTrackAsync();
 
             // Assert
             snackBarServiceMock.verify((x) => x.updatingAlbumArtworkAsync(), Times.never());
         });
 
-        it('should delete album artwork that has no track from the database', () => {
+        it('should delete album artwork that has no track from the database', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkThatHasNoTrack()).returns(() => 2);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkThatHasNoTrack();
+            await albumArtworkRemover.removeAlbumArtworkThatHasNoTrackAsync();
 
             // Assert
             albumArtworkRepositoryMock.verify((x) => x.deleteAlbumArtworkThatHasNoTrack(), Times.exactly(1));
         });
 
-        it('should not delete album artwork that has no track from the database if there is none', () => {
+        it('should not delete album artwork that has no track from the database if there is none', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkThatHasNoTrack()).returns(() => 0);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkThatHasNoTrack();
+            await albumArtworkRemover.removeAlbumArtworkThatHasNoTrackAsync();
 
             // Assert
             albumArtworkRepositoryMock.verify((x) => x.deleteAlbumArtworkThatHasNoTrack(), Times.never());
         });
     });
 
-    describe('removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexing', () => {
-        it('should get the number of album artwork for tracks that need album artwork indexing from the database', () => {
+    describe('removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync', () => {
+        it('should get the number of album artwork for tracks that need album artwork indexing from the database', async () => {
             // Arrange
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+            await albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync();
 
             // Assert
             albumArtworkRepositoryMock.verify((x) => x.getNumberOfAlbumArtworkForTracksThatNeedAlbumArtworkIndexing(), Times.exactly(1));
         });
 
-        it('should notify that album artwork is being updated, if there are tracks that need album artwork indexing.', () => {
+        it('should notify that album artwork is being updated, if there are tracks that need album artwork indexing.', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkForTracksThatNeedAlbumArtworkIndexing()).returns(() => 2);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+            await albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync();
 
             // Assert
             snackBarServiceMock.verify((x) => x.updatingAlbumArtworkAsync(), Times.exactly(1));
         });
 
-        it('should not notify that album artwork is being updated, if there are no tracks that need album artwork indexing.', () => {
+        it('should not notify that album artwork is being updated, if there are no tracks that need album artwork indexing.', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkForTracksThatNeedAlbumArtworkIndexing()).returns(() => 0);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+            await albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync();
 
             // Assert
             snackBarServiceMock.verify((x) => x.updatingAlbumArtworkAsync(), Times.never());
         });
 
-        it('should delete album artwork for tracks that need album artwork indexing from the database', () => {
+        it('should delete album artwork for tracks that need album artwork indexing from the database', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkForTracksThatNeedAlbumArtworkIndexing()).returns(() => 2);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+            await albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync();
 
             // Assert
             albumArtworkRepositoryMock.verify((x) => x.deleteAlbumArtworkForTracksThatNeedAlbumArtworkIndexing(), Times.exactly(1));
         });
 
-        it('should not delete album artwork if there are no tracks that need album artwork indexing from the database', () => {
+        it('should not delete album artwork if there are no tracks that need album artwork indexing from the database', async () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getNumberOfAlbumArtworkForTracksThatNeedAlbumArtworkIndexing()).returns(() => 0);
 
             // Act
-            albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+            await albumArtworkRemover.removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync();
 
             // Assert
             albumArtworkRepositoryMock.verify((x) => x.deleteAlbumArtworkForTracksThatNeedAlbumArtworkIndexing(), Times.never());
@@ -169,7 +169,9 @@ describe('AlbumArtworkRemover', () => {
             const albumArtwork2: AlbumArtwork = new AlbumArtwork('albumKey2', 'artworkId2');
             albumArtworkRepositoryMock.setup((x) => x.getAllAlbumArtwork()).returns(() => [albumArtwork1, albumArtwork2]);
             fileAccessMock.setup((x) => x.coverArtCacheFullPath()).returns(() => '/home/user/.config/Dopamine/Cache/CoverArt');
-            fileAccessMock.setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt')).returns(async () => []);
+            fileAccessMock
+                .setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt'))
+                .returns(() => Promise.resolve([]));
 
             // Act
             await albumArtworkRemover.removeAlbumArtworkThatIsNotInTheDatabaseFromDiskAsync();
@@ -186,10 +188,12 @@ describe('AlbumArtworkRemover', () => {
             fileAccessMock.setup((x) => x.coverArtCacheFullPath()).returns(() => '/home/user/.config/Dopamine/Cache/CoverArt');
             fileAccessMock
                 .setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt'))
-                .returns(async () => [
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
-                ]);
+                .returns(() =>
+                    Promise.resolve([
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
+                    ]),
+                );
             fileAccessMock
                 .setup((x) => x.getFileNameWithoutExtension('/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg'))
                 .returns(() => 'album-artworkId1');
@@ -210,10 +214,12 @@ describe('AlbumArtworkRemover', () => {
             fileAccessMock.setup((x) => x.coverArtCacheFullPath()).returns(() => '/home/user/.config/Dopamine/Cache/CoverArt');
             fileAccessMock
                 .setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt'))
-                .returns(async () => [
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
-                ]);
+                .returns(() =>
+                    Promise.resolve([
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
+                    ]),
+                );
             fileAccessMock
                 .setup((x) => x.getFileNameWithoutExtension('/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg'))
                 .returns(() => 'album-artworkId1');
@@ -232,7 +238,9 @@ describe('AlbumArtworkRemover', () => {
             // Arrange
             albumArtworkRepositoryMock.setup((x) => x.getAllAlbumArtwork()).returns(() => []);
             fileAccessMock.setup((x) => x.coverArtCacheFullPath()).returns(() => '/home/user/.config/Dopamine/Cache/CoverArt');
-            fileAccessMock.setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt')).returns(async () => []);
+            fileAccessMock
+                .setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt'))
+                .returns(() => Promise.resolve([]));
 
             // Act
             await albumArtworkRemover.removeAlbumArtworkThatIsNotInTheDatabaseFromDiskAsync();
@@ -248,10 +256,12 @@ describe('AlbumArtworkRemover', () => {
             fileAccessMock.setup((x) => x.coverArtCacheFullPath()).returns(() => '/home/user/.config/Dopamine/Cache/CoverArt');
             fileAccessMock
                 .setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt'))
-                .returns(async () => [
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
-                ]);
+                .returns(() =>
+                    Promise.resolve([
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
+                    ]),
+                );
             fileAccessMock
                 .setup((x) => x.getFileNameWithoutExtension('/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg'))
                 .returns(() => 'album-artworkId1');
@@ -265,7 +275,7 @@ describe('AlbumArtworkRemover', () => {
             // Assert
             fileAccessMock.verify(
                 (x) => x.deleteFileIfExistsAsync('/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg'),
-                Times.exactly(1)
+                Times.exactly(1),
             );
         });
 
@@ -276,10 +286,12 @@ describe('AlbumArtworkRemover', () => {
             fileAccessMock.setup((x) => x.coverArtCacheFullPath()).returns(() => '/home/user/.config/Dopamine/Cache/CoverArt');
             fileAccessMock
                 .setup((x) => x.getFilesInDirectoryAsync('/home/user/.config/Dopamine/Cache/CoverArt'))
-                .returns(async () => [
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
-                    '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
-                ]);
+                .returns(async () =>
+                    Promise.resolve([
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg',
+                        '/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId2.jpg',
+                    ]),
+                );
             fileAccessMock
                 .setup((x) => x.getFileNameWithoutExtension('/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg'))
                 .returns(() => 'album-artworkId1');
@@ -293,7 +305,7 @@ describe('AlbumArtworkRemover', () => {
             // Assert
             fileAccessMock.verify(
                 (x) => x.deleteFileIfExistsAsync('/home/user/.config/Dopamine/Cache/CoverArt/album-artworkId1.jpg'),
-                Times.never()
+                Times.never(),
             );
         });
     });

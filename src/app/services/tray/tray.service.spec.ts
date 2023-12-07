@@ -1,21 +1,21 @@
 import { Observable, Subject } from 'rxjs';
 import { IMock, Mock, Times } from 'typemoq';
-import { BaseIpcProxy } from '../../common/io/base-ipc-proxy';
-import { BaseSettings } from '../../common/settings/base-settings';
-import { BaseTranslatorService } from '../translator/base-translator.service';
+import { SettingsBase } from '../../common/settings/settings.base';
 import { TrayService } from './tray.service';
+import { TranslatorServiceBase } from '../translator/translator.service.base';
+import { IpcProxyBase } from '../../common/io/ipc-proxy.base';
 
 describe('TrayService', () => {
-    let translatorServiceMock: IMock<BaseTranslatorService>;
-    let settingsMock: IMock<BaseSettings>;
-    let ipcProxyMock: IMock<BaseIpcProxy>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
+    let settingsMock: IMock<SettingsBase>;
+    let ipcProxyMock: IMock<IpcProxyBase>;
 
     let translateServiceProxyLanguageChanged: Subject<void>;
 
     beforeEach(() => {
-        translatorServiceMock = Mock.ofType<BaseTranslatorService>();
-        settingsMock = Mock.ofType<BaseSettings>();
-        ipcProxyMock = Mock.ofType<BaseIpcProxy>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
+        settingsMock = Mock.ofType<SettingsBase>();
+        ipcProxyMock = Mock.ofType<IpcProxyBase>();
 
         translateServiceProxyLanguageChanged = new Subject();
         const translateServiceProxyLanguageChanged$: Observable<void> = translateServiceProxyLanguageChanged.asObservable();
@@ -24,8 +24,6 @@ describe('TrayService', () => {
         translatorServiceMock.setup((x) => x.get('exit')).returns(() => 'Exit');
         translatorServiceMock.setup((x) => x.languageChanged$).returns(() => translateServiceProxyLanguageChanged$);
     });
-
-    const flushPromises = () => new Promise(process.nextTick);
 
     function createService(): TrayService {
         return new TrayService(translatorServiceMock.object, settingsMock.object, ipcProxyMock.object);
@@ -50,7 +48,7 @@ describe('TrayService', () => {
             };
 
             // Act
-            const service: TrayService = createService();
+            createService();
 
             // Assert
             ipcProxyMock.verify((x) => x.sendToMainProcess('update-tray-context-menu', arg), Times.once());
