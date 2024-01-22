@@ -1,32 +1,43 @@
 import { IMock, Mock, Times } from 'typemoq';
 import { CollectionComponent } from './collection.component';
-import { TabSelectionGetter } from './tab-selection-getter';
 import { AppearanceServiceBase } from '../../../services/appearance/appearance.service.base';
 import { SettingsBase } from '../../../common/settings/settings.base';
 import { PlaybackServiceBase } from '../../../services/playback/playback.service.base';
 import { SearchServiceBase } from '../../../services/search/search.service.base';
-import { Constants } from '../../../common/application/constants';
 import { AudioVisualizer } from '../../../services/playback/audio-visualizer';
 import { DocumentProxy } from '../../../common/io/document-proxy';
+import { CollectionNavigationService } from '../../../services/collection-navigation/collection-navigation.service';
 
 describe('CollectionComponent', () => {
     let appearanceServiceMock: IMock<AppearanceServiceBase>;
+    let collectionNavigationServiceMock: IMock<CollectionNavigationService>;
     let settingsMock: IMock<SettingsBase>;
     let playbackServiceMock: IMock<PlaybackServiceBase>;
     let searchServiceMock: IMock<SearchServiceBase>;
-    let collectionPersisterStub: any;
-    let tabSelectionGetterMock: IMock<TabSelectionGetter>;
     let audioVisualizerMock: IMock<AudioVisualizer>;
     let documentProxyMock: IMock<DocumentProxy>;
+
+    const collectionNavigationServiceStub: any = { page: 0 };
 
     function createComponent(): CollectionComponent {
         return new CollectionComponent(
             appearanceServiceMock.object,
+            collectionNavigationServiceMock.object,
             settingsMock.object,
             playbackServiceMock.object,
             searchServiceMock.object,
-            collectionPersisterStub,
-            tabSelectionGetterMock.object,
+            audioVisualizerMock.object,
+            documentProxyMock.object,
+        );
+    }
+
+    function createComponentUsingStub(): CollectionComponent {
+        return new CollectionComponent(
+            appearanceServiceMock.object,
+            collectionNavigationServiceStub,
+            settingsMock.object,
+            playbackServiceMock.object,
+            searchServiceMock.object,
             audioVisualizerMock.object,
             documentProxyMock.object,
         );
@@ -34,11 +45,10 @@ describe('CollectionComponent', () => {
 
     beforeEach(() => {
         appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
+        collectionNavigationServiceMock = Mock.ofType<CollectionNavigationService>();
         settingsMock = Mock.ofType<SettingsBase>();
         playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
         searchServiceMock = Mock.ofType<SearchServiceBase>();
-        collectionPersisterStub = {};
-        tabSelectionGetterMock = Mock.ofType<TabSelectionGetter>();
         audioVisualizerMock = Mock.ofType<AudioVisualizer>();
         documentProxyMock = Mock.ofType<DocumentProxy>();
     });
@@ -73,111 +83,20 @@ describe('CollectionComponent', () => {
             // Assert
             expect(component.settings).toBeDefined();
         });
-    });
 
-    describe('artistsTablabel', () => {
-        it('should return Constants.artistsTablabel', () => {
+        it('should set page', () => {
             // Arrange
-            const component: CollectionComponent = createComponent();
+            collectionNavigationServiceMock.setup((x) => x.page).returns(() => 3);
 
             // Act
-
-            // Assert
-            expect(component.artistsTabLabel).toEqual(Constants.artistsTabLabel);
-        });
-    });
-
-    describe('genresTablabel', () => {
-        it('should return Constants.genresTablabel', () => {
-            // Arrange
             const component: CollectionComponent = createComponent();
 
-            // Act
-
             // Assert
-            expect(component.genresTabLabel).toEqual(Constants.genresTabLabel);
-        });
-    });
-
-    describe('albumsTablabel', () => {
-        it('should return Constants.albumsTablabel', () => {
-            // Arrange
-            const component: CollectionComponent = createComponent();
-
-            // Act
-
-            // Assert
-            expect(component.albumsTabLabel).toEqual(Constants.albumsTabLabel);
-        });
-    });
-
-    describe('tracksTablabel', () => {
-        it('should return Constants.tracksTablabel', () => {
-            // Arrange
-            const component: CollectionComponent = createComponent();
-
-            // Act
-
-            // Assert
-            expect(component.tracksTabLabel).toEqual(Constants.tracksTabLabel);
-        });
-    });
-
-    describe('playlistsTablabel', () => {
-        it('should return Constants.playlistsTablabel', () => {
-            // Arrange
-            const component: CollectionComponent = createComponent();
-
-            // Act
-
-            // Assert
-            expect(component.playlistsTabLabel).toEqual(Constants.playlistsTabLabel);
-        });
-    });
-
-    describe('foldersTablabel', () => {
-        it('should return Constants.foldersTablabel', () => {
-            // Arrange
-            const component: CollectionComponent = createComponent();
-
-            // Act
-
-            // Assert
-            expect(component.foldersTabLabel).toEqual(Constants.foldersTabLabel);
-        });
-    });
-
-    describe('selectedIndex', () => {
-        it('should set selected index and get tab label for selected index and set it as selected tab in collectionPersister', () => {
-            // Arrange
-            const component: CollectionComponent = createComponent();
-
-            // Act
-            component.selectedIndex = 3;
-
-            // Assert
-            expect(component.selectedIndex).toEqual(3);
-            tabSelectionGetterMock.verify((x) => x.getTabLabelForIndex(3), Times.once());
+            expect(component.page).toEqual(3);
         });
     });
 
     describe('ngAfterViewInit', () => {
-        it('should get tab index for tab label and set selected index', () => {
-            // Arrange
-            const component: CollectionComponent = createComponent();
-            tabSelectionGetterMock.setup((x) => x.getTabIndexForLabel('playlists')).returns(() => 4);
-            collectionPersisterStub.selectedTab = 'playlists';
-
-            // Act
-            jest.useFakeTimers();
-            component.ngAfterViewInit();
-            jest.runAllTimers();
-
-            // Assert
-            tabSelectionGetterMock.verify((x) => x.getTabIndexForLabel('playlists'), Times.once());
-            expect(component.selectedIndex).toEqual(4);
-        });
-
         it('should set the audio visualizer', () => {
             // Arrange
             const canvasMock: IMock<HTMLCanvasElement> = Mock.ofType<HTMLCanvasElement>();
@@ -237,6 +156,45 @@ describe('CollectionComponent', () => {
 
             // Assert
             playbackServiceMock.verify((x) => x.togglePlayback(), Times.never());
+        });
+    });
+
+    describe('setPage', () => {
+        it('should set previousPage to page before changing page', () => {
+            // Arrange
+            const component: CollectionComponent = createComponent();
+            component.previousPage = 1;
+            component.page = 3;
+
+            // Act
+            component.setPage(2);
+
+            // Assert
+            expect(component.previousPage).toEqual(3);
+        });
+
+        it('should set page to the given page', () => {
+            // Arrange
+            const component: CollectionComponent = createComponent();
+            component.page = 3;
+
+            // Act
+            component.setPage(2);
+
+            // Assert
+            expect(component.page).toEqual(2);
+        });
+
+        it('should set collectionNavigationService.page to the given page', () => {
+            // Arrange
+            const component: CollectionComponent = createComponentUsingStub();
+            collectionNavigationServiceStub.page = 3;
+
+            // Act
+            component.setPage(2);
+
+            // Assert
+            expect(collectionNavigationServiceStub.page).toEqual(2);
         });
     });
 });

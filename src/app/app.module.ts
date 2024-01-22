@@ -4,9 +4,6 @@ import { LOCATION_INITIALIZED } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { APP_INITIALIZER, ErrorHandler, Injector, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatRippleModule } from '@angular/material/core';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -16,11 +13,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSortModule } from '@angular/material/sort';
-import { MatStepperModule } from '@angular/material/stepper';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions, MatTooltipModule } from '@angular/material/tooltip';
 import { BrowserModule, HammerModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -93,7 +87,6 @@ import { GenreComponent } from './ui/components/collection/collection-genres/gen
 import { GenresAlbumsPersister } from './ui/components/collection/collection-genres/genres-albums-persister';
 import { GenresPersister } from './ui/components/collection/collection-genres/genres-persister';
 import { GenresTracksPersister } from './ui/components/collection/collection-genres/genres-tracks-persister';
-import { CollectionPersister } from './ui/components/collection/collection-persister';
 import { CollectionPlaybackPaneComponent } from './ui/components/collection/collection-playback-pane/collection-playback-pane.component';
 import { CollectionPlaylistsComponent } from './ui/components/collection/collection-playlists/collection-playlists.component';
 import { PlaylistBrowserComponent } from './ui/components/collection/collection-playlists/playlist-browser/playlist-browser.component';
@@ -111,7 +104,6 @@ import { CollectionComponent } from './ui/components/collection/collection.compo
 import { ItemSpaceCalculator } from './ui/components/collection/item-space-calculator';
 import { SemanticZoomButtonComponent } from './ui/components/collection/semantic-zoom/semantic-zoom-button/semantic-zoom-button.component';
 import { SemanticZoomComponent } from './ui/components/collection/semantic-zoom/semantic-zoom.component';
-import { TabSelectionGetter } from './ui/components/collection/tab-selection-getter';
 import { TotalsComponent } from './ui/components/collection/totals/totals.component';
 import { TrackBrowserComponent } from './ui/components/collection/track-browser/track-browser.component';
 import { TrackComponent } from './ui/components/collection/track/track.component';
@@ -210,7 +202,6 @@ import { IndexingService } from './services/indexing/indexing.service';
 import { OnlineAlbumArtworkGetter } from './services/indexing/online-album-artwork-getter';
 import { TrackAdder } from './services/indexing/track-adder';
 import { TrackFieldCreator } from './services/indexing/track-field-creator';
-import { TrackFiller } from './services/indexing/track-filler';
 import { TrackIndexer } from './services/indexing/track-indexer';
 import { TrackRemover } from './services/indexing/track-remover';
 import { TrackUpdater } from './services/indexing/track-updater';
@@ -310,7 +301,27 @@ import { AudioVisualizer } from './services/playback/audio-visualizer';
 import { AudioVisualizerServiceBase } from './services/audio-visualizer/audio-visualizer.service.base';
 import { AudioVisualizerService } from './services/audio-visualizer/audio-visualizer.service';
 import { NowPlayingNothingPlayingComponent } from './ui/components/now-playing/now-playing-nothing-playing/now-playing-nothing-playing.component';
-import { LinkButtonComponent } from './ui/components/link-button/link-button.component';
+import { OnlineArtistImageGetter } from './services/artist-information/online-artist-image-getter';
+import { SubMenuComponent } from './ui/components/sub-menu/sub-menu.component';
+import { SubMenuItemComponent } from './ui/components/sub-menu/sub-menu-item/sub-menu-item.component';
+import { MetroPageContainerComponent } from './ui/components/metro-page-container/metro-page-container.component';
+import { MetroPageComponent } from './ui/components/metro-page-container/metro-page/metro-page.component';
+import { WelcomeGreetingComponent } from './ui/components/welcome/welcome-greeting/welcome-greeting.component';
+import { WelcomeService } from './services/welcome/welcome.service';
+import { WelcomeServiceBase } from './services/welcome/welcome.service.base';
+import { WelcomeLanguageComponent } from './ui/components/welcome/welcome-language/welcome-language.component';
+import { WelcomeAppearanceComponent } from './ui/components/welcome/welcome-appearance/welcome-appearance.component';
+import { WelcomeMusicComponent } from './ui/components/welcome/welcome-music/welcome-music.component';
+import { WelcomeOnlineComponent } from './ui/components/welcome/welcome-online/welcome-online.component';
+import { WelcomeDonateComponent } from './ui/components/welcome/welcome-donate/welcome-donate.component';
+import { WelcomeDoneComponent } from './ui/components/welcome/welcome-done/welcome-done.component';
+import { WelcomeNavigationButtonsComponent } from './ui/components/welcome/welcome-navigation-buttons/welcome-navigation-buttons';
+import { AccentButtonComponent } from './ui/components/controls/accent-button/accent-button.component';
+import { TransparentButtonComponent } from './ui/components/controls/transparent-button/transparent-button.component';
+import { IconTextButtonComponent } from './ui/components/controls/icon-text-button/icon-text-button.component';
+import { BigIconButtonComponent } from './ui/components/controls/big-icon-button/big-icon-button.component';
+import { ToggleSwitchComponent } from './ui/components/controls/toggle-switch/toggle-switch.component';
+import { IconButtonComponent } from './ui/components/controls/icon-button/icon-button.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -442,28 +453,39 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         NowPlayingLyricsComponent,
         SimilarArtistComponent,
         NowPlayingNothingPlayingComponent,
-        LinkButtonComponent,
+        SubMenuComponent,
+        SubMenuItemComponent,
+        MetroPageContainerComponent,
+        MetroPageComponent,
+        WelcomeGreetingComponent,
+        WelcomeLanguageComponent,
+        WelcomeAppearanceComponent,
+        WelcomeMusicComponent,
+        WelcomeOnlineComponent,
+        WelcomeDonateComponent,
+        WelcomeDoneComponent,
+        WelcomeNavigationButtonsComponent,
+        AccentButtonComponent,
+        TransparentButtonComponent,
+        IconTextButtonComponent,
+        BigIconButtonComponent,
+        ToggleSwitchComponent,
+        IconButtonComponent,
     ],
     imports: [
         BrowserAnimationsModule,
         BrowserModule,
         MatSidenavModule,
         MatProgressSpinnerModule,
-        MatStepperModule,
         MatFormFieldModule,
         MatInputModule,
-        MatButtonModule,
         MatSelectModule,
-        MatSlideToggleModule,
         MatTooltipModule,
         MatSnackBarModule,
         MatRippleModule,
         MatDialogModule,
         MatMenuModule,
         MatDividerModule,
-        MatTabsModule,
-        MatCheckboxModule,
-        MatChipsModule,
         MatSortModule,
         DragDropModule,
         HammerModule,
@@ -496,7 +518,6 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         TrackUpdater,
         TrackAdder,
         TrackVerifier,
-        TrackFiller,
         FileMetadataFactory,
         TrackFieldCreator,
         AlbumKeyGenerator,
@@ -519,7 +540,6 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         ProgressUpdater,
         Queue,
         MathExtensions,
-        CollectionPersister,
         PathValidator,
         AlbumRowsGetter,
         ItemSpaceCalculator,
@@ -566,7 +586,6 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         FileValidator,
         DateProxy,
         DateTime,
-        TabSelectionGetter,
         LogViewer,
         ArtistInformationFactory,
         GuidFactory,
@@ -575,6 +594,7 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         OnlineLyricsGetter,
         IntegrationTestRunner,
         AudioVisualizer,
+        OnlineArtistImageGetter,
         { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: CustomTooltipDefaults },
         { provide: FileAccessBase, useClass: FileAccess },
         { provide: AlbumArtworkRepositoryBase, useClass: AlbumArtworkRepository },
@@ -613,6 +633,7 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         { provide: ScrobblingServiceBase, useClass: ScrobblingService },
         { provide: NowPlayingNavigationServiceBase, useClass: NowPlayingNavigationService },
         { provide: ArtistInformationServiceBase, useClass: ArtistInformationService },
+        { provide: WelcomeServiceBase, useClass: WelcomeService },
         { provide: LyricsServiceBase, useClass: LyricsService },
         { provide: EventListenerServiceBase, useClass: EventListenerService },
         { provide: AudioVisualizerServiceBase, useClass: AudioVisualizerService },

@@ -1,25 +1,24 @@
 <div class="window-frame">
     <div class="window-frame__titlebar theme-header-background">
-        <div class="window-frame__dragarea">
-            <app-back-button class="m-2"></app-back-button>
-        </div>
+        <app-back-button class="m-2"></app-back-button>
+        <app-sub-menu>
+            <app-sub-menu-item [page]="0" [selectedPage]="this.page" (click)="this.setPage(0)">
+                {{ 'about' | translate }}
+            </app-sub-menu-item>
+            <app-sub-menu-item [page]="1" [selectedPage]="this.page" (click)="this.setPage(1)">
+                {{ 'components' | translate }}
+            </app-sub-menu-item>
+        </app-sub-menu>
+        <div class="window-frame__dragarea"></div>
         <app-main-menu> </app-main-menu>
         <app-window-controls *ngIf="!appearanceService.windowHasNativeTitleBar"></app-window-controls>
     </div>
-    <div class="window-frame__content" [@pageSwitchAnimation]="pageSwitchAnimation">
-        <mat-tab-group>
-            <mat-tab>
-                <ng-template mat-tab-label>
-                    {{ 'about' | translate }}
-                </ng-template>
-                <app-about></app-about>
-            </mat-tab>
-            <mat-tab>
-                <ng-template mat-tab-label>
-                    {{ 'components' | translate }}
-                </ng-template>
-                <app-components></app-components>
-            </mat-tab>
-        </mat-tab-group>
+    <div class="window-frame__content">
+        <!-- About -->
+        <app-about *ngIf="this.leftToRight(0)" [@enterLeftToRight]></app-about>
+        <app-about *ngIf="this.rightToLeft(0)" [@enterRightToLeft]></app-about>
+        <!-- Components -->
+        <app-components *ngIf="this.leftToRight(1)" [@enterLeftToRight]></app-components>
+        <app-components *ngIf="this.rightToLeft(1)" [@enterRightToLeft]></app-components>
     </div>
 </div>

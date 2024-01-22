@@ -30,6 +30,7 @@
     /* The splitter resize gutter is not displayed when the height is not set explicitly */
     height: calc(100vh - 120px);
     max-height: calc(100vh - 120px);
+    width: 100vw;
     overflow: hidden;
 }
 
@@ -102,6 +103,11 @@
     overflow: hidden;
 }
 
+.overflow-y-only {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 .overflow-hidden-important {
     overflow: hidden !important;
 }
@@ -116,6 +122,35 @@
     text-align: right !important;
 }
 
-.break-on-newline{
+.break-on-newline {
     white-space: pre-line;
+}
+
+.draggable {
+    -webkit-app-region: drag;
+}
+
+.title {
+    color: var(--theme-accent-color);
+    font-weight: lighter !important;
+    font-size: calc(var(--fontsize) * 1.7) !important;
+    margin-bottom: 24px;
+}
+
+.largest {
+    font-weight: lighter !important;
+    font-size: calc(var(--fontsize) * 1.7) !important;
+}
+
+.larger {
+    font-weight: lighter !important;
+    font-size: calc(var(--fontsize) * 1.15) !important;
+}
+
+.smaller {
+    font-size: calc(var(--fontsize) * 0.9) !important;
+}
+
+.thinner {
+    font-weight: lighter !important;
 }

@@ -17,6 +17,7 @@ const windowStateKeeper = require("electron-window-state");
 const os = require("os");
 const path = require("path");
 const url = require("url");
+const worker_threads_1 = require("worker_threads");
 /**
  * Command line parameters
  */
@@ -74,19 +75,23 @@ function getTrayIcon() {
         return path.join(globalAny.__static, 'icons/trayTemplate.png');
     }
     const invertColor = settings.get('invertNotificationAreaIconColor');
-    if (electron_1.nativeTheme.shouldUseDarkColors) {
-        if (invertColor) {
-            return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_black.ico' : 'icons/tray_black.png');
+    if (os.platform() === 'win32') {
+        if (!invertColor) {
+            // Defaulting to black for Windows
+            return path.join(globalAny.__static, 'icons/tray_black.ico');
         }
         else {
-            return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_white.ico' : 'icons/tray_white.png');
+            return path.join(globalAny.__static, 'icons/tray_white.ico');
         }
     }
-    if (invertColor) {
-        return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_white.ico' : 'icons/tray_white.png');
-    }
     else {
-        return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_black.ico' : 'icons/tray_black.png');
+        if (!invertColor) {
+            // Defaulting to white for Linux
+            return path.join(globalAny.__static, 'icons/tray_white.png');
+        }
+        else {
+            return path.join(globalAny.__static, 'icons/tray_black.png');
+        }
     }
 }
 function createMainWindow() {
@@ -181,15 +186,15 @@ function createMainWindow() {
  * Main
  */
 try {
-    electron_log_1.default.info('[Main] [] +++ Starting +++');
+    electron_log_1.default.info('[Main] [Main] +++ Starting +++');
     const gotTheLock = electron_1.app.requestSingleInstanceLock();
     if (!gotTheLock) {
-        electron_log_1.default.info('[Main] [] There is already another instance running. Closing.');
+        electron_log_1.default.info('[Main] [Main] There is already another instance running. Closing.');
         electron_1.app.quit();
     }
     else {
         electron_1.app.on('second-instance', (event, argv, workingDirectory) => {
-            electron_log_1.default.info('[Main] [] Attempt to run second instance. Showing existing window.');
+            electron_log_1.default.info('[Main] [Main] Attempt to run second instance. Showing existing window.');
             mainWindow.webContents.send('arguments-received', argv);
             // Someone tried to run a second instance, we should focus the existing window.
             if (mainWindow) {
@@ -266,10 +271,18 @@ try {
             }
             tray.setImage(getTrayIcon());
         });
+        electron_1.ipcMain.on('metadata-worker-request', (event, arg) => {
+            const workerThread = new worker_threads_1.Worker(path.join(__dirname, 'main/metadata/metadata-worker.js'), {
+                workerData: { arg },
+            });
+            workerThread.on('message', (filledIndexableTracks) => {
+                mainWindow.webContents.send('metadata-worker-response', { filledIndexableTracks: filledIndexableTracks });
+            });
+        });
     }
 }
 catch (e) {
-    electron_log_1.default.error(`[Main] [] Could not start. Error: ${e.message}`);
+    electron_log_1.default.error(`[Main] [Main] Could not start. Error: ${e.message}`);
     throw e;
 }
 //# sourceMappingURL=main.js.map

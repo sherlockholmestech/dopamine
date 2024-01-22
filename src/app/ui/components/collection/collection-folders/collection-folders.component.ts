@@ -1,17 +1,15 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { IOutputData } from 'angular-split';
 import { Subscription } from 'rxjs';
 import { Constants } from '../../../../common/application/constants';
 import { Hacks } from '../../../../common/hacks';
 import { Logger } from '../../../../common/logger';
-import { Scheduler } from '../../../../common/scheduling/scheduler';
 import { PromiseUtils } from '../../../../common/utils/promise-utils';
 import { FolderModel } from '../../../../services/folder/folder-model';
 import { SubfolderModel } from '../../../../services/folder/subfolder-model';
 import { PlaybackStarted } from '../../../../services/playback/playback-started';
 import { TrackModels } from '../../../../services/track/track-models';
 import { AddToPlaylistMenu } from '../../add-to-playlist-menu';
-import { CollectionPersister } from '../collection-persister';
 import { FolderTracksPersister } from './folder-tracks-persister';
 import { FoldersPersister } from './folders-persister';
 import { SearchServiceBase } from '../../../../services/search/search.service.base';
@@ -23,21 +21,24 @@ import { CollectionServiceBase } from '../../../../services/collection/collectio
 import { NavigationServiceBase } from '../../../../services/navigation/navigation.service.base';
 import { TrackServiceBase } from '../../../../services/track/track.service.base';
 import { PlaybackIndicationServiceBase } from '../../../../services/playback-indication/playback-indication.service.base';
-import { DesktopBase } from '../../../../common/io/desktop.base';
 import { SettingsBase } from '../../../../common/settings/settings.base';
 import { MouseSelectionWatcher } from '../../mouse-selection-watcher';
 import { ContextMenuOpener } from '../../context-menu-opener';
 import { SchedulerBase } from '../../../../common/scheduling/scheduler.base';
+import { MatMenuTrigger } from '@angular/material/menu';
+import { DesktopBase } from '../../../../common/io/desktop.base';
 
 @Component({
     selector: 'app-collection-folders',
-    host: { style: 'display: block' },
+    host: { style: 'display: block; width: 100%;' },
     templateUrl: './collection-folders.component.html',
     styleUrls: ['./collection-folders.component.scss'],
     providers: [MouseSelectionWatcher],
     encapsulation: ViewEncapsulation.None,
 })
 export class CollectionFoldersComponent implements OnInit, OnDestroy {
+    private subscription: Subscription = new Subscription();
+
     public constructor(
         public searchService: SearchServiceBase,
         public appearanceService: AppearanceServiceBase,
@@ -49,19 +50,19 @@ export class CollectionFoldersComponent implements OnInit, OnDestroy {
         public addToPlaylistMenu: AddToPlaylistMenu,
         private indexingService: IndexingServiceBase,
         private collectionService: CollectionServiceBase,
-        private collectionPersister: CollectionPersister,
         private settings: SettingsBase,
         private navigationService: NavigationServiceBase,
         private trackService: TrackServiceBase,
         private playbackIndicationService: PlaybackIndicationServiceBase,
         private foldersPersister: FoldersPersister,
         private scheduler: SchedulerBase,
-        private desktop: DesktopBase,
         private logger: Logger,
         private hacks: Hacks,
+        private desktop: DesktopBase,
     ) {}
 
-    private subscription: Subscription = new Subscription();
+    @ViewChild('subfolderContextMenuAnchor', { read: MatMenuTrigger, static: false })
+    public subfolderContextMenu: MatMenuTrigger;
 
     public leftPaneSize: number = this.settings.foldersLeftPaneWidthPercent;
     public rightPaneSize: number = 100 - this.settings.foldersLeftPaneWidthPercent;
@@ -70,7 +71,7 @@ export class CollectionFoldersComponent implements OnInit, OnDestroy {
     public openedFolder: FolderModel;
     public subfolders: SubfolderModel[] = [];
     public selectedSubfolder: SubfolderModel | undefined;
-    public subfolderBreadCrumbs: SubfolderModel[] = [];
+    public subfolderBreadcrumbs: SubfolderModel[] = [];
     public tracks: TrackModels = new TrackModels();
 
     public ngOnDestroy(): void {
@@ -93,23 +94,17 @@ export class CollectionFoldersComponent implements OnInit, OnDestroy {
 
         this.subscription.add(
             this.indexingService.indexingFinished$.subscribe(() => {
-                PromiseUtils.noAwait(this.processListsAsync());
+                PromiseUtils.noAwait(this.fillListsAsync());
             }),
         );
 
         this.subscription.add(
             this.collectionService.collectionChanged$.subscribe(() => {
-                PromiseUtils.noAwait(this.processListsAsync());
+                PromiseUtils.noAwait(this.fillListsAsync());
             }),
         );
 
-        this.subscription.add(
-            this.collectionPersister.selectedTabChanged$.subscribe(() => {
-                PromiseUtils.noAwait(this.processListsAsync());
-            }),
-        );
-
-        await this.processListsAsync();
+        await this.fillListsAsync();
     }
 
     public splitDragEnd(event: IOutputData): void {
@@ -135,7 +130,7 @@ export class CollectionFoldersComponent implements OnInit, OnDestroy {
 
             this.foldersPersister.setOpenedSubfolder(new SubfolderModel(openedSubfolderPath, false));
 
-            this.subfolderBreadCrumbs = this.folderService.getSubfolderBreadCrumbs(this.openedFolder, openedSubfolderPath);
+            this.subfolderBreadcrumbs = this.folderService.getSubfolderBreadcrumbs(this.openedFolder, openedSubfolderPath);
             this.tracks = await this.trackService.getTracksInSubfolderAsync(openedSubfolderPath);
             this.mouseSelectionWatcher.initialize(this.tracks.tracks, false);
 
@@ -167,12 +162,12 @@ export class CollectionFoldersComponent implements OnInit, OnDestroy {
         await this.navigationService.navigateToManageCollectionAsync();
     }
 
-    private async processListsAsync(): Promise<void> {
-        if (this.collectionPersister.selectedTab === Constants.foldersTabLabel) {
-            await this.fillListsAsync();
-        } else {
-            this.clearLists();
-        }
+    public onSubfolderContextMenu(event: MouseEvent, subfolder: SubfolderModel): void {
+        this.contextMenuOpener.open(this.subfolderContextMenu, event, subfolder);
+    }
+
+    public async onOpenSubfolderAsync(subfolder: SubfolderModel): Promise<void> {
+        await this.desktop.openPathAsync(subfolder.path);
     }
 
     private async fillListsAsync(): Promise<void> {
@@ -190,7 +185,7 @@ export class CollectionFoldersComponent implements OnInit, OnDestroy {
     private clearLists(): void {
         this.folders = [];
         this.subfolders = [];
-        this.subfolderBreadCrumbs = [];
+        this.subfolderBreadcrumbs = [];
         this.tracks = new TrackModels();
     }
 

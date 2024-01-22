@@ -15,6 +15,7 @@ import * as windowStateKeeper from 'electron-window-state';
 import * as os from 'os';
 import * as path from 'path';
 import * as url from 'url';
+import { Worker, isMainThread } from 'worker_threads';
 
 /**
  * Command line parameters
@@ -87,18 +88,20 @@ function getTrayIcon(): string {
 
     const invertColor: boolean = settings.get('invertNotificationAreaIconColor');
 
-    if (nativeTheme.shouldUseDarkColors) {
-        if (invertColor) {
-            return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_black.ico' : 'icons/tray_black.png');
+    if (os.platform() === 'win32') {
+        if (!invertColor) {
+            // Defaulting to black for Windows
+            return path.join(globalAny.__static, 'icons/tray_black.ico');
         } else {
-            return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_white.ico' : 'icons/tray_white.png');
+            return path.join(globalAny.__static, 'icons/tray_white.ico');
         }
-    }
-
-    if (invertColor) {
-        return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_white.ico' : 'icons/tray_white.png');
     } else {
-        return path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/tray_black.ico' : 'icons/tray_black.png');
+        if (!invertColor) {
+            // Defaulting to white for Linux
+            return path.join(globalAny.__static, 'icons/tray_white.png');
+        } else {
+            return path.join(globalAny.__static, 'icons/tray_black.png');
+        }
     }
 }
 
@@ -212,16 +215,16 @@ function createMainWindow(): void {
  * Main
  */
 try {
-    log.info('[Main] [] +++ Starting +++');
+    log.info('[Main] [Main] +++ Starting +++');
 
     const gotTheLock = app.requestSingleInstanceLock();
 
     if (!gotTheLock) {
-        log.info('[Main] [] There is already another instance running. Closing.');
+        log.info('[Main] [Main] There is already another instance running. Closing.');
         app.quit();
     } else {
         app.on('second-instance', (event, argv, workingDirectory) => {
-            log.info('[Main] [] Attempt to run second instance. Showing existing window.');
+            log.info('[Main] [Main] Attempt to run second instance. Showing existing window.');
             mainWindow!.webContents.send('arguments-received', argv);
 
             // Someone tried to run a second instance, we should focus the existing window.
@@ -313,9 +316,19 @@ try {
 
             tray.setImage(getTrayIcon());
         });
+
+        ipcMain.on('metadata-worker-request', (event: any, arg: any) => {
+            const workerThread = new Worker(path.join(__dirname, 'main/metadata/metadata-worker.js'), {
+                workerData: { arg },
+            });
+
+            workerThread.on('message', (filledIndexableTracks): void => {
+                mainWindow!.webContents.send('metadata-worker-response', { filledIndexableTracks: filledIndexableTracks });
+            });
+        });
     }
 } catch (e) {
-    log.error(`[Main] [] Could not start. Error: ${e.message}`);
+    log.error(`[Main] [Main] Could not start. Error: ${e.message}`);
 
     throw e;
 }

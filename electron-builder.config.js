@@ -43,7 +43,14 @@ const config = {
     ],
     nsis: {
         shortcutName: 'Dopamine 3',
-        perMachine: true,
+        perMachine: false,
+        oneClick: false,
+        deleteAppDataOnUninstall: false,
+        allowToChangeInstallationDirectory: true,
+        allowElevation: true,
+        include: 'build/uninstaller.nsh',
+        installerSidebar: 'build/Sidebar.bmp',
+        uninstallerSidebar: 'build/Sidebar.bmp',
     },
     directories: {
         output: 'release',
@@ -59,7 +66,7 @@ const config = {
         artifactName: `\${productName}-${getFullVersion()}.\${ext}`,
     },
     linux: {
-        target: ['pacman'],
+        target: ['AppImage', 'deb', 'rpm', 'pacman', 'snap'],
         category: 'Audio',
         artifactName: `\${productName}-${getFullVersion()}.\${ext}`,
         desktop: {

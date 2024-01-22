@@ -3,14 +3,12 @@ import { IOutputData } from 'angular-split';
 import { Subscription } from 'rxjs';
 import { Constants } from '../../../../common/application/constants';
 import { Logger } from '../../../../common/logger';
-import { Scheduler } from '../../../../common/scheduling/scheduler';
 import { PromiseUtils } from '../../../../common/utils/promise-utils';
 import { AlbumModel } from '../../../../services/album/album-model';
 import { ArtistModel } from '../../../../services/artist/artist-model';
 import { ArtistType } from '../../../../services/artist/artist-type';
 import { TrackModels } from '../../../../services/track/track-models';
 import { AlbumOrder } from '../album-order';
-import { CollectionPersister } from '../collection-persister';
 import { ArtistsAlbumsPersister } from './artists-albums-persister';
 import { ArtistsPersister } from './artists-persister';
 import { ArtistsTracksPersister } from './artists-tracks-persister';
@@ -25,6 +23,7 @@ import { SchedulerBase } from '../../../../common/scheduling/scheduler.base';
 
 @Component({
     selector: 'app-collection-artists',
+    host: { style: 'display: block; width: 100%;' },
     templateUrl: './collection-artists.component.html',
     styleUrls: ['./collection-artists.component.scss'],
 })
@@ -37,7 +36,6 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
         public artistsPersister: ArtistsPersister,
         public albumsPersister: ArtistsAlbumsPersister,
         public tracksPersister: ArtistsTracksPersister,
-        private collectionPersister: CollectionPersister,
         private indexingService: IndexingServiceBase,
         private collectionService: CollectionServiceBase,
         private artistService: ArtistServiceBase,
@@ -93,37 +91,23 @@ export class CollectionArtistsComponent implements OnInit, OnDestroy {
 
         this.subscription.add(
             this.indexingService.indexingFinished$.subscribe(() => {
-                PromiseUtils.noAwait(this.processListsAsync());
+                PromiseUtils.noAwait(this.fillListsAsync());
             }),
         );
 
         this.subscription.add(
             this.collectionService.collectionChanged$.subscribe(() => {
-                PromiseUtils.noAwait(this.processListsAsync());
-            }),
-        );
-
-        this.subscription.add(
-            this.collectionPersister.selectedTabChanged$.subscribe(() => {
-                PromiseUtils.noAwait(this.processListsAsync());
+                PromiseUtils.noAwait(this.fillListsAsync());
             }),
         );
 
         this.selectedAlbumOrder = this.albumsPersister.getSelectedAlbumOrder();
-        await this.processListsAsync();
+        await this.fillListsAsync();
     }
 
     public splitDragEnd(event: IOutputData): void {
         this.settings.artistsLeftPaneWidthPercent = <number>event.sizes[0];
         this.settings.artistsRightPaneWidthPercent = <number>event.sizes[2];
-    }
-
-    private async processListsAsync(): Promise<void> {
-        if (this.collectionPersister.selectedTab === Constants.artistsTabLabel) {
-            await this.fillListsAsync();
-        } else {
-            this.clearLists();
-        }
     }
 
     private async fillListsAsync(): Promise<void> {

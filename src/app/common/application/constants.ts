@@ -1,5 +1,4 @@
 import { ExternalComponent } from './external-component';
-import { FontSize } from './font-size';
 import { Language } from './language';
 
 export class Constants {
@@ -32,16 +31,18 @@ export class Constants {
 
     public static readonly albumSizeInPixels: number = 120;
     public static readonly itemMarginInPixels: number = 8;
+    public static readonly screenEaseMarginPixels: number = 50;
+    public static readonly screenEaseSpeedMilliseconds: number = 350;
     public static readonly longListLoadDelayMilliseconds: number = 500;
     public static readonly shortListLoadDelayMilliseconds: number = 50;
     public static readonly albumsRedrawDelayMilliseconds: number = 150;
     public static readonly searchDelayMilliseconds: number = 500;
+    public static readonly semanticZoomOutAnimationMilliseconds: number = 250;
     public static readonly semanticZoomInDelayMilliseconds: number = 100;
     public static readonly semanticZoomOutDelayMilliseconds: number = 100;
     public static readonly playbackInfoSwitchAnimationMilliseconds: number = 250;
-    public static readonly pageSwitchAnimationMilliseconds: number = 250;
 
-    public static readonly fontSizes: FontSize[] = [new FontSize(12), new FontSize(13), new FontSize(14), new FontSize(15)];
+    public static readonly fontSizes: number[] = [12, 13, 14, 15];
 
     public static readonly cachedCoverArtMaximumSize: number = 360;
     public static readonly cachedCoverArtJpegQuality: number = 80;
@@ -90,13 +91,6 @@ export class Constants {
         'y',
         'z',
     ];
-
-    public static artistsTabLabel: string = 'artists';
-    public static genresTabLabel: string = 'genres';
-    public static albumsTabLabel: string = 'albums';
-    public static tracksTabLabel: string = 'tracks';
-    public static playlistsTabLabel: string = 'playlists';
-    public static foldersTabLabel: string = 'folders';
 
     // Transparent 1x1 Gif to avoid broken image icons.
     // See: https://stackoverflow.com/questions/22051573/how-to-hide-image-broken-icon-using-only-css-html/29111371
@@ -164,6 +158,12 @@ export class Constants {
             'Validate XML, Parse XML to JS Object, or Build XML from JS Object without C/C++ based libraries and no callback.',
             'https://github.com/NaturalIntelligence/fast-xml-parser',
             'https://github.com/NaturalIntelligence/fast-xml-parser/blob/master/LICENSE',
+        ),
+        new ExternalComponent(
+            'Font Awesome Free',
+            "Font Awesome is the Internet's icon library and toolkit, used by millions of designers, developers, and content creators.",
+            'https://github.com/FortAwesome/Font-Awesome',
+            'https://github.com/FortAwesome/Font-Awesome/blob/6.x/LICENSE.txt',
         ),
         new ExternalComponent(
             'fs-extra',

@@ -1,4 +1,4 @@
-<div [@pageSwitchAnimation]="pageSwitchAnimation">
+<div>
     <div
         class="app-now-playing__backgroundimage"
         [ngStyle]="{ 'background-image': 'url(' + background1 + ')' }"
@@ -22,18 +22,20 @@
         </div>
         <div class="window-frame__content">
             <div class="app-now-playing">
-                <mat-horizontal-stepper [linear]="false" #stepper class="now-playing-stepper">
+                <div class="app-now-playing__content">
                     <!-- Nothing playing -->
-                    <mat-step> <app-now-playing-nothing-playing class="collection-viewport"></app-now-playing-nothing-playing> </mat-step>
+                    <app-now-playing-nothing-playing *ngIf="this.leftToRight(0)" [@enterLeftToRight]></app-now-playing-nothing-playing>
+                    <app-now-playing-nothing-playing *ngIf="this.rightToLeft(0)" [@enterRightToLeft]></app-now-playing-nothing-playing>
                     <!-- Showcase -->
-                    <mat-step>
-                        <app-now-playing-showcase class="collection-viewport"></app-now-playing-showcase>
-                    </mat-step>
+                    <app-now-playing-showcase *ngIf="this.leftToRight(1)" [@enterLeftToRight]></app-now-playing-showcase>
+                    <app-now-playing-showcase *ngIf="this.rightToLeft(1)" [@enterRightToLeft]></app-now-playing-showcase>
                     <!-- Lyrics -->
-                    <mat-step> <app-now-playing-lyrics class="collection-viewport"></app-now-playing-lyrics> </mat-step>
+                    <app-now-playing-lyrics *ngIf="this.leftToRight(2)" [@enterLeftToRight]></app-now-playing-lyrics>
+                    <app-now-playing-lyrics *ngIf="this.rightToLeft(2)" [@enterRightToLeft]></app-now-playing-lyrics>
                     <!-- Artist info -->
-                    <mat-step> <app-now-playing-artist-info class="collection-viewport"></app-now-playing-artist-info> </mat-step>
-                </mat-horizontal-stepper>
+                    <app-now-playing-artist-info *ngIf="this.leftToRight(3)" [@enterLeftToRight]></app-now-playing-artist-info>
+                    <app-now-playing-artist-info *ngIf="this.rightToLeft(3)" [@enterRightToLeft]></app-now-playing-artist-info>
+                </div>
                 <div class="app-now-playing-playback-controls__container">
                     <div
                         class="app-now-playing-playback-controls__background theme-footer-background"

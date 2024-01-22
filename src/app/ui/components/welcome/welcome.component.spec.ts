@@ -1,25 +1,21 @@
 import { IMock, Mock, Times } from 'typemoq';
 import { WelcomeComponent } from './welcome.component';
 import { NavigationServiceBase } from '../../../services/navigation/navigation.service.base';
-import { TranslatorServiceBase } from '../../../services/translator/translator.service.base';
 import { AppearanceServiceBase } from '../../../services/appearance/appearance.service.base';
-import { SettingsBase } from '../../../common/settings/settings.base';
+import { WelcomeServiceBase } from '../../../services/welcome/welcome.service.base';
+import { WelcomeGreetingComponent } from './welcome-greeting/welcome-greeting.component';
 
 describe('WelcomeComponent', () => {
-    let navigationServiceMock: IMock<NavigationServiceBase>;
-    let translatorService: IMock<TranslatorServiceBase>;
-    let appearanceService: IMock<AppearanceServiceBase>;
-    let settings: IMock<SettingsBase>;
+    let appearanceServiceMock: IMock<AppearanceServiceBase>;
+    let welcomeServiceMock: IMock<WelcomeServiceBase>;
 
     let component: WelcomeComponent;
 
     beforeEach(() => {
-        navigationServiceMock = Mock.ofType<NavigationServiceBase>();
-        translatorService = Mock.ofType<TranslatorServiceBase>();
-        appearanceService = Mock.ofType<AppearanceServiceBase>();
-        settings = Mock.ofType<SettingsBase>();
+        appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
+        welcomeServiceMock = Mock.ofType<WelcomeServiceBase>();
 
-        component = new WelcomeComponent(navigationServiceMock.object, translatorService.object, appearanceService.object, settings.object);
+        component = new WelcomeComponent(appearanceServiceMock.object, welcomeServiceMock.object);
     });
 
     describe('constructor', () => {
@@ -32,70 +28,44 @@ describe('WelcomeComponent', () => {
             expect(component).toBeDefined();
         });
 
-        it('should start at step 0', () => {
+        it('should have 7 pages', () => {
             // Arrange
 
             // Act
 
             // Assert
-            expect(component.currentStep).toEqual(0);
-        });
-
-        it('should have 7 steps', () => {
-            // Arrange
-
-            // Act
-
-            // Assert
-            expect(component.totalSteps).toEqual(7);
-        });
-
-        it('Cannot go back', () => {
-            // Arrange
-
-            // Act
-
-            // Assert
-            expect(component.canGoBack).toBeFalsy();
-        });
-
-        it('Can go forward', () => {
-            // Arrange
-
-            // Act
-
-            // Assert
-            expect(component.canGoForward).toBeTruthy();
-        });
-
-        it('Cannot finish', () => {
-            // Arrange
-
-            // Act
-
-            // Assert
-            expect(component.canFinish).toBeFalsy();
-        });
-
-        it('should provide correct donate url', () => {
-            // Arrange
-
-            // Act
-
-            // Assert
-            expect(component.donateUrl).toEqual('https://digimezzo.github.io/site/donate');
+            expect(component.totalPages).toEqual(7);
         });
     });
 
-    describe('finish', () => {
-        it('should navigate to loading component', async () => {
+    describe('isLoaded', () => {
+        it('should return isLoaded from WelcomeService', () => {
             // Arrange
+            welcomeServiceMock.setup((x) => x.isLoaded).returns(() => true);
+
+            // Act, Assert
+            expect(component.isLoaded).toBeTruthy();
+        });
+    });
+
+    describe('currentPage', () => {
+        it('should get page', () => {
+            // Arrange
+            component.page = 6;
+
+            // Act, Assert
+            expect(component.currentPage).toEqual(6);
+        });
+
+        it('should set page', () => {
+            // Arrange
+            component.page = 6;
 
             // Act
-            await component.finishAsync();
+            component.currentPage = 5;
 
             // Assert
-            navigationServiceMock.verify((x) => x.navigateToLoadingAsync(), Times.exactly(1));
+            expect(component.currentPage).toEqual(5);
         });
     });
 });

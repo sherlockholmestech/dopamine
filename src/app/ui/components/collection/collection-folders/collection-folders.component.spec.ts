@@ -2,7 +2,6 @@ import { IOutputData } from 'angular-split';
 import { Observable, Subject } from 'rxjs';
 import { IMock, It, Mock, Times } from 'typemoq';
 import { AddToPlaylistMenu } from '../../add-to-playlist-menu';
-import { CollectionPersister } from '../collection-persister';
 import { CollectionFoldersComponent } from './collection-folders.component';
 import { FolderTracksPersister } from './folder-tracks-persister';
 import { FoldersPersister } from './folders-persister';
@@ -17,7 +16,6 @@ import { NavigationServiceBase } from '../../../../services/navigation/navigatio
 import { TrackServiceBase } from '../../../../services/track/track.service.base';
 import { PlaybackIndicationServiceBase } from '../../../../services/playback-indication/playback-indication.service.base';
 import { Scheduler } from '../../../../common/scheduling/scheduler';
-import { DesktopBase } from '../../../../common/io/desktop.base';
 import { Logger } from '../../../../common/logger';
 import { Hacks } from '../../../../common/hacks';
 import { TranslatorServiceBase } from '../../../../services/translator/translator.service.base';
@@ -32,6 +30,8 @@ import { TrackModel } from '../../../../services/track/track-model';
 import { TrackModels } from '../../../../services/track/track-models';
 import { Folder } from '../../../../data/entities/folder';
 import { Constants } from '../../../../common/application/constants';
+import { DesktopBase } from '../../../../common/io/desktop.base';
+import { TrackBrowserComponent } from '../track-browser/track-browser.component';
 
 describe('CollectionFoldersComponent', () => {
     let settingsStub: any;
@@ -40,7 +40,6 @@ describe('CollectionFoldersComponent', () => {
     let indexingServiceMock: IMock<IndexingServiceBase>;
     let collectionServiceMock: IMock<CollectionServiceBase>;
     let metadataServiceMock: IMock<MetadataServiceBase>;
-    let collectionPersisterMock: IMock<CollectionPersister>;
     let playbackServiceMock: IMock<PlaybackServiceBase>;
     let folderServiceMock: IMock<FolderServiceBase>;
     let navigationServiceMock: IMock<NavigationServiceBase>;
@@ -48,7 +47,6 @@ describe('CollectionFoldersComponent', () => {
     let playbackIndicationServiceMock: IMock<PlaybackIndicationServiceBase>;
     let foldersPersisterMock: IMock<FoldersPersister>;
     let schedulerMock: IMock<Scheduler>;
-    let desktopMock: IMock<DesktopBase>;
     let loggerMock: IMock<Logger>;
     let hacksMock: IMock<Hacks>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
@@ -57,6 +55,7 @@ describe('CollectionFoldersComponent', () => {
     let addToPlaylistMenuMock: IMock<AddToPlaylistMenu>;
     let dateTimeMock: IMock<DateTime>;
     let folderTracksPersisterMock: IMock<FolderTracksPersister>;
+    let desktopMock: IMock<DesktopBase>;
 
     let playbackServicePlaybackStartedMock: Subject<PlaybackStarted>;
     let playbackServicePlaybackStoppedMock: Subject<void>;
@@ -79,9 +78,6 @@ describe('CollectionFoldersComponent', () => {
     let trackModel1: TrackModel;
     let trackModel2: TrackModel;
 
-    let selectedTabChangedMock: Subject<void>;
-    let selectedTabChangedMock$: Observable<void>;
-
     let metadataService_ratingSaved: Subject<TrackModel>;
 
     let tracks: TrackModels;
@@ -89,7 +85,7 @@ describe('CollectionFoldersComponent', () => {
     const flushPromises = () => new Promise(process.nextTick);
 
     function createComponent(): CollectionFoldersComponent {
-        const component: CollectionFoldersComponent = new CollectionFoldersComponent(
+        return new CollectionFoldersComponent(
             searchServiceMock.object,
             appearanceServiceMock.object,
             folderServiceMock.object,
@@ -100,19 +96,16 @@ describe('CollectionFoldersComponent', () => {
             addToPlaylistMenuMock.object,
             indexingServiceMock.object,
             collectionServiceMock.object,
-            collectionPersisterMock.object,
             settingsStub,
             navigationServiceMock.object,
             trackServiceMock.object,
             playbackIndicationServiceMock.object,
             foldersPersisterMock.object,
             schedulerMock.object,
-            desktopMock.object,
             loggerMock.object,
             hacksMock.object,
+            desktopMock.object,
         );
-
-        return component;
     }
 
     beforeEach(() => {
@@ -122,7 +115,6 @@ describe('CollectionFoldersComponent', () => {
         indexingServiceMock = Mock.ofType<IndexingServiceBase>();
         collectionServiceMock = Mock.ofType<CollectionServiceBase>();
         metadataServiceMock = Mock.ofType<MetadataServiceBase>();
-        collectionPersisterMock = Mock.ofType<CollectionPersister>();
         playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
         folderServiceMock = Mock.ofType<FolderServiceBase>();
         navigationServiceMock = Mock.ofType<NavigationServiceBase>();
@@ -132,13 +124,13 @@ describe('CollectionFoldersComponent', () => {
         loggerMock = Mock.ofType<Logger>();
         hacksMock = Mock.ofType<Hacks>();
         schedulerMock = Mock.ofType<Scheduler>();
-        desktopMock = Mock.ofType<DesktopBase>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         contextMenuOpenerMock = Mock.ofType<ContextMenuOpener>();
         mouseSelectionWatcherMock = Mock.ofType<MouseSelectionWatcher>();
         addToPlaylistMenuMock = Mock.ofType<AddToPlaylistMenu>();
         dateTimeMock = Mock.ofType<DateTime>();
         folderTracksPersisterMock = Mock.ofType<FolderTracksPersister>();
+        desktopMock = Mock.ofType<DesktopBase>();
 
         folder1 = new FolderModel(new Folder('/home/user/Music'));
         folder2 = new FolderModel(new Folder('/home/user/Downloads'));
@@ -148,7 +140,7 @@ describe('CollectionFoldersComponent', () => {
         subfolder2 = new SubfolderModel('/home/user/Music/subfolder2', false);
         subfolders = [subfolder1, subfolder2];
         folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve(subfolders));
-        folderServiceMock.setup((x) => x.getSubfolderBreadCrumbs(It.isAny(), It.isAny())).returns(() => subfolders);
+        folderServiceMock.setup((x) => x.getSubfolderBreadcrumbs(It.isAny(), It.isAny())).returns(() => subfolders);
 
         foldersPersisterMock.setup((x) => x.getOpenedFolder(It.isAny())).returns(() => folder1);
         foldersPersisterMock.setup((x) => x.getOpenedSubfolder()).returns(() => subfolder1);
@@ -183,10 +175,6 @@ describe('CollectionFoldersComponent', () => {
         collectionChangedMock = new Subject();
         collectionChangedMock$ = collectionChangedMock.asObservable();
         collectionServiceMock.setup((x) => x.collectionChanged$).returns(() => collectionChangedMock$);
-
-        selectedTabChangedMock = new Subject();
-        selectedTabChangedMock$ = selectedTabChangedMock.asObservable();
-        collectionPersisterMock.setup((x) => x.selectedTabChanged$).returns(() => selectedTabChangedMock$);
 
         metadataService_ratingSaved = new Subject();
         const metadataService_ratingSaved$: Observable<TrackModel> = metadataService_ratingSaved.asObservable();
@@ -244,14 +232,14 @@ describe('CollectionFoldersComponent', () => {
             expect(component.subfolders).toBeDefined();
         });
 
-        it('should define subfolderBreadCrumbs', () => {
+        it('should define subfolderBreadcrumbs', () => {
             // Arrange
 
             // Act
             const component: CollectionFoldersComponent = createComponent();
 
             // Assert
-            expect(component.subfolderBreadCrumbs).toBeDefined();
+            expect(component.subfolderBreadcrumbs).toBeDefined();
         });
 
         it('should define tracks', () => {
@@ -333,6 +321,16 @@ describe('CollectionFoldersComponent', () => {
             // Assert
             expect(component.addToPlaylistMenu).toBeDefined();
         });
+
+        it('should declare subfolderContextMenu', () => {
+            // Arrange
+
+            // Act
+            const component: CollectionFoldersComponent = createComponent();
+
+            // Assert
+            expect(component.subfolderContextMenu).toBeUndefined();
+        });
     });
 
     describe('splitDragEnd', () => {
@@ -362,10 +360,8 @@ describe('CollectionFoldersComponent', () => {
     });
 
     describe('ngOnInit', () => {
-        it('should get the folders if the selected tab is folders', async () => {
+        it('should get the folders', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
 
             // Act
@@ -375,23 +371,8 @@ describe('CollectionFoldersComponent', () => {
             folderServiceMock.verify((x) => x.getFolders(), Times.exactly(1));
         });
 
-        it('should not get the folders if the selected tab is not folders', async () => {
+        it('should get breadcrumbs for the opened folder if there are no subfolders', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            folderServiceMock.verify((x) => x.getFolders(), Times.never());
-        });
-
-        it('should get breadcrumbs for the opened folder if there are no subfolders and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             folderServiceMock.reset();
             folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
             folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve([]));
@@ -401,29 +382,11 @@ describe('CollectionFoldersComponent', () => {
             await component.ngOnInit();
 
             // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(folder1, folder1.path), Times.exactly(1));
+            folderServiceMock.verify((x) => x.getSubfolderBreadcrumbs(folder1, folder1.path), Times.exactly(1));
         });
 
-        it('should not get breadcrumbs for the opened folder if there are no subfolders and the selected tab is not folders', async () => {
+        it('should get breadcrumbs for the opened folder if there are subfolders but none is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve([]));
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(It.isAny(), It.isAny()), Times.never());
-        });
-
-        it('should get breadcrumbs for the opened folder if there are subfolders but none is go to parent and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             folderServiceMock.reset();
             folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
 
@@ -437,39 +400,22 @@ describe('CollectionFoldersComponent', () => {
             await component.ngOnInit();
 
             // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(folder1, folder1.path), Times.exactly(1));
+            folderServiceMock.verify((x) => x.getSubfolderBreadcrumbs(folder1, folder1.path), Times.exactly(1));
         });
 
-        it('should get breadcrumbs for the first go to parent subfolder if there are subfolders and at least one is go to parent and the selected tab is folders', async () => {
+        it('should get breadcrumbs for the first go to parent subfolder if there are subfolders and at least one is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
 
             // Act
             await component.ngOnInit();
 
             // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(folder1, subfolder1.path), Times.exactly(1));
+            folderServiceMock.verify((x) => x.getSubfolderBreadcrumbs(folder1, subfolder1.path), Times.exactly(1));
         });
 
-        it('should not get breadcrumbs for the first go to parent subfolder if there are subfolders and at least one is go to parent and the selected tab is not folders', async () => {
+        it('should get tracks for the opened folder if there are no subfolders', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(It.isAny(), It.isAny()), Times.never());
-        });
-
-        it('should get tracks for the opened folder if there are no subfolders and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             folderServiceMock.reset();
             folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
             folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve([]));
@@ -482,10 +428,8 @@ describe('CollectionFoldersComponent', () => {
             trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(folder1.path), Times.exactly(1));
         });
 
-        it('should get tracks for the opened folder if there are subfolders but none is go to parent and the selected tab is folders', async () => {
+        it('should get tracks for the opened folder if there are subfolders but none is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             folderServiceMock.reset();
             folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
 
@@ -502,10 +446,8 @@ describe('CollectionFoldersComponent', () => {
             trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(folder1.path), Times.exactly(1));
         });
 
-        it('should get tracks for the first go to parent subfolder if there are subfolders and at least one is go to parent and the selected tab is folders', async () => {
+        it('should get tracks for the first go to parent subfolder if there are subfolders and at least one is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
 
             // Act
@@ -515,23 +457,8 @@ describe('CollectionFoldersComponent', () => {
             trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(subfolder1.path), Times.exactly(1));
         });
 
-        it('should not get tracks if the selected tab is not folders', async () => {
+        it('should set the playing subfolder', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(It.isAny()), Times.never());
-        });
-
-        it('should set the playing subfolder if the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
 
             // Act
@@ -541,23 +468,8 @@ describe('CollectionFoldersComponent', () => {
             playbackIndicationServiceMock.verify((x) => x.setPlayingSubfolder(subfolders, trackModel1), Times.exactly(1));
         });
 
-        it('should not set the playing subfolder if the selected tab is not folders', async () => {
+        it('should set the playing track', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            playbackIndicationServiceMock.verify((x) => x.setPlayingSubfolder(It.isAny(), It.isAny()), Times.never());
-        });
-
-        it('should set the playing track if the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
 
             // Act
@@ -565,19 +477,6 @@ describe('CollectionFoldersComponent', () => {
 
             // Assert
             playbackIndicationServiceMock.verify((x) => x.setPlayingTrack(component.tracks.tracks, trackModel1), Times.exactly(1));
-        });
-
-        it('should not set the playing track if the selected tab is not folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            playbackIndicationServiceMock.verify((x) => x.setPlayingTrack(It.isAny(), It.isAny()), Times.never());
         });
 
         it('should set the playing subfolder on playback started', async () => {
@@ -594,9 +493,7 @@ describe('CollectionFoldersComponent', () => {
             playbackIndicationServiceMock.verify((x) => x.setPlayingSubfolder(subfolders, trackModel1), Times.exactly(1));
         });
 
-        it('should set the opened folder from the settings if the selected tab is folders', async () => {
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
+        it('should set the opened folder from the settings', async () => {
             // Arrange
             const component: CollectionFoldersComponent = createComponent();
 
@@ -607,22 +504,7 @@ describe('CollectionFoldersComponent', () => {
             expect(component.openedFolder).toBe(folder1);
         });
 
-        it('should not set the opened folder from the settings if the selected tab is not folders', async () => {
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            // Arrange
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            expect(component.openedFolder).toBeUndefined();
-        });
-
-        it('should get subfolders for the the opened subfolder from the settings  if the selected tab is folders', async () => {
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
+        it('should get subfolders for the the opened subfolder from the settings', async () => {
             // Arrange
             const component: CollectionFoldersComponent = createComponent();
 
@@ -633,22 +515,7 @@ describe('CollectionFoldersComponent', () => {
             folderServiceMock.verify((x) => x.getSubfoldersAsync(folder1, subfolder1), Times.exactly(1));
         });
 
-        it('should not get subfolders for the the opened subfolder from the settings if the selected tab is not folders', async () => {
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            // Arrange
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            folderServiceMock.verify((x) => x.getSubfoldersAsync(folder1, subfolder1), Times.never());
-        });
-
-        it('should save the opened subfolder to the settings if the selected tab is folders', async () => {
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
+        it('should save the opened subfolder to the settings', async () => {
             // Arrange
             const component: CollectionFoldersComponent = createComponent();
 
@@ -662,23 +529,8 @@ describe('CollectionFoldersComponent', () => {
             );
         });
 
-        it('should not save the opened subfolder to the settings if the selected tab is not folders', async () => {
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
+        it('should get the folders when indexing is finished', async () => {
             // Arrange
-            const component: CollectionFoldersComponent = createComponent();
-
-            // Act
-            await component.ngOnInit();
-
-            // Assert
-            foldersPersisterMock.verify((x) => x.setOpenedSubfolder(It.isAny()), Times.never());
-        });
-
-        it('should get the folders when indexing is finished and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -694,81 +546,8 @@ describe('CollectionFoldersComponent', () => {
             folderServiceMock.verify((x) => x.getFolders(), Times.exactly(1));
         });
 
-        it('should not get the folders when indexing is finished and the selected tab is not folders', async () => {
+        it('should get the folders when collection has changed', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve(subfolders));
-
-            // Act
-            indexingServiceIndexingFinishedMock.next();
-            const scheduler: Scheduler = new Scheduler();
-            await scheduler.sleepAsync(Constants.longListLoadDelayMilliseconds + Constants.shortListLoadDelayMilliseconds + 100);
-
-            // Assert
-            folderServiceMock.verify((x) => x.getFolders(), Times.never());
-        });
-
-        it('should fill the lists if the selected tab changes to folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-
-            component.folders = [];
-            component.subfolders = [];
-            component.subfolderBreadCrumbs = [];
-            component.tracks = new TrackModels();
-
-            // Act
-            selectedTabChangedMock.next();
-            await flushPromises();
-
-            // Assert
-            expect(component.folders.length).toEqual(2);
-            expect(component.subfolders.length).toEqual(2);
-            expect(component.subfolderBreadCrumbs.length).toEqual(2);
-            expect(component.tracks.tracks.length).toEqual(2);
-        });
-
-        it('should clear the lists if the selected tab changes to not folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-
-            component.folders = [];
-            component.subfolders = [];
-            component.subfolderBreadCrumbs = [];
-            component.tracks = new TrackModels();
-
-            selectedTabChangedMock.next();
-            await flushPromises();
-
-            collectionPersisterMock.reset();
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            // Act
-            selectedTabChangedMock.next();
-            await flushPromises();
-
-            // Assert
-            expect(component.folders.length).toEqual(0);
-            expect(component.subfolders.length).toEqual(0);
-            expect(component.subfolderBreadCrumbs.length).toEqual(0);
-            expect(component.tracks.tracks.length).toEqual(0);
-        });
-
-        it('should get the folders when collection has changed and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -782,25 +561,6 @@ describe('CollectionFoldersComponent', () => {
 
             // Assert
             folderServiceMock.verify((x) => x.getFolders(), Times.exactly(1));
-        });
-
-        it('should not get the folders when collection has changed and the selected tab is not folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve(subfolders));
-
-            // Act
-            collectionChangedMock.next();
-            const scheduler: Scheduler = new Scheduler();
-            await scheduler.sleepAsync(Constants.longListLoadDelayMilliseconds + Constants.shortListLoadDelayMilliseconds + 100);
-
-            // Assert
-            folderServiceMock.verify((x) => x.getFolders(), Times.never());
         });
     });
 
@@ -897,10 +657,8 @@ describe('CollectionFoldersComponent', () => {
             folderServiceMock.verify((x) => x.getSubfoldersAsync(It.isAny(), It.isAny()), Times.never());
         });
 
-        it('should get subfolders for the given opened subfolder if the opened folder is not undefined and the selected tab is folders', async () => {
+        it('should get subfolders for the given opened subfolder if the opened folder is not undefined', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -914,27 +672,8 @@ describe('CollectionFoldersComponent', () => {
             folderServiceMock.verify((x) => x.getSubfoldersAsync(folder1, subfolder1), Times.exactly(1));
         });
 
-        it('should not get subfolders for the given opened subfolder if the opened folder is not undefined and the selected tab is not folders', async () => {
+        it('should get breadcrumbs for the opened folder if there are no subfolders', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve(subfolders));
-
-            // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
-
-            // Assert
-            folderServiceMock.verify((x) => x.getSubfoldersAsync(It.isAny(), It.isAny()), Times.never());
-        });
-
-        it('should get breadcrumbs for the opened folder if there are no subfolders and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -945,30 +684,11 @@ describe('CollectionFoldersComponent', () => {
             await component.setOpenedSubfolderAsync(subfolder1);
 
             // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(folder1, folder1.path), Times.exactly(1));
+            folderServiceMock.verify((x) => x.getSubfolderBreadcrumbs(folder1, folder1.path), Times.exactly(1));
         });
 
-        it('should not get breadcrumbs for the opened folder if there are no subfolders and the selected tab is not folders', async () => {
+        it('should get breadcrumbs for the opened folder if there are subfolders but none is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve([]));
-
-            // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
-
-            // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(It.isAny(), It.isAny()), Times.never());
-        });
-
-        it('should get breadcrumbs for the opened folder if there are subfolders but none is go to parent and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -983,34 +703,11 @@ describe('CollectionFoldersComponent', () => {
             await component.setOpenedSubfolderAsync(subfolder1);
 
             // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(folder1, folder1.path), Times.exactly(1));
+            folderServiceMock.verify((x) => x.getSubfolderBreadcrumbs(folder1, folder1.path), Times.exactly(1));
         });
 
-        it('should not get breadcrumbs for the opened folder if there are subfolders but none is go to parent and the selected tab is not folders', async () => {
+        it('should get breadcrumbs for the first go to parent subfolder if there are subfolders and at least one is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-
-            subfolder1 = new SubfolderModel('/home/user/Music/subfolder1', false);
-            subfolder2 = new SubfolderModel('/home/user/Music/subfolder2', false);
-            subfolders = [subfolder1, subfolder2];
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve(subfolders));
-
-            // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
-
-            // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(It.isAny(), It.isAny()), Times.never());
-        });
-
-        it('should get breadcrumbs for the first go to parent subfolder if there are subfolders and at least one is go to parent and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -1021,30 +718,11 @@ describe('CollectionFoldersComponent', () => {
             await component.setOpenedSubfolderAsync(subfolder1);
 
             // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(folder1, subfolder1.path), Times.exactly(1));
+            folderServiceMock.verify((x) => x.getSubfolderBreadcrumbs(folder1, subfolder1.path), Times.exactly(1));
         });
 
-        it('should not get breadcrumbs for the first go to parent subfolder if there are subfolders and at least one is go to parent and the selected tab is not folders', async () => {
+        it('should get tracks for the opened folder if there are no subfolders', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve(subfolders));
-
-            // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
-
-            // Assert
-            folderServiceMock.verify((x) => x.getSubfolderBreadCrumbs(folder1, subfolder1.path), Times.never());
-        });
-
-        it('should get tracks for the opened folder if there are no subfolders and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -1058,27 +736,8 @@ describe('CollectionFoldersComponent', () => {
             trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(folder1.path), Times.exactly(1));
         });
 
-        it('should not get tracks for the opened folder if there are no subfolders and the selected tab is not folders', async () => {
+        it('should get tracks for the opened folder if there are subfolders but none is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve([]));
-
-            // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
-
-            // Assert
-            trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(It.isAny()), Times.never());
-        });
-
-        it('should get tracks for the opened folder if there are subfolders but none is go to parent and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             folderServiceMock.reset();
@@ -1096,31 +755,8 @@ describe('CollectionFoldersComponent', () => {
             trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(folder1.path), Times.exactly(1));
         });
 
-        it('should not get tracks for the opened folder if there are subfolders but none is go to parent and the selected tab is not folders', async () => {
+        it('should get tracks for the first go to parent subfolder if there are subfolders and at least one is go to parent', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-
-            subfolder1 = new SubfolderModel('/home/user/Music/subfolder1', false);
-            subfolder2 = new SubfolderModel('/home/user/Music/subfolder2', false);
-            subfolders = [subfolder1, subfolder2];
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve(subfolders));
-
-            // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
-
-            // Assert
-            trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(It.isAny()), Times.never());
-        });
-
-        it('should get tracks for the first go to parent subfolder if there are subfolders and at least one is go to parent and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             trackServiceMock.reset();
@@ -1133,26 +769,8 @@ describe('CollectionFoldersComponent', () => {
             trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(subfolder1.path), Times.exactly(1));
         });
 
-        it('should not get tracks for the first go to parent subfolder if there are subfolders and at least one is go to parent and the selected tab is not folders', async () => {
+        it('should save the opened subfolder to the settings', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            trackServiceMock.reset();
-            trackServiceMock.setup((x) => x.getTracksInSubfolderAsync(It.isAny())).returns(() => Promise.resolve(new TrackModels()));
-
-            // Act
-            await component.setOpenedSubfolderAsync(undefined);
-
-            // Assert
-            trackServiceMock.verify((x) => x.getTracksInSubfolderAsync(subfolder1.path), Times.never());
-        });
-
-        it('should save the opened subfolder to the settings and the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             foldersPersisterMock.reset();
@@ -1167,25 +785,8 @@ describe('CollectionFoldersComponent', () => {
             );
         });
 
-        it('should not save the opened subfolder to the settings and the selected tab is not folders', async () => {
+        it('should initialize MouseSelectionWatcher using tracks', async () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
-            const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            foldersPersisterMock.reset();
-
-            // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
-
-            // Assert
-            foldersPersisterMock.verify((x) => x.setOpenedSubfolder(It.isAny()), Times.never());
-        });
-
-        it('should initialize MouseSelectionWatcher using tracks if the selected tab is folders', async () => {
-            // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.foldersTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
             await component.ngOnInit();
             mouseSelectionWatcherMock.reset();
@@ -1199,22 +800,34 @@ describe('CollectionFoldersComponent', () => {
             // Assert
             mouseSelectionWatcherMock.verify((x) => x.initialize(component.tracks.tracks, false), Times.exactly(1));
         });
+    });
 
-        it('should not initialize MouseSelectionWatcher using tracks if the selected tab is not folders', async () => {
+    describe('onSubfolderContextMenu', () => {
+        it('should open the context menu', () => {
             // Arrange
-            collectionPersisterMock.setup((x) => x.selectedTab).returns(() => Constants.artistsTabLabel);
-
             const component: CollectionFoldersComponent = createComponent();
-            await component.ngOnInit();
-            folderServiceMock.reset();
-            folderServiceMock.setup((x) => x.getFolders()).returns(() => folders);
-            folderServiceMock.setup((x) => x.getSubfoldersAsync(It.isAny(), It.isAny())).returns(() => Promise.resolve([]));
+            const event: MouseEvent = new MouseEvent('contextmenu');
+            const subfolder: SubfolderModel = subfolder1;
 
             // Act
-            await component.setOpenedSubfolderAsync(subfolder1);
+            component.onSubfolderContextMenu(event, subfolder);
 
             // Assert
-            mouseSelectionWatcherMock.verify((x) => x.initialize(component.tracks.tracks, false), Times.never());
+            contextMenuOpenerMock.verify((x) => x.open(component.subfolderContextMenu, event, subfolder), Times.exactly(1));
+        });
+    });
+
+    describe('onOpenSubfolderAsync', () => {
+        it('should open the given folder in the desktop', async () => {
+            // Arrange
+            const component: CollectionFoldersComponent = createComponent();
+            desktopMock.setup((x) => x.openPathAsync(subfolder1.path)).returns(() => Promise.resolve());
+
+            // Act
+            await component.onOpenSubfolderAsync(subfolder1);
+
+            // Assert
+            desktopMock.verify((x) => x.openPathAsync(subfolder1.path), Times.exactly(1));
         });
     });
 });

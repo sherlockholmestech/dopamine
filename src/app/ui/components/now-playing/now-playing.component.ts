@@ -1,6 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { AfterViewInit, Component, HostListener, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
-import { MatStepper } from '@angular/material/stepper';
+import { AfterViewInit, Component, HostListener, OnInit, ViewEncapsulation } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { PromiseUtils } from '../../../common/utils/promise-utils';
 import { NowPlayingPage } from '../../../services/now-playing-navigation/now-playing-page';
@@ -11,9 +10,11 @@ import { PlaybackServiceBase } from '../../../services/playback/playback.service
 import { SearchServiceBase } from '../../../services/search/search.service.base';
 import { NowPlayingNavigationServiceBase } from '../../../services/now-playing-navigation/now-playing-navigation.service.base';
 import { SchedulerBase } from '../../../common/scheduling/scheduler.base';
-import { Constants } from '../../../common/application/constants';
 import { AudioVisualizer } from '../../../services/playback/audio-visualizer';
 import { DocumentProxy } from '../../../common/io/document-proxy';
+import { enterLeftToRight, enterRightToLeft } from '../../animations/animations';
+import { AnimatedPage } from '../animated-page';
+import { SettingsBase } from '../../../common/settings/settings.base';
 
 @Component({
     selector: 'app-now-playing',
@@ -22,6 +23,8 @@ import { DocumentProxy } from '../../../common/io/document-proxy';
     styleUrls: ['./now-playing.component.scss'],
     encapsulation: ViewEncapsulation.None,
     animations: [
+        enterLeftToRight,
+        enterRightToLeft,
         trigger('controlsVisibility', [
             state(
                 'visible',
@@ -37,12 +40,6 @@ import { DocumentProxy } from '../../../common/io/document-proxy';
             ),
             transition('hidden => visible', animate('.25s')),
             transition('visible => hidden', animate('1s')),
-        ]),
-        trigger('pageSwitchAnimation', [
-            state('fade-out', style({ opacity: 0 })),
-            state('fade-in', style({ opacity: 1 })),
-            transition('fade-in => fade-out', animate('10ms ease-out')),
-            transition('fade-out => fade-in', animate(`${Constants.pageSwitchAnimationMilliseconds}ms ease-out`)),
         ]),
         trigger('background1Animation', [
             state(
@@ -92,7 +89,7 @@ import { DocumentProxy } from '../../../common/io/document-proxy';
         ]),
     ],
 })
-export class NowPlayingComponent implements OnInit, AfterViewInit {
+export class NowPlayingComponent extends AnimatedPage implements OnInit, AfterViewInit {
     private timerId: number = 0;
     private subscription: Subscription = new Subscription();
 
@@ -106,9 +103,10 @@ export class NowPlayingComponent implements OnInit, AfterViewInit {
         private scheduler: SchedulerBase,
         private audioVisualizer: AudioVisualizer,
         private documentProxy: DocumentProxy,
-    ) {}
-
-    @ViewChild('stepper') public stepper: MatStepper;
+        private settings: SettingsBase,
+    ) {
+        super();
+    }
 
     public background1IsUsed: boolean = false;
     public background1: string = '';
@@ -117,7 +115,6 @@ export class NowPlayingComponent implements OnInit, AfterViewInit {
     public background2Animation: string = this.appearanceService.isUsingLightTheme ? 'fade-in-light' : 'fade-in-dark';
 
     public pageSwitchAnimation: string = 'fade-out';
-
     public controlsVisibility: string = 'visible';
 
     @HostListener('document:keyup', ['$event'])
@@ -166,13 +163,17 @@ export class NowPlayingComponent implements OnInit, AfterViewInit {
 
         this.controlsVisibility = 'visible';
 
+        if (this.settings.keepPlaybackControlsVisibleOnNowPlayingPage) {
+            return;
+        }
+
         this.timerId = window.setTimeout(() => {
             this.controlsVisibility = 'hidden';
         }, 5000);
     }
 
     private async setBackgroundsAsync(): Promise<void> {
-        const proposedBackground: string = await this.metadataService.createImageUrlAsync(this.playbackService.currentTrack);
+        const proposedBackground: string = await this.metadataService.createImageUrlAsync(this.playbackService.currentTrack, 0);
 
         if (this.background1IsUsed) {
             if (proposedBackground !== this.background1) {
@@ -204,7 +205,7 @@ export class NowPlayingComponent implements OnInit, AfterViewInit {
     }
 
     private setNowPlayingPage(nowPlayingPage: NowPlayingPage): void {
-        this.stepper.selectedIndex = nowPlayingPage;
+        this.page = nowPlayingPage;
     }
 
     public async ngAfterViewInit(): Promise<void> {

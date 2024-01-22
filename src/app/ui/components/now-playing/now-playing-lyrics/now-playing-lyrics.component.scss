@@ -3,6 +3,7 @@
     display: flex;
     flex-direction: row;
     height: 100%;
+    width: 100%;
 }
 
 .app-now-playing-lyrics__picture {
@@ -11,9 +12,18 @@
         0 6px 20px 0 rgba(0, 0, 0, 0.2);
 }
 
-.app-now-playing-lyrics__text {
-    margin-left: 50px;
+.app-now-playing-lyrics__spinner {
+    display: flex;
     flex: 1;
+    margin-left: 50px;
+    justify-content: center;
+    align-items: center;
+}
+
+.app-now-playing-lyrics__text {
+    display: flex;
+    flex: 1;
+    margin-left: 50px;
     overflow-y: auto;
     overflow-x: hidden;
 }

@@ -1,37 +1,36 @@
 <div class="window-frame">
     <div class="window-frame__titlebar theme-header-background">
-        <div class="window-frame__dragarea">
-            <app-back-button class="m-2"></app-back-button>
-        </div>
+        <app-back-button class="m-2"></app-back-button>
+        <app-sub-menu>
+            <app-sub-menu-item [page]="0" [selectedPage]="this.page" (click)="this.setPage(0)">
+                {{ 'appearance' | translate }}
+            </app-sub-menu-item>
+            <app-sub-menu-item [page]="1" [selectedPage]="this.page" (click)="this.setPage(1)">
+                {{ 'behavior' | translate }}
+            </app-sub-menu-item>
+            <app-sub-menu-item [page]="2" [selectedPage]="this.page" (click)="this.setPage(2)">
+                {{ 'advanced' | translate }}
+            </app-sub-menu-item>
+            <app-sub-menu-item [page]="3" [selectedPage]="this.page" (click)="this.setPage(3)">
+                {{ 'online' | translate }}
+            </app-sub-menu-item>
+        </app-sub-menu>
+        <div class="window-frame__dragarea"></div>
         <app-main-menu class="main-menu"> </app-main-menu>
         <app-window-controls *ngIf="!appearanceService.windowHasNativeTitleBar"></app-window-controls>
     </div>
-    <div class="window-frame__content" [@pageSwitchAnimation]="pageSwitchAnimation">
-        <mat-tab-group>
-            <mat-tab>
-                <ng-template mat-tab-label>
-                    {{ 'appearance' | translate }}
-                </ng-template>
-                <app-appearance-settings></app-appearance-settings>
-            </mat-tab>
-            <mat-tab>
-                <ng-template mat-tab-label>
-                    {{ 'behavior' | translate }}
-                </ng-template>
-                <app-behavior-settings></app-behavior-settings>
-            </mat-tab>
-            <mat-tab>
-                <ng-template mat-tab-label>
-                    {{ 'advanced' | translate }}
-                </ng-template>
-                <app-advanced-settings></app-advanced-settings>
-            </mat-tab>
-            <mat-tab>
-                <ng-template mat-tab-label>
-                    {{ 'online' | translate }}
-                </ng-template>
-                <app-online-settings></app-online-settings>
-            </mat-tab>
-        </mat-tab-group>
+    <div class="window-frame__content">
+        <!-- Appearance -->
+        <app-appearance-settings *ngIf="this.leftToRight(0)" [@enterLeftToRight]></app-appearance-settings>
+        <app-appearance-settings *ngIf="this.rightToLeft(0)" [@enterRightToLeft]></app-appearance-settings>
+        <!-- Behavior -->
+        <app-behavior-settings *ngIf="this.leftToRight(1)" [@enterLeftToRight]></app-behavior-settings>
+        <app-behavior-settings *ngIf="this.rightToLeft(1)" [@enterRightToLeft]></app-behavior-settings>
+        <!-- Advanced -->
+        <app-advanced-settings *ngIf="this.leftToRight(2)" [@enterLeftToRight]></app-advanced-settings>
+        <app-advanced-settings *ngIf="this.rightToLeft(2)" [@enterRightToLeft]></app-advanced-settings>
+        <!-- Online -->
+        <app-online-settings *ngIf="this.leftToRight(3)" [@enterLeftToRight]></app-online-settings>
+        <app-online-settings *ngIf="this.rightToLeft(4)" [@enterRightToLeft]></app-online-settings>
     </div>
 </div>

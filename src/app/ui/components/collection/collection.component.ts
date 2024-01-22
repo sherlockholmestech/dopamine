@@ -1,14 +1,13 @@
 import { AfterViewInit, Component, HostListener, ViewEncapsulation } from '@angular/core';
-import { CollectionPersister } from './collection-persister';
-import { TabSelectionGetter } from './tab-selection-getter';
 import { AppearanceServiceBase } from '../../../services/appearance/appearance.service.base';
 import { PlaybackServiceBase } from '../../../services/playback/playback.service.base';
 import { SearchServiceBase } from '../../../services/search/search.service.base';
 import { SettingsBase } from '../../../common/settings/settings.base';
-import { animate, state, style, transition, trigger } from '@angular/animations';
-import { Constants } from '../../../common/application/constants';
 import { AudioVisualizer } from '../../../services/playback/audio-visualizer';
 import { DocumentProxy } from '../../../common/io/document-proxy';
+import { AnimatedPage } from '../animated-page';
+import { enterLeftToRight, enterRightToLeft } from '../../animations/animations';
+import { CollectionNavigationService } from '../../../services/collection-navigation/collection-navigation.service';
 
 @Component({
     selector: 'app-collection',
@@ -16,53 +15,20 @@ import { DocumentProxy } from '../../../common/io/document-proxy';
     templateUrl: './collection.component.html',
     styleUrls: ['./collection.component.scss'],
     encapsulation: ViewEncapsulation.None,
-    animations: [
-        trigger('pageSwitchAnimation', [
-            state('fade-out', style({ opacity: 0 })),
-            state('fade-in', style({ opacity: 1 })),
-            transition('fade-in => fade-out', animate('10ms ease-out')),
-            transition('fade-out => fade-in', animate(`${Constants.pageSwitchAnimationMilliseconds}ms ease-out`)),
-        ]),
-    ],
+    animations: [enterLeftToRight, enterRightToLeft],
 })
-export class CollectionComponent implements AfterViewInit {
-    private _selectedIndex: number;
-
+export class CollectionComponent extends AnimatedPage implements AfterViewInit {
     public constructor(
         public appearanceService: AppearanceServiceBase,
+        public collectionNavigationService: CollectionNavigationService,
         public settings: SettingsBase,
         private playbackService: PlaybackServiceBase,
         private searchService: SearchServiceBase,
-        private collectionPersister: CollectionPersister,
-        private tabSelectionGetter: TabSelectionGetter,
         private audioVisualizer: AudioVisualizer,
         private documentProxy: DocumentProxy,
-    ) {}
-
-    public pageSwitchAnimation: string = 'fade-out';
-
-    public get artistsTabLabel(): string {
-        return Constants.artistsTabLabel;
-    }
-
-    public get genresTabLabel(): string {
-        return Constants.genresTabLabel;
-    }
-
-    public get albumsTabLabel(): string {
-        return Constants.albumsTabLabel;
-    }
-
-    public get tracksTabLabel(): string {
-        return Constants.tracksTabLabel;
-    }
-
-    public get playlistsTabLabel(): string {
-        return Constants.playlistsTabLabel;
-    }
-
-    public get foldersTabLabel(): string {
-        return Constants.foldersTabLabel;
+    ) {
+        super();
+        this.page = this.collectionNavigationService.page;
     }
 
     @HostListener('document:keyup', ['$event'])
@@ -72,32 +38,19 @@ export class CollectionComponent implements AfterViewInit {
         }
     }
 
-    public get selectedIndex(): number {
-        return this._selectedIndex;
-    }
-
-    public set selectedIndex(v: number) {
-        this._selectedIndex = v;
-        this.collectionPersister.selectedTab = this.tabSelectionGetter.getTabLabelForIndex(v);
-
-        // Manually trigger a custom event. Together with CdkVirtualScrollViewportPatchDirective,
-        // this will ensure that CdkVirtualScrollViewport triggers a viewport size check when the
-        // selected tab is changed.
-        window.dispatchEvent(new Event('tab-changed'));
-    }
-
     public ngAfterViewInit(): void {
-        // HACK: avoids a ExpressionChangedAfterItHasBeenCheckedError in DEV mode.
-        setTimeout(() => {
-            this.pageSwitchAnimation = 'fade-in';
-            this.selectedIndex = this.tabSelectionGetter.getTabIndexForLabel(this.collectionPersister.selectedTab);
-        }, 0);
-
         this.setAudioVisualizer();
     }
 
     private setAudioVisualizer(): void {
         const canvas: HTMLCanvasElement = this.documentProxy.getCanvasById('collectionAudioVisualizer');
         this.audioVisualizer.connectCanvas(canvas);
+    }
+
+    public override setPage(page: number): void {
+        this.previousPage = this.page;
+        this.page = page;
+
+        this.collectionNavigationService.page = page;
     }
 }

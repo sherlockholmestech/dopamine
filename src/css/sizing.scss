@@ -26,8 +26,8 @@
     border-radius: 12px;
 }
 
-.font-20px {
-    font-size: 20px;
+.font-18px {
+    font-size: 18px;
 }
 
 .h-100 {
@@ -38,20 +38,12 @@
     width: 100%;
 }
 
-.font-medium {
-    font-size: var(--fontsize-medium) !important;
+.w-0 {
+    width: 0;
 }
 
-.font-large {
-    font-size: var(--fontsize-large) !important;
-}
-
-.font-extra-large {
-    font-size: var(--fontsize-extra-large) !important;
-}
-
-.font-thin {
-    font-weight: lighter !important;
+.h-100vh {
+    height: 100vh;
 }
 
 .rotate-90ccw {
