@@ -8,12 +8,9 @@ import { TrackOrder } from '../track-order';
 import { TrackBrowserComponent } from './track-browser.component';
 import { TrackModels } from '../../../../services/track/track-models';
 import { PlaybackStarted } from '../../../../services/playback/playback-started';
-import { PlaybackServiceBase } from '../../../../services/playback/playback.service.base';
 import { ContextMenuOpener } from '../../context-menu-opener';
 import { PlaybackIndicationServiceBase } from '../../../../services/playback-indication/playback-indication.service.base';
-import { MetadataServiceBase } from '../../../../services/metadata/metadata.service.base';
 import { MouseSelectionWatcher } from '../../mouse-selection-watcher';
-import { TrackOrdering } from '../../../../common/ordering/track-ordering';
 import { DesktopBase } from '../../../../common/io/desktop.base';
 import { Logger } from '../../../../common/logger';
 import { CollectionServiceBase } from '../../../../services/collection/collection.service.base';
@@ -21,15 +18,21 @@ import { TranslatorServiceBase } from '../../../../services/translator/translato
 import { DialogServiceBase } from '../../../../services/dialog/dialog.service.base';
 import { DateTime } from '../../../../common/date-time';
 import { GuidFactory } from '../../../../common/guid.factory';
+import { TrackSorter } from '../../../../common/sorting/track-sorter';
+import { SettingsMock } from '../../../../testing/settings-mock';
+import { PlaybackService } from '../../../../services/playback/playback.service';
+import { MetadataService } from '../../../../services/metadata/metadata.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('TrackBrowserComponent', () => {
-    let playbackServiceMock: IMock<PlaybackServiceBase>;
+    let playbackServiceMock: IMock<PlaybackService>;
     let addToPlaylistMenuMock: IMock<AddToPlaylistMenu>;
     let contextMenuOpenerMock: IMock<ContextMenuOpener>;
     let playbackIndicationServiceMock: IMock<PlaybackIndicationServiceBase>;
-    let metadataServiceMock: IMock<MetadataServiceBase>;
+    let metadataServiceMock: IMock<MetadataService>;
     let mouseSelectionWatcherMock: IMock<MouseSelectionWatcher>;
-    let trackOrderingMock: IMock<TrackOrdering>;
+    let trackSorterMock: IMock<TrackSorter>;
     let desktopMock: IMock<DesktopBase>;
     let loggerMock: IMock<Logger>;
     let tracksPersisterMock: IMock<BaseTracksPersister>;
@@ -38,6 +41,7 @@ describe('TrackBrowserComponent', () => {
     let dialogServiceMock: IMock<DialogServiceBase>;
     let dateTimeMock: IMock<DateTime>;
     let guidFactoryMock: IMock<GuidFactory>;
+    let settingsMock: any;
 
     let playbackStartedMock: Subject<PlaybackStarted>;
     let playbackStartedMock$: Observable<PlaybackStarted>;
@@ -59,22 +63,23 @@ describe('TrackBrowserComponent', () => {
     let tracks: TrackModels;
 
     beforeEach(() => {
-        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
+        playbackServiceMock = Mock.ofType<PlaybackService>();
         addToPlaylistMenuMock = Mock.ofType<AddToPlaylistMenu>();
         contextMenuOpenerMock = Mock.ofType<ContextMenuOpener>();
         playbackIndicationServiceMock = Mock.ofType<PlaybackIndicationServiceBase>();
-        metadataServiceMock = Mock.ofType<MetadataServiceBase>();
+        metadataServiceMock = Mock.ofType<MetadataService>();
         collectionServiceMock = Mock.ofType<CollectionServiceBase>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         dialogServiceMock = Mock.ofType<DialogServiceBase>();
         mouseSelectionWatcherMock = Mock.ofType<MouseSelectionWatcher>();
-        trackOrderingMock = Mock.ofType<TrackOrdering>();
+        trackSorterMock = Mock.ofType<TrackSorter>();
         desktopMock = Mock.ofType<DesktopBase>();
         loggerMock = Mock.ofType<Logger>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         tracksPersisterMock = Mock.ofType<BaseTracksPersister>();
         dateTimeMock = Mock.ofType<DateTime>();
         guidFactoryMock = Mock.ofType<GuidFactory>();
+        settingsMock = new SettingsMock();
 
         playbackStartedMock = new Subject();
         playbackStartedMock$ = playbackStartedMock.asObservable();
@@ -129,25 +134,23 @@ describe('TrackBrowserComponent', () => {
         track4.rating = 4;
         track4.love = 0;
 
-        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
-        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object);
-        trackModel3 = new TrackModel(track3, dateTimeMock.object, translatorServiceMock.object);
-        trackModel4 = new TrackModel(track4, dateTimeMock.object, translatorServiceMock.object);
+        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
+        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object, settingsMock);
+        trackModel3 = new TrackModel(track3, dateTimeMock.object, translatorServiceMock.object, settingsMock);
+        trackModel4 = new TrackModel(track4, dateTimeMock.object, translatorServiceMock.object, settingsMock);
         tracks = new TrackModels();
         tracks.addTrack(trackModel1);
         tracks.addTrack(trackModel2);
         tracks.addTrack(trackModel3);
         tracks.addTrack(trackModel4);
 
-        trackOrderingMock
-            .setup((x) => x.getTracksOrderedByTitleAscending(It.isAny()))
+        trackSorterMock
+            .setup((x) => x.sortByTitleAscending(It.isAny()))
             .returns(() => [trackModel1, trackModel2, trackModel3, trackModel4]);
-        trackOrderingMock
-            .setup((x) => x.getTracksOrderedByTitleDescending(It.isAny()))
+        trackSorterMock
+            .setup((x) => x.sortByTitleDescending(It.isAny()))
             .returns(() => [trackModel4, trackModel3, trackModel2, trackModel1]);
-        trackOrderingMock
-            .setup((x) => x.getTracksOrderedByAlbum(It.isAny()))
-            .returns(() => [trackModel1, trackModel2, trackModel3, trackModel4]);
+        trackSorterMock.setup((x) => x.sortByAlbum(It.isAny())).returns(() => [trackModel1, trackModel2, trackModel3, trackModel4]);
     });
 
     function createComponent(): TrackBrowserComponent {
@@ -159,7 +162,7 @@ describe('TrackBrowserComponent', () => {
             metadataServiceMock.object,
             playbackIndicationServiceMock.object,
             guidFactoryMock.object,
-            trackOrderingMock.object,
+            trackSorterMock.object,
             collectionServiceMock.object,
             translatorServiceMock.object,
             dialogServiceMock.object,
@@ -349,7 +352,7 @@ describe('TrackBrowserComponent', () => {
             const track5 = new Track('Path 1');
             track5.rating = 5;
 
-            const trackModel5: TrackModel = new TrackModel(track5, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel5: TrackModel = new TrackModel(track5, dateTimeMock.object, translatorServiceMock.object, settingsMock);
 
             // Act
             component.ngOnInit();
@@ -370,7 +373,7 @@ describe('TrackBrowserComponent', () => {
             const track5 = new Track('Path 1');
             track5.love = 1;
 
-            const trackModel5: TrackModel = new TrackModel(track5, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel5: TrackModel = new TrackModel(track5, dateTimeMock.object, translatorServiceMock.object, settingsMock);
 
             // Act
             component.ngOnInit();

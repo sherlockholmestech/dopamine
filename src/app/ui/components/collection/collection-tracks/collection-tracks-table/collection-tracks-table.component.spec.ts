@@ -15,21 +15,24 @@ import { Track } from '../../../../../data/entities/track';
 import { TrackModels } from '../../../../../services/track/track-models';
 import { TracksColumnsOrderColumn } from '../../../../../services/track-columns/tracks-columns-order-column';
 import { TracksColumnsOrderDirection } from '../../../../../services/track-columns/tracks-columns-order-direction';
-import { PlaybackServiceBase } from '../../../../../services/playback/playback.service.base';
-import { MetadataServiceBase } from '../../../../../services/metadata/metadata.service.base';
 import { PlaybackIndicationServiceBase } from '../../../../../services/playback-indication/playback-indication.service.base';
 import { TracksColumnsServiceBase } from '../../../../../services/track-columns/tracks-columns.service.base';
 import { DesktopBase } from '../../../../../common/io/desktop.base';
 import { TranslatorServiceBase } from '../../../../../services/translator/translator.service.base';
 import { DialogServiceBase } from '../../../../../services/dialog/dialog.service.base';
 import { CollectionServiceBase } from '../../../../../services/collection/collection.service.base';
+import { SettingsMock } from '../../../../../testing/settings-mock';
+import { PlaybackService } from '../../../../../services/playback/playback.service';
+import { MetadataService } from '../../../../../services/metadata/metadata.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('CollectionTracksTableComponent', () => {
-    let playbackServiceMock: IMock<PlaybackServiceBase>;
+    let playbackServiceMock: IMock<PlaybackService>;
     let mouseSelectionWatcherMock: IMock<MouseSelectionWatcher>;
     let addToPlaylistMenuMock: IMock<AddToPlaylistMenu>;
     let contextMenuOpenerMock: IMock<ContextMenuOpener>;
-    let metadataServiceMock: IMock<MetadataServiceBase>;
+    let metadataServiceMock: IMock<MetadataService>;
     let playbackIndicationServiceMock: IMock<PlaybackIndicationServiceBase>;
     let tracksColumnsServiceMock: IMock<TracksColumnsServiceBase>;
     let tracksColumnsOrderingMock: IMock<TracksColumnsOrdering>;
@@ -40,6 +43,7 @@ describe('CollectionTracksTableComponent', () => {
     let translatorServiceMock: IMock<TranslatorServiceBase>;
     let desktopMock: IMock<DesktopBase>;
     let loggerMock: IMock<Logger>;
+    let settingsMock: any;
 
     let playbackStartedMock: Subject<PlaybackStarted>;
     let playbackStartedMock$: Observable<PlaybackStarted>;
@@ -82,11 +86,11 @@ describe('CollectionTracksTableComponent', () => {
     }
 
     beforeEach(() => {
-        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
+        playbackServiceMock = Mock.ofType<PlaybackService>();
         mouseSelectionWatcherMock = Mock.ofType<MouseSelectionWatcher>();
         addToPlaylistMenuMock = Mock.ofType<AddToPlaylistMenu>();
         contextMenuOpenerMock = Mock.ofType<ContextMenuOpener>();
-        metadataServiceMock = Mock.ofType<MetadataServiceBase>();
+        metadataServiceMock = Mock.ofType<MetadataService>();
         playbackIndicationServiceMock = Mock.ofType<PlaybackIndicationServiceBase>();
         tracksColumnsServiceMock = Mock.ofType<TracksColumnsServiceBase>();
         tracksColumnsOrderingMock = Mock.ofType<TracksColumnsOrdering>();
@@ -97,6 +101,7 @@ describe('CollectionTracksTableComponent', () => {
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         desktopMock = Mock.ofType<DesktopBase>();
         loggerMock = Mock.ofType<Logger>();
+        settingsMock = new SettingsMock();
 
         playbackStartedMock = new Subject();
         playbackStartedMock$ = playbackStartedMock.asObservable();
@@ -161,10 +166,10 @@ describe('CollectionTracksTableComponent', () => {
         track4.discNumber = 1;
         track4.rating = 4;
 
-        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
-        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object);
-        trackModel3 = new TrackModel(track3, dateTimeMock.object, translatorServiceMock.object);
-        trackModel4 = new TrackModel(track4, dateTimeMock.object, translatorServiceMock.object);
+        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
+        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object, settingsMock);
+        trackModel3 = new TrackModel(track3, dateTimeMock.object, translatorServiceMock.object, settingsMock);
+        trackModel4 = new TrackModel(track4, dateTimeMock.object, translatorServiceMock.object, settingsMock);
         tracks = new TrackModels();
         tracks.addTrack(trackModel1);
         tracks.addTrack(trackModel2);

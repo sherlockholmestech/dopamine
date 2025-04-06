@@ -2,25 +2,33 @@ import { Injectable } from '@angular/core';
 import { AlbumArtwork } from '../../data/entities/album-artwork';
 import { Logger } from '../../common/logger';
 import { Timer } from '../../common/scheduling/timer';
-import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
 import { AlbumArtworkRepositoryBase } from '../../data/repositories/album-artwork-repository.base';
-import {FileAccessBase} from "../../common/io/file-access.base";
+import { FileAccessBase } from '../../common/io/file-access.base';
+import { NotificationServiceBase } from '../notification/notification.service.base';
+import { ApplicationPaths } from '../../common/application/application-paths';
+import { SettingsBase } from '../../common/settings/settings.base';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AlbumArtworkRemover {
     public constructor(
         private albumArtworkRepository: AlbumArtworkRepositoryBase,
         private fileAccess: FileAccessBase,
-        private snackBarService: SnackBarServiceBase,
+        private applicationPaths: ApplicationPaths,
+        private notificationService: NotificationServiceBase,
+        private settings: SettingsBase,
         private logger: Logger,
     ) {}
 
     public async removeAlbumArtworkThatHasNoTrackAsync(): Promise<void> {
         const timer: Timer = new Timer();
         timer.start();
+        
+        const albumKeyIndex: string = this.settings.albumKeyIndex;
 
         try {
-            const numberOfAlbumArtworkToRemove: number = this.albumArtworkRepository.getNumberOfAlbumArtworkThatHasNoTrack();
+            const numberOfAlbumArtworkToRemove: number = this.albumArtworkRepository.getNumberOfAlbumArtworkThatHasNoTrack(
+                albumKeyIndex,
+            );
 
             if (numberOfAlbumArtworkToRemove === 0) {
                 timer.stop();
@@ -40,9 +48,11 @@ export class AlbumArtworkRemover {
                 'removeAlbumArtworkThatHasNoTrackAsync',
             );
 
-            await this.snackBarService.updatingAlbumArtworkAsync();
+            await this.notificationService.updatingAlbumArtworkAsync();
 
-            const numberOfRemovedAlbumArtwork: number = this.albumArtworkRepository.deleteAlbumArtworkThatHasNoTrack();
+            const numberOfRemovedAlbumArtwork: number = this.albumArtworkRepository.deleteAlbumArtworkThatHasNoTrack(
+                albumKeyIndex,
+            );
 
             timer.stop();
 
@@ -63,8 +73,9 @@ export class AlbumArtworkRemover {
         timer.start();
 
         try {
+            const albumKeyIndex: string = this.settings.albumKeyIndex;
             const numberOfAlbumArtworkToRemove: number =
-                this.albumArtworkRepository.getNumberOfAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+                this.albumArtworkRepository.getNumberOfAlbumArtworkForTracksThatNeedAlbumArtworkIndexing(albumKeyIndex);
 
             if (numberOfAlbumArtworkToRemove === 0) {
                 timer.stop();
@@ -84,10 +95,11 @@ export class AlbumArtworkRemover {
                 'removeAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync',
             );
 
-            await this.snackBarService.updatingAlbumArtworkAsync();
+            await this.notificationService.updatingAlbumArtworkAsync();
 
-            const numberOfRemovedAlbumArtwork: number =
-                this.albumArtworkRepository.deleteAlbumArtworkForTracksThatNeedAlbumArtworkIndexing();
+            const numberOfRemovedAlbumArtwork: number = this.albumArtworkRepository.deleteAlbumArtworkForTracksThatNeedAlbumArtworkIndexing(
+                albumKeyIndex,
+            );
 
             timer.stop();
 
@@ -126,7 +138,7 @@ export class AlbumArtworkRemover {
                 'removeAlbumArtworkThatIsNotInTheDatabaseFromDiskAsync',
             );
 
-            const coverArtCacheFullPath: string = this.fileAccess.coverArtCacheFullPath();
+            const coverArtCacheFullPath: string = this.applicationPaths.coverArtCacheFullPath();
             const allAlbumArtworkFilePaths: string[] = await this.fileAccess.getFilesInDirectoryAsync(coverArtCacheFullPath);
 
             this.logger.info(
@@ -146,8 +158,8 @@ export class AlbumArtworkRemover {
                 }
 
                 if (numberOfRemovedAlbumArtwork === 1) {
-                    // Only trigger the snack bar once
-                    await this.snackBarService.updatingAlbumArtworkAsync();
+                    // Only trigger the notification once
+                    await this.notificationService.updatingAlbumArtworkAsync();
                 }
             }
         } catch (e: unknown) {

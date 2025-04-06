@@ -73,8 +73,16 @@ export class TagLibFileMetadata implements IFileMetadata {
                 this.album = tagLibFile.tag.album ?? '';
             }
 
-            if (tagLibFile.tag.albumArtists != undefined) {
-                this.albumArtists = tagLibFile.tag.albumArtists ?? [];
+            if (tagLibFile.tag.albumArtists !== undefined) {
+                if (this.path.toLowerCase().endsWith('.wav')) {
+                    // .wav files have limited tagging capabilities. RIFF INFO tags are used to store metadata in .wav files.
+                    // There seems to be no dedicated tag for album artists in the RIFF INFO tags. Artist is stored in the 'IART' tag.
+                    // node-taglib-sharp reads the album artist from the RIFF 'IART' tag, but adds a null character at the end of the string.
+                    // That is why we remove all null characters from all strings in the array here.
+                    this.albumArtists = (tagLibFile.tag.albumArtists ?? []).map((a) => a.replace(/\u0000/g, ''));
+                } else {
+                    this.albumArtists = tagLibFile.tag.albumArtists ?? [];
+                }
             }
 
             if (tagLibFile.tag.genres != undefined) {
@@ -175,18 +183,16 @@ export class TagLibFileMetadata implements IFileMetadata {
 
     private writeRatingToFile(tagLibFile: File, rating: number): void {
         const id3v2Tag: Id3v2Tag = <Id3v2Tag>tagLibFile.getTag(TagTypes.Id3v2, true);
-        const allPopularimeterFrames: Id3v2PopularimeterFrame[] = id3v2Tag.getFramesByClassType<Id3v2PopularimeterFrame>(
+        let allPopularimeterFrames: Id3v2PopularimeterFrame[] = id3v2Tag.getFramesByClassType<Id3v2PopularimeterFrame>(
             Id3v2FrameClassType.PopularimeterFrame,
         );
 
         if (allPopularimeterFrames.length === 0) {
-            const newPopularimeterFrame = Id3v2PopularimeterFrame.fromUser(this.windowsPopMUser);
-            newPopularimeterFrame.rating = rating;
             id3v2Tag.removeFrames(Id3v2FrameIdentifiers.POPM);
-            id3v2Tag.addFrame(newPopularimeterFrame);
-
-            return;
+            id3v2Tag.addFrame(Id3v2PopularimeterFrame.fromUser(this.windowsPopMUser));
         }
+
+        allPopularimeterFrames = id3v2Tag.getFramesByClassType<Id3v2PopularimeterFrame>(Id3v2FrameClassType.PopularimeterFrame);
 
         const popularimeterFramesForWindowsUser: Id3v2PopularimeterFrame[] = allPopularimeterFrames.filter(
             (x) => x.user === this.windowsPopMUser,
@@ -194,10 +200,6 @@ export class TagLibFileMetadata implements IFileMetadata {
 
         if (popularimeterFramesForWindowsUser.length > 0) {
             popularimeterFramesForWindowsUser[0].rating = RatingConverter.starToPopMRating(rating);
-
-            return;
         }
-
-        allPopularimeterFrames[0].rating = RatingConverter.starToPopMRating(rating);
     }
 }

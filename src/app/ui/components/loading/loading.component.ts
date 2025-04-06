@@ -36,9 +36,18 @@ export class LoadingComponent implements OnInit {
         } else {
             if (this.fileService.hasPlayableFilesAsParameters()) {
                 await this.fileService.enqueueParameterFilesAsync();
-                await this.navigationService.navigateToNowPlayingAsync();
+
+                if (this.settings.playerType === 'cover') {
+                    await this.navigationService.navigateToCoverPlayerAsync();
+                } else {
+                    await this.navigationService.navigateToNowPlayingAsync();
+                }
             } else {
-                await this.navigationService.navigateToCollectionAsync();
+                if (this.settings.playerType === 'cover') {
+                    await this.navigationService.navigateToCoverPlayerAsync();
+                } else {
+                    await this.navigationService.navigateToCollectionAsync();
+                }
                 await this.initializeAsync();
             }
         }
@@ -48,7 +57,7 @@ export class LoadingComponent implements OnInit {
         await this.scheduler.sleepAsync(2000);
 
         if (this.settings.refreshCollectionAutomatically) {
-            await this.indexingService.indexCollectionIfOutdatedAsync();
+            this.indexingService.indexCollectionIfOutdated();
         }
 
         await this.updateService.checkForUpdatesAsync();

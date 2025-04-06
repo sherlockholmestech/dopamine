@@ -30,6 +30,10 @@
     background-color: rgba(var(--theme-rgb-base), 0.06) !important;
 }
 
+.mat-bottom-sheet-container {
+    background-color: var(--theme-main-background) !important;
+}
+
 // Text color
 // -----------------------------------------------------------------------------------------------------------------------------------------
 .mat-mdc-menu-item {
@@ -75,6 +79,14 @@
     opacity: 0.2 !important;
 }
 
+// Bottom sheet
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
+.mat-bottom-sheet-container {
+    padding: 0 !important;
+    overflow: unset !important;
+}
+
 // Menu
 // -----------------------------------------------------------------------------------------------------------------------------------------
 .mat-mdc-menu-item > * {
@@ -96,16 +108,6 @@
 
 .mat-mdc-menu-item:hover {
     background-color: rgba(var(--theme-rgb-base), 0.06) !important;
-}
-
-// Snack Bar
-// -----------------------------------------------------------------------------------------------------------------------------------------
-.mdc-snackbar__surface {
-    background: linear-gradient(45deg, var(--theme-primary-color) 30%, var(--theme-secondary-color) 100%) !important;
-}
-
-.cdk-global-overlay-wrapper > .cdk-overlay-pane {
-    margin-top: 50px !important;
 }
 
 // Tooltip

@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { Observable, Subject, Subscription } from 'rxjs';
 import { NowPlayingPage } from './now-playing-page';
 import { NowPlayingNavigationServiceBase } from './now-playing-navigation.service.base';
-import { PlaybackInformationServiceBase } from '../playback-information/playback-information.service.base';
 import { PlaybackInformation } from '../playback-information/playback-information';
 import { PromiseUtils } from '../../common/utils/promise-utils';
+import {PlaybackInformationService} from "../playback-information/playback-information.service";
 
 @Injectable()
 export class NowPlayingNavigationService implements NowPlayingNavigationServiceBase {
@@ -12,7 +12,7 @@ export class NowPlayingNavigationService implements NowPlayingNavigationServiceB
     private _currentNowPlayingPage: NowPlayingPage = NowPlayingPage.nothingPlaying;
     private subscription: Subscription = new Subscription();
 
-    public constructor(private playbackInformationService: PlaybackInformationServiceBase) {
+    public constructor(private playbackInformationService: PlaybackInformationService) {
         this.initializeSubscriptions();
         PromiseUtils.noAwait(this.setCurrentNowPlayingPageAsync());
     }
@@ -64,9 +64,9 @@ export class NowPlayingNavigationService implements NowPlayingNavigationServiceB
         const currentPlaybackInformation: PlaybackInformation = await this.playbackInformationService.getCurrentPlaybackInformationAsync();
 
         if (currentPlaybackInformation.track != undefined) {
-            this._currentNowPlayingPage = NowPlayingPage.showcase;
+            this.navigate(NowPlayingPage.showcase);
         } else {
-            this._currentNowPlayingPage = NowPlayingPage.nothingPlaying;
+            this.navigate(NowPlayingPage.nothingPlaying);
         }
     }
 }

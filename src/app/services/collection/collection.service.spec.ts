@@ -6,18 +6,21 @@ import { TrackModel } from '../track/track-model';
 import { CollectionService } from './collection.service';
 import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
 import { DesktopBase } from '../../common/io/desktop.base';
-import { PlaybackServiceBase } from '../playback/playback.service.base';
+import { PlaybackService } from '../playback/playback.service';
 import { TranslatorServiceBase } from '../translator/translator.service.base';
 import { Track } from '../../data/entities/track';
 import { CollectionServiceBase } from './collection.service.base';
+import { SettingsMock } from '../../testing/settings-mock';
 
 jest.mock('@electron/remote', () => ({ exec: jest.fn() }));
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('CollectionService', () => {
-    let playbackServiceMock: IMock<PlaybackServiceBase>;
+    let playbackServiceMock: IMock<PlaybackService>;
     let trackRepositoryMock: IMock<TrackRepositoryBase>;
     let desktopMock: IMock<DesktopBase>;
     let loggerMock: IMock<Logger>;
+    let settingsMock: any;
 
     let dateTimeMock: IMock<DateTime>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
@@ -32,23 +35,24 @@ describe('CollectionService', () => {
     let trackModel3: TrackModel;
 
     beforeEach(() => {
-        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
+        playbackServiceMock = Mock.ofType<PlaybackService>();
         trackRepositoryMock = Mock.ofType<TrackRepositoryBase>();
         desktopMock = Mock.ofType<DesktopBase>();
         loggerMock = Mock.ofType<Logger>();
+        settingsMock = new SettingsMock();
 
         dateTimeMock = Mock.ofType<DateTime>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
 
         track1 = new Track('path1');
         track1.trackId = 1;
-        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
+        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
         track2 = new Track('path2');
         track2.trackId = 2;
-        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object);
+        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object, settingsMock);
         track3 = new Track('path3');
         track3.trackId = 3;
-        trackModel3 = new TrackModel(track3, dateTimeMock.object, translatorServiceMock.object);
+        trackModel3 = new TrackModel(track3, dateTimeMock.object, translatorServiceMock.object, settingsMock);
 
         service = new CollectionService(playbackServiceMock.object, trackRepositoryMock.object, desktopMock.object, loggerMock.object);
     });

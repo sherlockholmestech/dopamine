@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { nativeImage, NativeImage, Size } from 'electron';
-import * as fs from 'fs-extra';
 import fetch from 'node-fetch';
 import { FileAccessBase } from './io/file-access.base';
+import { nativeImage, NativeImage, Size } from 'electron';
+import * as fs from 'fs-extra';
+import { Jimp } from 'jimp';
 
 @Injectable()
 export class ImageProcessor {
@@ -13,32 +14,53 @@ export class ImageProcessor {
     }
 
     public async convertLocalImageToBufferAsync(imagePath: string): Promise<Buffer> {
-        const imageBuffer: Buffer = await this.fileAccess.getFileContentAsBufferAsync(imagePath);
-
-        return imageBuffer;
+        return await this.fileAccess.getFileContentAsBufferAsync(imagePath);
     }
 
     public async convertOnlineImageToBufferAsync(imageUrl: string): Promise<Buffer> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         const response: Response = (await fetch(imageUrl)) as Response;
         const imageArrayBuffer: ArrayBuffer = await response.arrayBuffer();
-        const imageBuffer: Buffer = Buffer.from(imageArrayBuffer);
-
-        return imageBuffer;
+        return Buffer.from(imageArrayBuffer);
     }
 
     public convertBufferToImageUrl(imageBuffer: Buffer): string {
-        return 'data:image/png;base64,' + imageBuffer.toString('base64');
+        return 'data:image/jpg;base64,' + imageBuffer.toString('base64');
     }
 
-    public resizeImage(imageBuffer: Buffer, maxWidth: number, maxHeight: number, jpegQuality: number): Buffer {
+    public async toResizedJpegBufferAsync(imageBuffer: Buffer, maxWidth: number, maxHeight: number, jpegQuality: number): Promise<Buffer> {
         let image: NativeImage = nativeImage.createFromBuffer(imageBuffer);
-        const imageSize: Size = image.getSize();
 
-        if (imageSize.width > maxWidth || imageSize.height > maxHeight) {
-            image = image.resize({ width: maxWidth, height: maxHeight, quality: 'best' });
+        // NativeImage is very fast, but only supports PNG and JPG. For other formats, it returns an empty image.
+        if (!image.isEmpty()) {
+            const imageSize: Size = image.getSize();
+
+            if (imageSize.width > maxWidth || imageSize.height > maxHeight) {
+                image = image.resize({ width: maxWidth, height: maxHeight, quality: 'best' });
+            }
+
+            return image.toJPEG(jpegQuality);
         }
 
-        return image.toJPEG(jpegQuality);
+        // Fallback using Jimp, which is much slower than NativeImage.
+        let fallbackImage = await Jimp.read(imageBuffer);
+        if (fallbackImage.bitmap.width > maxWidth || fallbackImage.bitmap.height > maxHeight) {
+            fallbackImage.resize({ w: maxWidth, h: maxHeight });
+        }
+
+        return await fallbackImage.getBuffer('image/jpeg', { quality: jpegQuality });
+    }
+
+    public async toJpegBufferAsync(imageBuffer: Buffer, jpegQuality: number): Promise<Buffer> {
+        let image: NativeImage = nativeImage.createFromBuffer(imageBuffer);
+
+        // NativeImage is very fast, but only supports PNG and JPG. For other formats, it returns an empty image.
+        if (!image.isEmpty()) {
+            return image.toJPEG(jpegQuality);
+        }
+
+        let fallbackImage = await Jimp.read(imageBuffer);
+
+        return await fallbackImage.getBuffer('image/jpeg', { quality: jpegQuality });
     }
 }

@@ -17,6 +17,14 @@ import { FileAccessBase } from '../../common/io/file-access.base';
 import { ApplicationBase } from '../../common/io/application.base';
 import { AppearanceServiceBase } from './appearance.service.base';
 import { RgbColor } from '../../common/rgb-color';
+import { ApplicationPaths } from '../../common/application/application-paths';
+import { PlaybackService } from '../playback/playback.service';
+import { AlbumAccentColorService } from '../album-accent-color/album-accent-color.service';
+import { PlaybackStarted } from '../playback/playback-started';
+import { TrackModel } from '../track/track-model';
+import { MockCreator } from '../../testing/mock-creator';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('AppearanceService', () => {
     let settingsMock: IMock<SettingsBase>;
@@ -27,6 +35,11 @@ describe('AppearanceService', () => {
     let desktopMock: IMock<DesktopBase>;
     let defaultThemesCreatorMock: IMock<DefaultThemesCreator>;
     let documentProxyMock: IMock<DocumentProxy>;
+    let applicationPathsMock: IMock<ApplicationPaths>;
+    let playbackServiceMock: IMock<PlaybackService>;
+    let albumAccentColorServiceMock: IMock<AlbumAccentColorService>;
+
+    let playbackServicePlaybackStartedMock: Subject<PlaybackStarted>;
 
     let containerElementMock: HTMLElement;
     let documentElementMock: HTMLElement;
@@ -38,6 +51,11 @@ describe('AppearanceService', () => {
     let desktopAccentColorChangedMock: Subject<void>;
     let desktopNativeThemeUpdatedMock: Subject<void>;
 
+    let applicationFullScreenChangedMock: Subject<boolean>;
+    let applicationFullScreenChangedMock$: Observable<boolean>;
+
+    const flushPromises = () => new Promise(process.nextTick);
+
     function createService(): AppearanceServiceBase {
         return new AppearanceService(
             settingsMock.object,
@@ -48,6 +66,9 @@ describe('AppearanceService', () => {
             desktopMock.object,
             defaultThemesCreatorMock.object,
             documentProxyMock.object,
+            applicationPathsMock.object,
+            playbackServiceMock.object,
+            albumAccentColorServiceMock.object,
         );
     }
 
@@ -67,6 +88,8 @@ describe('AppearanceService', () => {
             '#0ccccc',
             '#0ddddd',
             '#0eeeee',
+            '#0fffff',
+            '#0fffff',
             '#0fffff',
             '#0fffff',
             '#0fffff',
@@ -114,6 +137,8 @@ describe('AppearanceService', () => {
             '#1fffff',
             '#1fffff',
             '#1fffff',
+            '#1fffff',
+            '#1fffff',
         );
     }
 
@@ -137,6 +162,9 @@ describe('AppearanceService', () => {
             desktopMock.object,
             defaultThemesCreatorMock.object,
             documentProxyMock.object,
+            applicationPathsMock.object,
+            playbackServiceMock.object,
+            albumAccentColorServiceMock.object,
         );
     }
 
@@ -180,6 +208,26 @@ describe('AppearanceService', () => {
         expect(documentElementMock.style.getPropertyValue('--theme-accent-color-A700')).toEqual('#1aff1a');
     }
 
+    function assertAlbumCoverAccentColorCssProperties(): void {
+        expect(documentElementMock.style.getPropertyValue('--theme-primary-color')).toEqual('#001122');
+        expect(documentElementMock.style.getPropertyValue('--theme-secondary-color')).toEqual('#001122');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color')).toEqual('#001122');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-50')).toEqual('#2c96ff');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-100')).toEqual('#006fdf');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-200')).toEqual('#0053a7');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-300')).toEqual('#00305f');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-400')).toEqual('#002041');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-500')).toEqual('#001122');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-600')).toEqual('#000203');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-700')).toEqual('#000000');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-800')).toEqual('#000000');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-900')).toEqual('#000000');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-A100')).toEqual('#2290ff');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-A200')).toEqual('#005dbb');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-A400')).toEqual('#002a55');
+        expect(documentElementMock.style.getPropertyValue('--theme-accent-color-A700')).toEqual('#001e3b');
+    }
+
     function assertDarkColorCssProperties(scrollBars: string): void {
         expect(documentElementMock.style.getPropertyValue('--theme-window-button-icon')).toEqual('#000000');
         expect(documentElementMock.style.getPropertyValue('--theme-hovered-item-background')).toEqual('#011111');
@@ -196,6 +244,7 @@ describe('AppearanceService', () => {
         expect(documentElementMock.style.getPropertyValue('--theme-slider-thumb-background')).toEqual('#0ddddd');
         expect(documentElementMock.style.getPropertyValue('--theme-album-cover-logo')).toEqual('#0eeeee');
         expect(documentElementMock.style.getPropertyValue('--theme-album-cover-background')).toEqual('#0fffff');
+        expect(documentElementMock.style.getPropertyValue('--theme-header-separator')).toEqual('#0fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-pane-separators')).toEqual('#0fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-settings-separators')).toEqual('#0fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-context-menu-separators')).toEqual('#0fffff');
@@ -209,6 +258,7 @@ describe('AppearanceService', () => {
         expect(documentElementMock.style.getPropertyValue('--theme-secondary-button-text')).toEqual('#0fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-tooltip-text')).toEqual('#0fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-button-border')).toEqual('#0fffff');
+        expect(documentElementMock.style.getPropertyValue('--theme-highlight-foreground')).toEqual('#0fffff');
     }
 
     function assertLightColorCssProperties(scrollBars: string): void {
@@ -227,6 +277,7 @@ describe('AppearanceService', () => {
         expect(documentElementMock.style.getPropertyValue('--theme-slider-thumb-background')).toEqual('#1ddddd');
         expect(documentElementMock.style.getPropertyValue('--theme-album-cover-logo')).toEqual('#1eeeee');
         expect(documentElementMock.style.getPropertyValue('--theme-album-cover-background')).toEqual('#1fffff');
+        expect(documentElementMock.style.getPropertyValue('--theme-header-separator')).toEqual('#1fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-pane-separators')).toEqual('#1fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-settings-separators')).toEqual('#1fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-context-menu-separators')).toEqual('#1fffff');
@@ -240,6 +291,7 @@ describe('AppearanceService', () => {
         expect(documentElementMock.style.getPropertyValue('--theme-secondary-button-text')).toEqual('#1fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-tooltip-text')).toEqual('#1fffff');
         expect(documentElementMock.style.getPropertyValue('--theme-button-border')).toEqual('#1fffff');
+        expect(documentElementMock.style.getPropertyValue('--theme-highlight-foreground')).toEqual('#1fffff');
     }
 
     function resetElements(): void {
@@ -253,7 +305,6 @@ describe('AppearanceService', () => {
         fileAccessMock
             .setup((x) => x.getFilesInDirectory('/home/user/.config/Dopamine/Themes'))
             .returns(() => ['/home/user/.config/Dopamine/Themes/Theme 1.theme', '/home/user/.config/Dopamine/Themes/Theme 2.theme']);
-        fileAccessMock.setup((x) => x.applicationDataDirectory()).returns(() => '/home/user/.config/Dopamine');
         fileAccessMock
             .setup((x) => x.combinePath(['/home/user/.config/Dopamine', 'Themes']))
             .returns(() => '/home/user/.config/Dopamine/Themes');
@@ -288,12 +339,21 @@ describe('AppearanceService', () => {
         desktopMock = Mock.ofType<DesktopBase>();
         defaultThemesCreatorMock = Mock.ofType<DefaultThemesCreator>();
         documentProxyMock = Mock.ofType<DocumentProxy>();
+        applicationPathsMock = Mock.ofType<ApplicationPaths>();
+        playbackServiceMock = Mock.ofType<PlaybackService>();
+        albumAccentColorServiceMock = Mock.ofType<AlbumAccentColorService>();
+
+        playbackServicePlaybackStartedMock = new Subject();
+        const playbackServicePlaybackStartedMock$: Observable<PlaybackStarted> = playbackServicePlaybackStartedMock.asObservable();
+        playbackServiceMock.setup((x) => x.playbackStarted$).returns(() => playbackServicePlaybackStartedMock$);
 
         theme1 = createTheme('Theme 1');
         theme2 = createTheme('Theme 2');
 
         resetDefaultThemesCreatorMock();
         resetFileAccessMock();
+
+        applicationPathsMock.setup((x) => x.themesDirectoryFullPath()).returns(() => '/home/user/.config/Dopamine/Themes');
 
         containerElementMock = document.createElement('div');
         overlayContainerMock.setup((x) => x.getContainerElement()).returns(() => containerElementMock);
@@ -311,6 +371,10 @@ describe('AppearanceService', () => {
         desktopNativeThemeUpdatedMock = new Subject();
         const desktopNativeThemeUpdatedMock$: Observable<void> = desktopNativeThemeUpdatedMock.asObservable();
         desktopMock.setup((x) => x.nativeThemeUpdated$).returns(() => desktopNativeThemeUpdatedMock$);
+
+        applicationFullScreenChangedMock = new Subject();
+        applicationFullScreenChangedMock$ = applicationFullScreenChangedMock.asObservable();
+        applicationMock.setup((x) => x.fullScreenChanged$).returns(() => applicationFullScreenChangedMock$);
     });
 
     describe('constructor', () => {
@@ -352,6 +416,7 @@ describe('AppearanceService', () => {
             // Arrange
             applicationMock.reset();
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => true);
+            applicationMock.setup((x) => x.fullScreenChanged$).returns(() => applicationFullScreenChangedMock$);
 
             // Act
             const service: AppearanceServiceBase = createService();
@@ -364,6 +429,7 @@ describe('AppearanceService', () => {
             // Arrange
             applicationMock.reset();
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => false);
+            applicationMock.setup((x) => x.fullScreenChanged$).returns(() => applicationFullScreenChangedMock$);
 
             // Act
             const service: AppearanceServiceBase = createService();
@@ -476,6 +542,7 @@ describe('AppearanceService', () => {
             // Arrange
             applicationMock.reset();
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => true);
+            applicationMock.setup((x) => x.fullScreenChanged$).returns(() => applicationFullScreenChangedMock$);
             const service: AppearanceServiceBase = createService();
 
             // Act
@@ -489,6 +556,7 @@ describe('AppearanceService', () => {
             // Arrange
             applicationMock.reset();
             applicationMock.setup((x) => x.getGlobal('windowHasFrame')).returns(() => false);
+            applicationMock.setup((x) => x.fullScreenChanged$).returns(() => applicationFullScreenChangedMock$);
             const service: AppearanceServiceBase = createService();
 
             // Act
@@ -1047,8 +1115,8 @@ describe('AppearanceService', () => {
         });
     });
 
-    describe('applyAppearance', () => {
-        it('should apply the selected font size', () => {
+    describe('applyAppearanceAsync', () => {
+        it('should apply the selected font size', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
@@ -1059,13 +1127,14 @@ describe('AppearanceService', () => {
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             expect(documentElementMock.style.getPropertyValue('--fontsize')).toEqual('13px');
         });
 
-        it('should apply the dark theme of the selected theme when follow the system theme is disabled and use light background theme is disabled', () => {
+        it('should apply the dark theme of the selected theme when follow the system theme and follow album cover color are disabled and use light background theme is disabled', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
@@ -1074,20 +1143,22 @@ describe('AppearanceService', () => {
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
+            settingsMock.setup((x) => x.followAlbumCoverColor).returns(() => false);
 
             const service: AppearanceServiceBase = createService();
 
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             assertDarkColorCssProperties('#0fffff');
             expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
-        it('should apply the light theme of the selected theme when follow the system theme is disabled and use light background theme is enabled', () => {
+        it('should apply the light theme of the selected theme when follow the system theme and follow album cover color are disabled and use light background theme is enabled', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
@@ -1096,20 +1167,22 @@ describe('AppearanceService', () => {
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
+            settingsMock.setup((x) => x.followAlbumCoverColor).returns(() => false);
 
             const service: AppearanceServiceBase = createService();
 
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             assertLightColorCssProperties('#1fffff');
             expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
         });
 
-        it('should apply the dark theme of the selected theme when follow the system theme is enabled and the desktop is using a dark theme', () => {
+        it('should apply the dark theme of the selected theme when follow the system theme is enabled and follow album cover color is disabled and the desktop is using a dark theme', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
@@ -1118,20 +1191,22 @@ describe('AppearanceService', () => {
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => true);
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => true);
+            settingsMock.setup((x) => x.followAlbumCoverColor).returns(() => false);
 
             const service: AppearanceServiceBase = createService();
 
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             assertDarkColorCssProperties('#0fffff');
             expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
-        it('should apply the light theme of the selected theme when follow the system theme is enabled and the desktop is using a light theme', () => {
+        it('should apply the light theme of the selected theme when follow the system theme is enabled and follow album cover color is disabled and the desktop is using a light theme', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
@@ -1140,20 +1215,22 @@ describe('AppearanceService', () => {
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => true);
+            settingsMock.setup((x) => x.followAlbumCoverColor).returns(() => false);
 
             const service: AppearanceServiceBase = createService();
 
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             assertLightColorCssProperties('#1fffff');
             expect(service.backgroundRgbColor.equals(new RgbColor(21, 85, 85))).toBeTruthy();
         });
 
-        it('should apply the colors of the selected theme when follow the system color is disabled', () => {
+        it('should apply the colors of the selected theme when follow the system color and follow album cover color are disabled ', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
@@ -1161,12 +1238,14 @@ describe('AppearanceService', () => {
             settingsMock.setup((x) => x.useLightBackgroundTheme).returns(() => false);
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
             settingsMock.setup((x) => x.followSystemColor).returns(() => false);
+            settingsMock.setup((x) => x.followAlbumCoverColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
             const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             assertSelectedThemeAccentColorCssProperties();
@@ -1175,7 +1254,7 @@ describe('AppearanceService', () => {
             expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
-        it('should apply the colors of the system when follow the system color is enabled', () => {
+        it('should apply the colors of the system when follow the system color is enabled and follow album cover color is disabled', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
@@ -1184,12 +1263,14 @@ describe('AppearanceService', () => {
             desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
             desktopMock.setup((x) => x.getAccentColor()).returns(() => '00ff00ff');
             settingsMock.setup((x) => x.followSystemColor).returns(() => true);
+            settingsMock.setup((x) => x.followAlbumCoverColor).returns(() => false);
             settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
             const service: AppearanceServiceBase = createService();
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             assertSystemThemeAccentColorCssProperties();
@@ -1198,7 +1279,37 @@ describe('AppearanceService', () => {
             expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
         });
 
-        it('should apply a correct margin when not using system title bar search is visible', () => {
+        it('should apply the colors of the album cover when follow the system color is disabled and follow album cover color is enabled', async () => {
+            // Arrange
+            settingsMock.reset();
+            settingsMock.setup((x) => x.theme).returns(() => 'Theme 2');
+            settingsMock.setup((x) => x.fontSize).returns(() => 13);
+            settingsMock.setup((x) => x.useLightBackgroundTheme).returns(() => false);
+            desktopMock.setup((x) => x.shouldUseDarkColors()).returns(() => false);
+            desktopMock.setup((x) => x.getAccentColor()).returns(() => '00ff00ff');
+            settingsMock.setup((x) => x.followSystemColor).returns(() => false);
+            settingsMock.setup((x) => x.followAlbumCoverColor).returns(() => true);
+            settingsMock.setup((x) => x.followSystemTheme).returns(() => false);
+
+            const currentTrack: TrackModel = MockCreator.createTrackModelWithAlbumKey('path1', 'albumKey1');
+            playbackServiceMock.setup((x) => x.currentTrack).returns(() => currentTrack);
+            albumAccentColorServiceMock.setup((x) => x.getAlbumAccentColorAsync('albumKey1')).returns(() => Promise.resolve('#001122'));
+
+            const service: AppearanceServiceBase = createService();
+            resetElements();
+
+            // Act
+            await service.applyAppearanceAsync();
+            await flushPromises();
+
+            // Assert
+            assertAlbumCoverAccentColorCssProperties();
+            assertDarkColorCssProperties('#001122');
+            expect(service.accentRgbColor.equals(new RgbColor(0, 17, 34))).toBeTruthy();
+            expect(service.backgroundRgbColor.equals(new RgbColor(5, 85, 85))).toBeTruthy();
+        });
+
+        it('should apply a correct margin when not using system title bar search is visible', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 1');
@@ -1208,13 +1319,14 @@ describe('AppearanceService', () => {
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             expect(documentElementMock.style.getPropertyValue('--mat-tab-header-margin-right')).toEqual('354px');
         });
 
-        it('should apply a correct margin when using system title bar search is visible', () => {
+        it('should apply a correct margin when using system title bar search is visible', async () => {
             // Arrange
             settingsMock.reset();
             settingsMock.setup((x) => x.theme).returns(() => 'Theme 1');
@@ -1224,7 +1336,8 @@ describe('AppearanceService', () => {
             resetElements();
 
             // Act
-            service.applyAppearance();
+            await service.applyAppearanceAsync();
+            await flushPromises();
 
             // Assert
             expect(documentElementMock.style.getPropertyValue('--mat-tab-header-margin-right')).toEqual('219px');

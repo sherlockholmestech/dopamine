@@ -18,6 +18,7 @@ describe('ThemeNeutralColors', () => {
             '#333',
             '#444',
             '#555',
+            '#667',
             '#666',
             '#777',
             '#770',
@@ -31,6 +32,7 @@ describe('ThemeNeutralColors', () => {
             '#ffa',
             '#ffb',
             '#ffc',
+            '#ffd',
         );
     }
 
@@ -195,6 +197,16 @@ describe('ThemeNeutralColors', () => {
             expect(colors.albumCoverBackground).toEqual('#555');
         });
 
+        it('should set headerSeparator', () => {
+            // Arrange
+
+            // Act
+            const colors: ThemeNeutralColors = createNeutralColors();
+
+            // Assert
+            expect(colors.headerSeparator).toEqual('#667');
+        });
+
         it('should set paneSeparators', () => {
             // Arrange
 
@@ -323,6 +335,16 @@ describe('ThemeNeutralColors', () => {
 
             // Assert
             expect(colors.buttonBorder).toEqual('#ffc');
+        });
+
+        it('should set highlightForeground', () => {
+            // Arrange
+
+            // Act
+            const colors: ThemeNeutralColors = createNeutralColors();
+
+            // Assert
+            expect(colors.highlightForeground).toEqual('#ffd');
         });
     });
 });

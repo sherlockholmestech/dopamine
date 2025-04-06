@@ -14,26 +14,16 @@ export class ExternalArtworkPathGetter {
 
         const directory: string = this.fileAccess.getDirectoryPath(audioFilePath!);
         const filesInDirectory: string[] = await this.fileAccess.getFilesInDirectoryAsync(directory);
+        const audioFilePathWithoutExtension: string = this.fileAccess.getFileNameWithoutExtension(audioFilePath!);
+        const lowerCaseCoverArtPossibilities: string[] = Constants.externalCoverArtPatterns.map((externalCoverArtPattern) => {
+            return StringUtils.replaceAll(externalCoverArtPattern, '%filename%', audioFilePathWithoutExtension).toLowerCase();
+        });
 
         for (const filePath of filesInDirectory) {
             const fileName: string = this.fileAccess.getFileName(filePath);
 
-            if (Constants.externalCoverArtPatterns.includes(fileName.toLowerCase())) {
+            if (lowerCaseCoverArtPossibilities.includes(fileName.toLowerCase())) {
                 return filePath;
-            }
-
-            const fileNameWithoutExtension: string = this.fileAccess.getFileNameWithoutExtension(filePath);
-
-            for (const externalCoverArtPattern of Constants.externalCoverArtPatterns) {
-                const externalCoverArtPatternReplacedByFileName: string = StringUtils.replaceAll(
-                    externalCoverArtPattern,
-                    '%filename%',
-                    fileNameWithoutExtension,
-                );
-
-                if (fileName.toLowerCase() === externalCoverArtPatternReplacedByFileName.toLowerCase()) {
-                    return filePath;
-                }
             }
         }
 

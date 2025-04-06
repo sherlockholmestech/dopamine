@@ -1,313 +1,75 @@
-import { Subscription } from 'rxjs';
-import { IMock, Mock, Times } from 'typemoq';
+import { IMock, Mock } from 'typemoq';
 import { Logger } from '../../common/logger';
-import { FolderServiceMock } from '../folder/folder-service-mock';
-import { AlbumArtworkIndexer } from './album-artwork-indexer';
-import { CollectionChecker } from './collection-checker';
+import { NotificationServiceBase } from '../notification/notification.service.base';
+import { FolderServiceBase } from '../folder/folder.service.base';
+import { SettingsBase } from '../../common/settings/settings.base';
 import { IndexingService } from './indexing.service';
-import { TrackIndexer } from './track-indexer';
-import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
+import { IndexingServiceBase } from './indexing.service.base';
+import { Observable, Subject } from 'rxjs';
+import { DesktopBase } from '../../common/io/desktop.base';
+import { AlbumArtworkIndexer } from './album-artwork-indexer';
+import { IpcProxyBase } from '../../common/io/ipc-proxy.base';
+import { IIndexingMessage } from './messages/i-indexing-message';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('IndexingService', () => {
-    let collectionCheckerMock: IMock<CollectionChecker>;
-    let trackIndexerMock: IMock<TrackIndexer>;
+    let notificationServiceMock: IMock<NotificationServiceBase>;
+    let folderServiceMock: IMock<FolderServiceBase>;
     let albumArtworkIndexerMock: IMock<AlbumArtworkIndexer>;
-    let trackRepositoryMock: IMock<TrackRepositoryBase>;
-    let folderServiceMock: FolderServiceMock;
+    let desktopMock: IMock<DesktopBase>;
+    let settingsMock: IMock<SettingsBase>;
+    let ipcProxyMock: IMock<IpcProxyBase>;
     let loggerMock: IMock<Logger>;
-    let service: IndexingService;
+
+    let folderService_foldersChanged: Subject<void>;
+
+    let onIndexingWorkerMessage: Subject<IIndexingMessage>;
+    let onIndexingWorkerExit: Subject<void>;
 
     beforeEach(() => {
-        collectionCheckerMock = Mock.ofType<CollectionChecker>();
-        trackIndexerMock = Mock.ofType<TrackIndexer>();
+        notificationServiceMock = Mock.ofType<NotificationServiceBase>();
+        folderServiceMock = Mock.ofType<FolderServiceBase>();
+        desktopMock = Mock.ofType<DesktopBase>();
         albumArtworkIndexerMock = Mock.ofType<AlbumArtworkIndexer>();
-        trackRepositoryMock = Mock.ofType<TrackRepositoryBase>();
-        folderServiceMock = new FolderServiceMock();
+        settingsMock = Mock.ofType<SettingsBase>();
+        ipcProxyMock = Mock.ofType<IpcProxyBase>();
         loggerMock = Mock.ofType<Logger>();
-        service = new IndexingService(
-            collectionCheckerMock.object,
-            trackIndexerMock.object,
+
+        folderService_foldersChanged = new Subject();
+        const folderService_foldersChanged$: Observable<void> = folderService_foldersChanged.asObservable();
+        folderServiceMock.setup((x) => x.foldersChanged$).returns(() => folderService_foldersChanged$);
+
+        onIndexingWorkerMessage = new Subject();
+        const onIndexingWorkerMessage$: Observable<IIndexingMessage> = onIndexingWorkerMessage.asObservable();
+        ipcProxyMock.setup((x) => x.onIndexingWorkerMessage$).returns(() => onIndexingWorkerMessage$);
+
+        onIndexingWorkerExit = new Subject();
+        const onIndexingWorkerExit$: Observable<void> = onIndexingWorkerExit.asObservable();
+        ipcProxyMock.setup((x) => x.onIndexingWorkerExit$).returns(() => onIndexingWorkerExit$);
+    });
+
+    function createSut(): IndexingServiceBase {
+        return new IndexingService(
+            notificationServiceMock.object,
+            folderServiceMock.object,
             albumArtworkIndexerMock.object,
-            trackRepositoryMock.object,
-            folderServiceMock,
+            desktopMock.object,
+            settingsMock.object,
+            ipcProxyMock.object,
             loggerMock.object,
         );
-    });
+    }
 
     describe('constructor', () => {
         it('should create', () => {
-            // Arrange
-
-            // Act
-
-            // Assert
-            expect(service).toBeDefined();
-        });
-
-        it('should define indexingFinished$', () => {
-            // Arrange
-
-            // Act
+            // Arrange, Act
+            const sut: IndexingServiceBase = createSut();
 
             // Assert
-            expect(service.indexingFinished$).toBeDefined();
+            expect(sut).toBeDefined();
         });
     });
 
-    describe('indexCollectionIfOutdatedAsync', () => {
-        it('should check if the collection is out of date', async () => {
-            // Arrange
-            collectionCheckerMock.setup((x) => x.isCollectionOutdatedAsync()).returns(() => Promise.resolve(true));
-
-            // Act
-            await service.indexCollectionIfOutdatedAsync();
-
-            // Assert
-            collectionCheckerMock.verify((x) => x.isCollectionOutdatedAsync(), Times.exactly(1));
-        });
-
-        it('should index the tracks if the collection is out of date', async () => {
-            // Arrange
-            collectionCheckerMock.setup((x) => x.isCollectionOutdatedAsync()).returns(() => Promise.resolve(true));
-
-            // Act
-            await service.indexCollectionIfOutdatedAsync();
-
-            // Assert
-            trackIndexerMock.verify((x) => x.indexTracksAsync(), Times.exactly(1));
-        });
-
-        it('should not index the tracks if the collection is not out of date', async () => {
-            // Arrange
-            collectionCheckerMock.setup((x) => x.isCollectionOutdatedAsync()).returns(() => Promise.resolve(false));
-
-            // Act
-            await service.indexCollectionIfOutdatedAsync();
-
-            // Assert
-            trackIndexerMock.verify((x) => x.indexTracksAsync(), Times.never());
-        });
-
-        it('should index album artwork if the collection is out of date', async () => {
-            // Arrange
-            collectionCheckerMock.setup((x) => x.isCollectionOutdatedAsync()).returns(() => Promise.resolve(true));
-
-            // Act
-            await service.indexCollectionIfOutdatedAsync();
-
-            // Assert
-            albumArtworkIndexerMock.verify((x) => x.indexAlbumArtworkAsync(), Times.exactly(1));
-        });
-
-        it('should index album artwork if the collection is not out of date', async () => {
-            // Arrange
-            collectionCheckerMock.setup((x) => x.isCollectionOutdatedAsync()).returns(() => Promise.resolve(false));
-
-            // Act
-            await service.indexCollectionIfOutdatedAsync();
-
-            // Assert
-            albumArtworkIndexerMock.verify((x) => x.indexAlbumArtworkAsync(), Times.exactly(1));
-        });
-
-        it('should notify that indexing is finished', async () => {
-            // Arrange
-            let indexingIsFinished: boolean = false;
-            const subscription: Subscription = new Subscription();
-
-            subscription.add(
-                service.indexingFinished$.subscribe(() => {
-                    indexingIsFinished = true;
-                }),
-            );
-
-            // Act
-            await service.indexCollectionIfOutdatedAsync();
-
-            // Assert
-            expect(indexingIsFinished).toBeTruthy();
-        });
-    });
-
-    describe('indexCollectionIfFoldersHaveChangedAsync', () => {
-        it('should index the tracks if the folders have changed', async () => {
-            // Arrange
-            folderServiceMock.onFoldersChanged();
-
-            // Act
-            await service.indexCollectionIfFoldersHaveChangedAsync();
-
-            // Assert
-            trackIndexerMock.verify((x) => x.indexTracksAsync(), Times.exactly(1));
-        });
-
-        it('should index album artwork if the folders have changed', async () => {
-            // Arrange
-            folderServiceMock.onFoldersChanged();
-
-            // Act
-            await service.indexCollectionIfFoldersHaveChangedAsync();
-
-            // Assert
-            albumArtworkIndexerMock.verify((x) => x.indexAlbumArtworkAsync(), Times.exactly(1));
-        });
-
-        it('should not index the tracks if the folders have not changed', async () => {
-            // Arrange
-
-            // Act
-            await service.indexCollectionIfFoldersHaveChangedAsync();
-
-            // Assert
-            trackIndexerMock.verify((x) => x.indexTracksAsync(), Times.never());
-        });
-
-        it('should not index album artwork if the folders have not changed', async () => {
-            // Arrange
-
-            // Act
-            await service.indexCollectionIfFoldersHaveChangedAsync();
-
-            // Assert
-            albumArtworkIndexerMock.verify((x) => x.indexAlbumArtworkAsync(), Times.never());
-        });
-
-        it('should notify that indexing is finished if the folders have changed', async () => {
-            // Arrange
-            folderServiceMock.onFoldersChanged();
-
-            let indexingIsFinished: boolean = false;
-            const subscription: Subscription = new Subscription();
-
-            subscription.add(
-                service.indexingFinished$.subscribe(() => {
-                    indexingIsFinished = true;
-                }),
-            );
-
-            // Act
-            await service.indexCollectionIfFoldersHaveChangedAsync();
-
-            // Assert
-            expect(indexingIsFinished).toBeTruthy();
-        });
-
-        it('should not notify that indexing is finished if the folders have not changed', async () => {
-            // Arrange
-            let indexingIsFinished: boolean = false;
-            const subscription: Subscription = new Subscription();
-
-            subscription.add(
-                service.indexingFinished$.subscribe(() => {
-                    indexingIsFinished = true;
-                }),
-            );
-
-            // Act
-            await service.indexCollectionIfFoldersHaveChangedAsync();
-
-            // Assert
-            expect(indexingIsFinished).toBeFalsy();
-        });
-    });
-
-    describe('indexCollectionAlwaysAsync', () => {
-        it('should index the tracks', async () => {
-            // Arrange
-
-            // Act
-            await service.indexCollectionAlwaysAsync();
-
-            // Assert
-            trackIndexerMock.verify((x) => x.indexTracksAsync(), Times.exactly(1));
-        });
-
-        it('should index album artwork', async () => {
-            // Arrange
-
-            // Act
-            await service.indexCollectionAlwaysAsync();
-
-            // Assert
-            albumArtworkIndexerMock.verify((x) => x.indexAlbumArtworkAsync(), Times.exactly(1));
-        });
-
-        it('should notify that indexing is finished', async () => {
-            // Arrange
-            let indexingIsFinished: boolean = false;
-            const subscription: Subscription = new Subscription();
-
-            subscription.add(
-                service.indexingFinished$.subscribe(() => {
-                    indexingIsFinished = true;
-                }),
-            );
-
-            // Act
-            await service.indexCollectionAlwaysAsync();
-
-            // Assert
-            expect(indexingIsFinished).toBeTruthy();
-        });
-    });
-
-    describe('indexAlbumArtworkOnlyAsync', () => {
-        it('should enable album artwork indexing based on onlyWhenHasNoCover when onlyWhenHasNoCover is true', async () => {
-            // Arrange
-
-            // Act
-            await service.indexAlbumArtworkOnlyAsync(true);
-
-            // Assert
-            trackRepositoryMock.verify((x) => x.enableNeedsAlbumArtworkIndexingForAllTracks(true), Times.exactly(1));
-        });
-
-        it('should enable album artwork indexing based on onlyWhenHasNoCover when onlyWhenHasNoCover is false', async () => {
-            // Arrange
-
-            // Act
-            await service.indexAlbumArtworkOnlyAsync(false);
-
-            // Assert
-            trackRepositoryMock.verify((x) => x.enableNeedsAlbumArtworkIndexingForAllTracks(false), Times.exactly(1));
-        });
-
-        it('should index album artwork when onlyWhenHasNoCover is true', async () => {
-            // Arrange
-
-            // Act
-            await service.indexAlbumArtworkOnlyAsync(true);
-
-            // Assert
-            albumArtworkIndexerMock.verify((x) => x.indexAlbumArtworkAsync(), Times.exactly(1));
-        });
-
-        it('should index album artwork when onlyWhenHasNoCover is false', async () => {
-            // Arrange
-
-            // Act
-            await service.indexAlbumArtworkOnlyAsync(false);
-
-            // Assert
-            albumArtworkIndexerMock.verify((x) => x.indexAlbumArtworkAsync(), Times.exactly(1));
-        });
-
-        it('should notify that indexing is finished', async () => {
-            // Arrange
-            let indexingIsFinished: boolean = false;
-            const subscription: Subscription = new Subscription();
-
-            subscription.add(
-                service.indexingFinished$.subscribe(() => {
-                    indexingIsFinished = true;
-                }),
-            );
-
-            // Act
-            await service.indexAlbumArtworkOnlyAsync(false);
-
-            // Assert
-            expect(indexingIsFinished).toBeTruthy();
-        });
-    });
+    test.todo('should write tests');
 });

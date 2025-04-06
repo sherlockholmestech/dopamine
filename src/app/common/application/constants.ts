@@ -11,9 +11,12 @@ export class Constants {
         new Language('el', 'Greek', 'Ελληνικά', true),
         new Language('en', 'English', 'English', false),
         new Language('es', 'Spanish', 'Español', false),
+        new Language('fa', 'Farsi', 'فارسی', true),
         new Language('fr', 'French', 'Français', false),
         new Language('hr', 'Croatian', 'Hrvatski', false),
+        new Language('it', 'Italian', 'Italiano', false),
         new Language('nl', 'Dutch', 'Nederlands', false),
+        new Language('pl', 'Polish', 'Polski', false),
         new Language('pt-BR', 'Brazilian Portuguese', 'Português Brasileiro', false),
         new Language('ja-JP', 'Japanese', '日本語', true),
         new Language('ko', 'Korean', '한국어', true),
@@ -29,18 +32,20 @@ export class Constants {
     public static readonly releaseCandidateApplicationTag: string = 'rc';
     public static readonly columnValueDelimiter: string = ';';
 
-    public static readonly albumSizeInPixels: number = 120;
+    public static readonly albumSizeInPixels: number = 124;
     public static readonly itemMarginInPixels: number = 8;
     public static readonly screenEaseMarginPixels: number = 50;
     public static readonly screenEaseSpeedMilliseconds: number = 350;
     public static readonly longListLoadDelayMilliseconds: number = 500;
     public static readonly shortListLoadDelayMilliseconds: number = 50;
     public static readonly albumsRedrawDelayMilliseconds: number = 150;
+    public static readonly playlistsRedrawDelayMilliseconds: number = 150;
     public static readonly searchDelayMilliseconds: number = 500;
     public static readonly semanticZoomOutAnimationMilliseconds: number = 250;
     public static readonly semanticZoomInDelayMilliseconds: number = 100;
     public static readonly semanticZoomOutDelayMilliseconds: number = 100;
     public static readonly playbackInfoSwitchAnimationMilliseconds: number = 250;
+    public static readonly playlistsSaveDelayMilliseconds: number = 1000;
 
     public static readonly fontSizes: number[] = [12, 13, 14, 15];
 
@@ -142,10 +147,10 @@ export class Constants {
             'https://github.com/sindresorhus/electron-store/blob/master/license',
         ),
         new ExternalComponent(
-            'electron-window-state',
-            'A library to store and restore window sizes and positions for your Electron app.',
-            'https://github.com/mawie81/electron-window-state',
-            'https://github.com/mawie81/electron-window-state/blob/master/license',
+            'fast-sort',
+            'Blazing fast array sorting with TypeScript support.',
+            'https://github.com/snovakovic/fast-sort',
+            'https://github.com/snovakovic/fast-sort/blob/master/LICENSE',
         ),
         new ExternalComponent(
             'Fast HTML Parser',
@@ -177,6 +182,18 @@ export class Constants {
             'Replace Font Awesome with modern line icons.',
             'https://github.com/icons8/line-awesome',
             'https://github.com/icons8/line-awesome/blob/master/LICENSE.md',
+        ),
+        new ExternalComponent(
+            'Jimp',
+            'An image processing library written entirely in JavaScript for Node, with zero external or native dependencies.',
+            'https://github.com/jimp-dev/jimp',
+            'https://github.com/jimp-dev/jimp/blob/main/LICENSE',
+        ),
+        new ExternalComponent(
+            'macOS icon created by VisualisationExpo',
+            `Superb macOS icon created by VisualisationExpo, extending the original icon to better match the macOS look and feel.`,
+            'https://github.com/VisualisationExpo',
+            '',
         ),
         new ExternalComponent(
             'Material Design Color Generator',

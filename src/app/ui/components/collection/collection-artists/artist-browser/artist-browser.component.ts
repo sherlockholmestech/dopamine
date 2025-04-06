@@ -4,7 +4,6 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { Subscription } from 'rxjs';
 import { Constants } from '../../../../../common/application/constants';
 import { Logger } from '../../../../../common/logger';
-import { ArtistOrdering } from '../../../../../common/ordering/artist-ordering';
 import { SemanticZoomHeaderAdder } from '../../../../../common/semantic-zoom-header-adder';
 import { PromiseUtils } from '../../../../../common/utils/promise-utils';
 import { ArtistModel } from '../../../../../services/artist/artist-model';
@@ -12,12 +11,14 @@ import { ArtistType } from '../../../../../services/artist/artist-type';
 import { AddToPlaylistMenu } from '../../../add-to-playlist-menu';
 import { ArtistsPersister } from '../artists-persister';
 import { ArtistOrder } from './artist-order';
-import { PlaybackServiceBase } from '../../../../../services/playback/playback.service.base';
+import { PlaybackService } from '../../../../../services/playback/playback.service';
 import { SemanticZoomServiceBase } from '../../../../../services/semantic-zoom/semantic-zoom.service.base';
 import { ApplicationServiceBase } from '../../../../../services/application/application.service.base';
 import { SchedulerBase } from '../../../../../common/scheduling/scheduler.base';
 import { MouseSelectionWatcher } from '../../../mouse-selection-watcher';
 import { ContextMenuOpener } from '../../../context-menu-opener';
+import { ArtistSorter } from '../../../../../common/sorting/artist-sorter';
+import { Timer } from '../../../../../common/scheduling/timer';
 
 @Component({
     selector: 'app-artist-browser',
@@ -34,13 +35,13 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
     private subscription: Subscription = new Subscription();
 
     public constructor(
-        public playbackService: PlaybackServiceBase,
+        public playbackService: PlaybackService,
         private semanticZoomService: SemanticZoomServiceBase,
         private applicationService: ApplicationServiceBase,
         public addToPlaylistMenu: AddToPlaylistMenu,
         public mouseSelectionWatcher: MouseSelectionWatcher,
         public contextMenuOpener: ContextMenuOpener,
-        private artistOrdering: ArtistOrdering,
+        private artistSorter: ArtistSorter,
         private semanticZoomHeaderAdder: SemanticZoomHeaderAdder,
         private scheduler: SchedulerBase,
         private logger: Logger,
@@ -166,21 +167,33 @@ export class ArtistBrowserComponent implements OnInit, OnDestroy {
     private orderArtists(): void {
         let orderedArtists: ArtistModel[] = [];
 
+        const timer = new Timer();
+        timer.start();
+
         try {
             switch (this.selectedArtistOrder) {
                 case ArtistOrder.byArtistAscending:
-                    orderedArtists = this.artistOrdering.getArtistsOrderedAscending(this.artists);
+                    orderedArtists = this.artistSorter.sortAscending(this.artists);
                     break;
                 case ArtistOrder.byArtistDescending:
-                    orderedArtists = this.artistOrdering.getArtistsOrderedDescending(this.artists);
+                    orderedArtists = this.artistSorter.sortDescending(this.artists);
                     break;
                 default: {
-                    orderedArtists = this.artistOrdering.getArtistsOrderedAscending(this.artists);
+                    orderedArtists = this.artistSorter.sortAscending(this.artists);
                     break;
                 }
             }
 
             orderedArtists = this.semanticZoomHeaderAdder.addZoomHeaders(orderedArtists) as ArtistModel[];
+
+            timer.stop();
+
+            this.logger.info(
+                `Finished ordering artists. Time required: ${timer.elapsedMilliseconds} ms`,
+                'ArtistBrowserComponent',
+                'orderArtists',
+            );
+
             this.applySelectedArtists();
         } catch (e: unknown) {
             this.logger.error(e, 'Could not order artists', 'ArtistBrowserComponent', 'orderArtists');

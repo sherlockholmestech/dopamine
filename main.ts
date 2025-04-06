@@ -11,11 +11,13 @@
 import { app, BrowserWindow, ipcMain, Menu, nativeTheme, protocol, Tray } from 'electron';
 import log from 'electron-log';
 import * as Store from 'electron-store';
-import * as windowStateKeeper from 'electron-window-state';
-import * as os from 'os';
 import * as path from 'path';
 import * as url from 'url';
-import { Worker, isMainThread } from 'worker_threads';
+import { Worker } from 'worker_threads';
+import { DiscordApi } from './main/api/discord/discord-api';
+import { SensitiveInformation } from './main/common/application/sensitive-information';
+import { DiscordApiCommand } from './main/api/discord/discord-api-command';
+import { DiscordApiCommandType } from './main/api/discord/discord-api-command-type';
 
 /**
  * Command line parameters
@@ -37,24 +39,66 @@ const globalAny: any = global; // Global does not allow setting custom propertie
 const settings: Store<any> = new Store();
 const args: string[] = process.argv.slice(1);
 const isServing: boolean = args.some((val) => val === '--serve');
+const discordApi = new DiscordApi(SensitiveInformation.discordClientId);
+
 let mainWindow: BrowserWindow | undefined;
 let tray: Tray;
 let isQuitting: boolean;
+let isQuit: boolean;
+let fileProcessingTimeout: NodeJS.Timeout;
 
 // Static folder is not detected correctly in production
 if (process.env.NODE_ENV !== 'development') {
     globalAny.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\');
 }
 
+// Static variables
+globalAny.windowHasFrame = windowHasFrame();
+globalAny.isMacOS = isMacOS();
+globalAny.fileQueue = [];
+
 /**
  * Functions
  */
+function debounce(func: Function, wait: number) {
+    let timeout: NodeJS.Timeout | null;
+    return function (...args: any[]) {
+        const later = () => {
+            timeout = null;
+            func(...args);
+        };
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(later, wait);
+    };
+}
+
 function windowHasFrame(): boolean {
     if (!settings.has('useSystemTitleBar')) {
         settings.set('useSystemTitleBar', false);
     }
 
     return settings.get('useSystemTitleBar');
+}
+
+function isMacOS(): boolean {
+    return process.platform === 'darwin';
+}
+
+function isWindows(): boolean {
+    return process.platform === 'win32';
+}
+
+function titleBarStyle(): 'hiddenInset' | 'default' {
+    if (settings.get('useSystemTitleBar')) {
+        return 'default';
+    }
+    // makes traffic lights visible on macOS
+    if (isMacOS()) {
+        return 'hiddenInset';
+    }
+    return 'default';
 }
 
 function shouldShowIconInNotificationArea(): boolean {
@@ -82,13 +126,13 @@ function shouldCloseToNotificationArea(): boolean {
 }
 
 function getTrayIcon(): string {
-    if (os.platform() === 'darwin') {
+    if (isMacOS()) {
         return path.join(globalAny.__static, 'icons/trayTemplate.png');
     }
 
     const invertColor: boolean = settings.get('invertNotificationAreaIconColor');
 
-    if (os.platform() === 'win32') {
+    if (isWindows()) {
         if (!invertColor) {
             // Defaulting to black for Windows
             return path.join(globalAny.__static, 'icons/tray_black.ico');
@@ -105,28 +149,75 @@ function getTrayIcon(): string {
     }
 }
 
+function setInitialWindowState(mainWindow: BrowserWindow): void {
+    try {
+        if (!settings.has('playerType')) {
+            settings.set('playerType', 'full');
+        }
+
+        if (!settings.has('fullPlayerPositionSizeMaximized')) {
+            settings.set('fullPlayerPositionSizeMaximized', '50;50;1000;650;0');
+        }
+
+        if (!settings.has('coverPlayerPosition')) {
+            settings.set('coverPlayerPosition', '50;50');
+        }
+
+        let windowPositionSizeMaximizedAsString: string = settings.get('fullPlayerPositionSizeMaximized');
+
+        if (settings.get('playerType') === 'cover') {
+            windowPositionSizeMaximizedAsString = `${settings.get('coverPlayerPosition')};350;430;0`;
+        }
+
+        const windowPositionSizeMaximized: number[] = windowPositionSizeMaximizedAsString.split(';').map(Number);
+        mainWindow.setPosition(windowPositionSizeMaximized[0], windowPositionSizeMaximized[1]);
+
+        if (settings.get('playerType') !== 'full') {
+            mainWindow.resizable = false;
+            mainWindow.maximizable = false;
+            mainWindow.setContentSize(windowPositionSizeMaximized[2], windowPositionSizeMaximized[3]);
+            if (isMacOS()) {
+                mainWindow.fullScreenable = false;
+            }
+        } else {
+            if (isMacOS()) {
+                mainWindow.fullScreenable = true;
+            }
+            mainWindow.setSize(windowPositionSizeMaximized[2], windowPositionSizeMaximized[3]);
+            if (windowPositionSizeMaximized[4] === 1) {
+                mainWindow.maximize();
+            }
+        }
+    } catch (e) {
+        log.error(`[Main] [setInitialWindowState] Could not set initial window state. Error: ${e.message}`);
+
+        settings.set('playerType', 'full');
+        settings.set('fullPlayerPositionSizeMaximized', '50;50;1000;650;0');
+        settings.set('coverPlayerPosition', '50;50');
+        let windowPositionSizeMaximizedAsString: string = settings.get('fullPlayerPositionSizeMaximized');
+        const windowPositionSizeMaximized: number[] = windowPositionSizeMaximizedAsString.split(';').map(Number);
+        mainWindow.setPosition(windowPositionSizeMaximized[0], windowPositionSizeMaximized[1]);
+        mainWindow.setSize(windowPositionSizeMaximized[2], windowPositionSizeMaximized[3]);
+    }
+}
+
 function createMainWindow(): void {
+    // Set custom AppUserModelID to ensure the app name shows up in Windows media controls
+    app.setAppUserModelId('com.digimezzo.dopamine');
+
     // Suppress the default menu
     Menu.setApplicationMenu(null);
-
-    // Load the previous state with fallback to defaults
-    const windowState = windowStateKeeper({
-        defaultWidth: 1000,
-        defaultHeight: 650,
-    });
 
     const remoteMain = require('@electron/remote/main');
     remoteMain.initialize();
 
     // Create the browser window
     mainWindow = new BrowserWindow({
-        x: windowState.x,
-        y: windowState.y,
-        width: windowState.width,
-        height: windowState.height,
         backgroundColor: '#fff',
         frame: windowHasFrame(),
-        icon: path.join(globalAny.__static, os.platform() === 'win32' ? 'icons/icon.ico' : 'icons/64x64.png'),
+        titleBarStyle: titleBarStyle(),
+        trafficLightPosition: isMacOS() ? { x: 10, y: 15 } : undefined,
+        icon: path.join(globalAny.__static, isWindows() ? 'icons/icon.ico' : 'icons/64x64.png'),
         webPreferences: {
             webSecurity: false,
             nodeIntegration: true,
@@ -135,11 +226,9 @@ function createMainWindow(): void {
         show: false,
     });
 
+    setInitialWindowState(mainWindow);
+
     remoteMain.enable(mainWindow.webContents);
-
-    globalAny.windowHasFrame = windowHasFrame();
-
-    windowState.manage(mainWindow);
 
     if (isServing) {
         require('electron-reload')(__dirname, {
@@ -167,14 +256,16 @@ function createMainWindow(): void {
     // 'ready-to-show' doesn't fire on Windows in dev mode. In prod it seems to work.
     // See: https://github.com/electron/electron/issues/7779
     mainWindow.on('ready-to-show', () => {
-        mainWindow!.show();
-        mainWindow!.focus();
+        if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+        }
     });
 
     // Makes links open in external browser
     const handleRedirect = (e: any, localUrl: string) => {
         // Check that the requested url is not the current page
-        if (localUrl !== mainWindow!.webContents.getURL()) {
+        if (localUrl !== mainWindow?.webContents.getURL()) {
             e.preventDefault();
             require('electron').shell.openExternal(localUrl);
         }
@@ -184,9 +275,9 @@ function createMainWindow(): void {
 
     mainWindow.webContents.on('before-input-event', (event, input) => {
         if (input.key.toLowerCase() === 'f12') {
-            // if (serve) {
-            mainWindow!.webContents.toggleDevTools();
-            // }
+            if (mainWindow) {
+                mainWindow.webContents.toggleDevTools();
+            }
 
             event.preventDefault();
         }
@@ -195,21 +286,142 @@ function createMainWindow(): void {
     mainWindow.on('minimize', (event: any) => {
         if (shouldMinimizeToNotificationArea()) {
             event.preventDefault();
-            mainWindow!.hide();
+
+            if (mainWindow) {
+                mainWindow.hide();
+            }
         }
     });
 
     mainWindow.on('close', (event: any) => {
-        if (shouldCloseToNotificationArea()) {
-            if (!isQuitting) {
-                event.preventDefault();
-                mainWindow!.hide();
+        if (!isQuitting) {
+            event.preventDefault();
+            if (mainWindow) {
+                if (isQuit) {
+                    mainWindow.webContents.send('application-close');
+                    isQuitting = true;
+                }
+                // on MacOS, close button never closed entire app
+                else if (isMacOS()) {
+                    mainWindow.hide();
+                } else if (shouldCloseToNotificationArea()) {
+                    mainWindow.hide();
+                } else {
+                    mainWindow.webContents.send('application-close');
+                    isQuitting = true;
+                }
             }
-
-            return false;
         }
     });
+
+    mainWindow.on(
+        'move',
+        debounce(() => {
+            if (mainWindow && !mainWindow.isMaximized()) {
+                const position: number[] = mainWindow.getPosition();
+                const size: number[] = mainWindow.getSize();
+
+                if (settings.get('playerType') === 'full') {
+                    const isMaximized: number = mainWindow.isMaximized() ? 1 : 0;
+                    settings.set('fullPlayerPositionSizeMaximized', `${position[0]};${position[1]};${size[0]};${size[1]};${isMaximized}`);
+                } else if (settings.get('playerType') === 'cover') {
+                    settings.set('coverPlayerPosition', `${position[0]};${position[1]};350;430`);
+                }
+            }
+        }, 300),
+    );
+
+    mainWindow.on(
+        'resize',
+        debounce(() => {
+            if (mainWindow && !mainWindow.isMaximized()) {
+                const position: number[] = mainWindow.getPosition();
+                const size: number[] = mainWindow.getSize();
+
+                if (settings.get('playerType') === 'full') {
+                    const isMaximized: number = mainWindow.isMaximized() ? 1 : 0;
+                    settings.set('fullPlayerPositionSizeMaximized', `${position[0]};${position[1]};${size[0]};${size[1]};${isMaximized}`);
+                } else if (settings.get('playerType') === 'cover') {
+                    settings.set('coverPlayerPosition', `${position[0]};${position[1]}`);
+                }
+            }
+        }, 300),
+    );
+
+    mainWindow.on('maximize', (event: any) => {
+        if (mainWindow) {
+            if (settings.get('playerType') === 'full') {
+                let windowPositionSizeMaximizedAsString: string = settings.get('fullPlayerPositionSizeMaximized');
+                const windowPositionSizeMaximized: number[] = windowPositionSizeMaximizedAsString.split(';').map(Number);
+                console.log(windowPositionSizeMaximized);
+                settings.set(
+                    'fullPlayerPositionSizeMaximized',
+                    `${windowPositionSizeMaximized[0]};${windowPositionSizeMaximized[1]};${windowPositionSizeMaximized[2]};${windowPositionSizeMaximized[3]};1`,
+                );
+            }
+        }
+    });
+
+    mainWindow.on('unmaximize', (event: any) => {
+        if (mainWindow) {
+            if (settings.get('playerType') === 'full') {
+                settings.set(
+                    'fullPlayerPositionSizeMaximized',
+                    `${mainWindow.getPosition().join(';')};${mainWindow.getSize().join(';')};0`,
+                );
+            }
+        }
+    });
+
+    mainWindow.on('leave-full-screen', () => {
+        if (!mainWindow) {
+            return;
+        }
+        // On macOS, fullscreen transitions takes time
+        // So, we need to wait for the leave-full-screen to finally resize the window
+        if (!isMacOS()) {
+            return;
+        }
+
+        // if mode is not cover anymore, return
+        if (settings.get('playerType') !== 'cover') {
+            return;
+        }
+
+        setCoverPlayer(mainWindow);
+    });
 }
+
+function setCoverPlayer(mainWindow: BrowserWindow): void {
+    const coverPlayerPositionAsString: string = settings.get('coverPlayerPosition');
+    const coverPlayerPosition: number[] = coverPlayerPositionAsString.split(';').map(Number);
+
+    if (isMacOS()) {
+        mainWindow.fullScreenable = false;
+    }
+    mainWindow.resizable = false;
+    mainWindow.maximizable = false;
+    mainWindow.setPosition(coverPlayerPosition[0], coverPlayerPosition[1]);
+    mainWindow.setContentSize(350, 430);
+}
+
+function pushFilesToQueue(files: string[], functionName: string): void {
+    globalAny.fileQueue.push(...files);
+    log.info(`[App] [${functionName}] File queue: ${globalAny.fileQueue}`);
+    clearTimeout(fileProcessingTimeout);
+    fileProcessingTimeout = setTimeout(processFileQueue, debounceDelay);
+}
+
+function processFileQueue(): void {
+    if (globalAny.fileQueue.length > 0) {
+        log.info(`[App] [processFileQueue] Processing files: ${globalAny.fileQueue}`);
+        if (mainWindow) {
+            mainWindow.webContents.send('arguments-received', globalAny.fileQueue);
+        }
+    }
+}
+
+const debounceDelay: number = 100;
 
 /**
  * Main
@@ -221,14 +433,16 @@ try {
 
     if (!gotTheLock) {
         log.info('[Main] [Main] There is already another instance running. Closing.');
+        // Quit second instance
         app.quit();
     } else {
         app.on('second-instance', (event, argv, workingDirectory) => {
-            log.info('[Main] [Main] Attempt to run second instance. Showing existing window.');
-            mainWindow!.webContents.send('arguments-received', argv);
+            // First instance gets the arguments of the second instance and processes them
+            log.info('[App] [second-instance] Attempt to run second instance. Showing existing window.');
+            pushFilesToQueue(argv, 'second-instance');
 
-            // Someone tried to run a second instance, we should focus the existing window.
             if (mainWindow) {
+                // Someone tried to run a second instance, we should focus the existing window.
                 if (mainWindow.isMinimized()) {
                     mainWindow.restore();
                 }
@@ -247,21 +461,33 @@ try {
             log.info('[App] [window-all-closed] +++ Stopping +++');
             // On OS X it is common for applications and their menu bar
             // to stay active until the user quits explicitly with Cmd + Q
-            if (process.platform !== 'darwin') {
+            if (!isMacOS()) {
                 app.quit();
             }
         });
 
         app.on('activate', () => {
-            // On OS X it's common to re-create a window in the app when the
+            // On macOS, it's common to re-create a window in the app when the
             // dock icon is clicked and there are no other windows open.
             if (mainWindow == undefined) {
                 createMainWindow();
             }
+
+            // On macOS, clicking the dock icon should show the window.
+            if (isMacOS()) {
+                if (mainWindow) {
+                    mainWindow.show();
+                    mainWindow.focus();
+                }
+            }
         });
 
         app.on('before-quit', () => {
-            isQuitting = true;
+            isQuit = true;
+        });
+
+        app.on('will-quit', () => {
+            discordApi.shutdown();
         });
 
         app.whenReady().then(() => {
@@ -275,6 +501,14 @@ try {
                 tray = new Tray(getTrayIcon());
                 tray.setToolTip('Dopamine');
             }
+        });
+
+        app.on('open-file', (event, path) => {
+            log.info(`[App] [open-file] File opened: ${path}`);
+            // On macOS, the path of a double-clicked file is not passed as argument. Instead, it is passed as open-file event.
+            // https://stackoverflow.com/questions/50935292/argv1-returns-unexpected-value-when-i-open-a-file-on-double-click-in-electron
+            event.preventDefault();
+            pushFilesToQueue([path], 'open-file');
         });
 
         nativeTheme.on('updated', () => {
@@ -294,8 +528,10 @@ try {
                 {
                     label: arg.showDopamineLabel,
                     click(): void {
-                        mainWindow!.show();
-                        mainWindow!.focus();
+                        if (mainWindow) {
+                            mainWindow.show();
+                            mainWindow.focus();
+                        }
                     },
                 },
                 {
@@ -317,14 +553,77 @@ try {
             tray.setImage(getTrayIcon());
         });
 
-        ipcMain.on('metadata-worker-request', (event: any, arg: any) => {
-            const workerThread = new Worker(path.join(__dirname, 'main/metadata/metadata-worker.js'), {
+        ipcMain.on('indexing-worker', (event: any, arg: any) => {
+            const workerThread = new Worker(path.join(__dirname, 'main/background-work/workers/indexing-worker.js'), {
                 workerData: { arg },
             });
 
-            workerThread.on('message', (filledIndexableTracks): void => {
-                mainWindow!.webContents.send('metadata-worker-response', { filledIndexableTracks: filledIndexableTracks });
+            workerThread.on('message', (message): void => {
+                if (mainWindow) {
+                    mainWindow.webContents.send('indexing-worker-message', message);
+                }
             });
+
+            workerThread.on('exit', (): void => {
+                if (mainWindow) {
+                    mainWindow.webContents.send('indexing-worker-exit', 'Done');
+                }
+            });
+        });
+
+        ipcMain.on('closing-tasks-performed', (_) => {
+            app.quit();
+        });
+
+        ipcMain.on('set-full-player', (event: any, arg: any) => {
+            log.info('[Main] [set-full-player] Setting playerType to full player');
+            if (mainWindow) {
+                const fullPlayerPositionSizeMaximizedAsString: string = settings.get('fullPlayerPositionSizeMaximized');
+                console.log(fullPlayerPositionSizeMaximizedAsString);
+                const fullPlayerPositionSizeMaximized: number[] = fullPlayerPositionSizeMaximizedAsString.split(';').map(Number);
+
+                if (isMacOS()) {
+                    mainWindow.fullScreenable = true;
+                }
+                mainWindow.resizable = true;
+                mainWindow.maximizable = true;
+                mainWindow.setPosition(fullPlayerPositionSizeMaximized[0], fullPlayerPositionSizeMaximized[1]);
+                mainWindow.setSize(fullPlayerPositionSizeMaximized[2], fullPlayerPositionSizeMaximized[3]);
+
+                if (fullPlayerPositionSizeMaximized[4] === 1) {
+                    mainWindow.maximize();
+                }
+            }
+        });
+
+        ipcMain.on('set-cover-player', (event: any, arg: any) => {
+            log.info('[Main] [set-cover-player] Setting playerType to cover player');
+            if (mainWindow) {
+                // We cannot resize the window when it is still in full screen mode on macOS.
+                if (isMacOS() && mainWindow.isFullScreen()) {
+                    // If for whatever reason fullScreenable will be set to false
+                    // mainWindow.fullScreen = false; will not work on macOS.
+                    mainWindow.fullScreenable = true;
+                    mainWindow.fullScreen = false;
+                    return;
+                }
+
+                mainWindow.unmaximize();
+                setCoverPlayer(mainWindow);
+            }
+        });
+
+        ipcMain.on('clear-file-queue', (event: any, arg: any) => {
+            log.info('[Main] [clear-file-queue] Clearing file queue');
+            globalAny.fileQueue = [];
+        });
+
+        ipcMain.on('discord-api-command', (event: any, command: DiscordApiCommand) => {
+            if (command.commandType === DiscordApiCommandType.SetPresence) {
+                discordApi.setPresence(command.args!);
+            } else if (command.commandType === DiscordApiCommandType.ClearPresence) {
+                discordApi.clearPresence();
+            }
         });
     }
 } catch (e) {

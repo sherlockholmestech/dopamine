@@ -7,6 +7,8 @@ export class Settings implements SettingsBase {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private settings: Store<any> = new Store();
 
+    private cachedAlbumKeyIndex: string = '-1';
+
     public constructor() {
         this.initialize();
     }
@@ -19,6 +21,27 @@ export class Settings implements SettingsBase {
     // language
     public get language(): string {
         return <string>this.settings.get('language');
+    }
+
+    // albumKeyIndex
+    public get albumKeyIndex(): string {
+        if (this.cachedAlbumKeyIndex === '-1') {
+            this.setCachedAlbumKeyIndex();
+        }
+
+        return this.cachedAlbumKeyIndex;
+    }
+
+    private setCachedAlbumKeyIndex(): void {
+        if (this.albumsDefinedByFolders) {
+            this.cachedAlbumKeyIndex = '3';
+        }
+
+        if (this.albumsDefinedByTitle) {
+            this.cachedAlbumKeyIndex = '2';
+        }
+
+        this.cachedAlbumKeyIndex = '';
     }
 
     public set language(v: string) {
@@ -104,6 +127,15 @@ export class Settings implements SettingsBase {
 
     public set followSystemColor(v: boolean) {
         this.settings.set('followSystemColor', v);
+    }
+
+    // followAlbumCoverColor
+    public get followAlbumCoverColor(): boolean {
+        return <boolean>this.settings.get('followAlbumCoverColor');
+    }
+
+    public set followAlbumCoverColor(v: boolean) {
+        this.settings.set('followAlbumCoverColor', v);
     }
 
     // skipRemovedFilesDuringRefresh
@@ -592,15 +624,6 @@ export class Settings implements SettingsBase {
         this.settings.set('showLove', v);
     }
 
-    // enableMultimediaKeys
-    public get enableMultimediaKeys(): boolean {
-        return <boolean>this.settings.get('enableMultimediaKeys');
-    }
-
-    public set enableMultimediaKeys(v: boolean) {
-        this.settings.set('enableMultimediaKeys', v);
-    }
-
     // downloadArtistInformationFromLastFm
     public get downloadArtistInformationFromLastFm(): boolean {
         return <boolean>this.settings.get('downloadArtistInformationFromLastFm');
@@ -656,6 +679,116 @@ export class Settings implements SettingsBase {
         this.settings.set('keepPlaybackControlsVisibleOnNowPlayingPage', v);
     }
 
+    // albumsDefinedByTitleAndArtist
+    public get albumsDefinedByTitleAndArtist(): boolean {
+        return <boolean>this.settings.get('albumsDefinedByTitleAndArtist');
+    }
+
+    public set albumsDefinedByTitleAndArtist(v: boolean) {
+        this.settings.set('albumsDefinedByTitleAndArtist', v);
+        this.setCachedAlbumKeyIndex();
+    }
+
+    // albumsDefinedByTitle
+    public get albumsDefinedByTitle(): boolean {
+        return <boolean>this.settings.get('albumsDefinedByTitle');
+    }
+
+    public set albumsDefinedByTitle(v: boolean) {
+        this.settings.set('albumsDefinedByTitle', v);
+        this.setCachedAlbumKeyIndex();
+    }
+
+    // albumsDefinedByFolders
+    public get albumsDefinedByFolders(): boolean {
+        return <boolean>this.settings.get('albumsDefinedByFolders');
+    }
+
+    public set albumsDefinedByFolders(v: boolean) {
+        this.settings.set('albumsDefinedByFolders', v);
+        this.setCachedAlbumKeyIndex();
+    }
+
+    // playbackControlsLoop
+    public get playbackControlsLoop(): number {
+        return <number>this.settings.get('playbackControlsLoop');
+    }
+
+    public set playbackControlsLoop(v: number) {
+        this.settings.set('playbackControlsLoop', v);
+    }
+
+    // playbackControlsShuffle
+    public get playbackControlsShuffle(): number {
+        return <number>this.settings.get('playbackControlsShuffle');
+    }
+
+    public set playbackControlsShuffle(v: number) {
+        this.settings.set('playbackControlsShuffle', v);
+    }
+
+    // rememberPlaybackStateAfterRestart
+    public get rememberPlaybackStateAfterRestart(): boolean {
+        return <boolean>this.settings.get('rememberPlaybackStateAfterRestart');
+    }
+
+    public set rememberPlaybackStateAfterRestart(v: boolean) {
+        this.settings.set('rememberPlaybackStateAfterRestart', v);
+    }
+
+    // artistSplitSeparators
+    public get artistSplitSeparators(): string {
+        return <string>this.settings.get('artistSplitSeparators');
+    }
+
+    public set artistSplitSeparators(v: string) {
+        this.settings.set('artistSplitSeparators', v);
+    }
+
+    // artistSplitExceptions
+    public get artistSplitExceptions(): string {
+        return <string>this.settings.get('artistSplitExceptions');
+    }
+
+    public set artistSplitExceptions(v: string) {
+        this.settings.set('artistSplitExceptions', v);
+    }
+
+    // playerType
+    public get playerType(): string {
+        return <string>this.settings.get('playerType');
+    }
+
+    public set playerType(v: string) {
+        this.settings.set('playerType', v);
+    }
+
+    // fullPlayerPositionSizeMaximized
+    public get fullPlayerPositionSizeMaximized(): string {
+        return <string>this.settings.get('fullPlayerPositionSizeMaximized');
+    }
+
+    public set fullPlayerPositionSizeMaximized(v: string) {
+        this.settings.set('fullPlayerPositionSizeMaximized', v);
+    }
+
+    // coverPlayerPosition
+    public get coverPlayerPosition(): string {
+        return <string>this.settings.get('coverPlayerPosition');
+    }
+
+    public set coverPlayerPositionAndSize(v: string) {
+        this.settings.set('coverPlayerPosition', v);
+    }
+
+    // useGaplessPlayback
+    public get useGaplessPlayback(): boolean {
+        return <boolean>this.settings.get('useGaplessPlayback');
+    }
+    public set useGaplessPlayback(v: boolean) {
+        this.settings.set('useGaplessPlayback', v);
+    }
+
     // Initialize
     private initialize(): void {
         if (!this.settings.has('language')) {
@@ -696,6 +829,10 @@ export class Settings implements SettingsBase {
 
         if (!this.settings.has('followSystemColor')) {
             this.settings.set('followSystemColor', false);
+        }
+
+        if (!this.settings.has('followAlbumCoverColor')) {
+            this.settings.set('followAlbumCoverColor', false);
         }
 
         if (!this.settings.has('skipRemovedFilesDuringRefresh')) {
@@ -910,10 +1047,6 @@ export class Settings implements SettingsBase {
             this.settings.set('showLove', false);
         }
 
-        if (!this.settings.has('enableMultimediaKeys')) {
-            this.settings.set('enableMultimediaKeys', true);
-        }
-
         if (!this.settings.has('downloadArtistInformationFromLastFm')) {
             this.settings.set('downloadArtistInformationFromLastFm', true);
         }
@@ -936,6 +1069,54 @@ export class Settings implements SettingsBase {
 
         if (!this.settings.has('keepPlaybackControlsVisibleOnNowPlayingPage')) {
             this.settings.set('keepPlaybackControlsVisibleOnNowPlayingPage', false);
+        }
+
+        if (!this.settings.has('albumsDefinedByTitleAndArtist')) {
+            this.settings.set('albumsDefinedByTitleAndArtist', true);
+        }
+
+        if (!this.settings.has('albumsDefinedByTitle')) {
+            this.settings.set('albumsDefinedByTitle', false);
+        }
+
+        if (!this.settings.has('albumsDefinedByFolders')) {
+            this.settings.set('albumsDefinedByFolders', false);
+        }
+
+        if (!this.settings.has('playbackControlsLoop')) {
+            this.settings.set('playbackControlsLoop', 0);
+        }
+
+        if (!this.settings.has('playbackControlsShuffle')) {
+            this.settings.set('playbackControlsShuffle', false);
+        }
+
+        if (!this.settings.has('rememberPlaybackStateAfterRestart')) {
+            this.settings.set('rememberPlaybackStateAfterRestart', true);
+        }
+
+        if (!this.settings.has('artistSplitSeparators')) {
+            this.settings.set('artistSplitSeparators', '[feat.][ft.]');
+        }
+
+        if (!this.settings.has('artistSplitExceptions')) {
+            this.settings.set('artistSplitExceptions', '');
+        }
+
+        if (!this.settings.has('playerType')) {
+            this.settings.set('playerType', 'full');
+        }
+
+        if (!this.settings.has('fullPlayerPositionSizeMaximized')) {
+            this.settings.set('fullPlayerPositionSizeMaximized', '50;50;1000;650;0');
+        }
+
+        if (!this.settings.has('coverPlayerPosition')) {
+            this.settings.set('coverPlayerPosition', '50;50');
+        }
+
+        if (!this.settings.has('useGaplessPlayback')) {
+            this.settings.set('useGaplessPlayback', false);
         }
     }
 }

@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { Subscription } from 'rxjs';
 import { PlaybackStarted } from '../../../services/playback/playback-started';
 import { TrackModel } from '../../../services/track/track-model';
-import { PlaybackServiceBase } from '../../../services/playback/playback.service.base';
+import { PlaybackService } from '../../../services/playback/playback.service';
 import { PlaybackIndicationServiceBase } from '../../../services/playback-indication/playback-indication.service.base';
 import { NavigationServiceBase } from '../../../services/navigation/navigation.service.base';
 import { MouseSelectionWatcher } from '../mouse-selection-watcher';
@@ -22,7 +22,7 @@ export class PlaybackQueueComponent implements OnInit, OnDestroy {
     private _shouldShowList: boolean = false;
 
     public constructor(
-        public playbackService: PlaybackServiceBase,
+        public playbackService: PlaybackService,
         public contextMenuOpener: ContextMenuOpener,
         public mouseSelectionWatcher: MouseSelectionWatcher,
         private playbackIndicationService: PlaybackIndicationServiceBase,
@@ -31,6 +31,9 @@ export class PlaybackQueueComponent implements OnInit, OnDestroy {
 
     @ViewChild('trackContextMenuAnchor', { read: MatMenuTrigger, static: false })
     public trackContextMenu: MatMenuTrigger;
+
+    @Input()
+    public showTitle: boolean = true;
 
     public get shouldShowList(): boolean {
         return this._shouldShowList;
@@ -48,7 +51,7 @@ export class PlaybackQueueComponent implements OnInit, OnDestroy {
         );
 
         this.subscription.add(
-            this.navigationService.showPlaybackQueueRequested$.subscribe(() => {
+            this.navigationService.refreshPlaybackQueueListRequested$.subscribe(() => {
                 // HACK: thanks to Angular for breaking cdk virtual scroll or the drawer (who knows, do they even know themselves?)
                 // After Angular 14, the cdk virtual scroll does not render all items when opening the drawer. A resize of the window
                 // with the drawer open, fixes drawing of all items in the list. This hack is an automatic workaround.

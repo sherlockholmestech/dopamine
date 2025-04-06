@@ -15,6 +15,7 @@ export class ThemeNeutralColors {
         public sliderThumbBackground: string,
         public albumCoverLogo: string,
         public albumCoverBackground: string,
+        public headerSeparator: string,
         public paneSeparators: string,
         public settingsSeparators: string,
         public contextMenuSeparators: string,
@@ -28,5 +29,6 @@ export class ThemeNeutralColors {
         public secondaryButtonText: string,
         public tooltipText: string,
         public buttonBorder: string,
+        public highlightForeground: string,
     ) {}
 }

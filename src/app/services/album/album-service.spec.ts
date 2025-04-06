@@ -6,25 +6,45 @@ import { TranslatorServiceBase } from '../translator/translator.service.base';
 import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
 import { FileAccessBase } from '../../common/io/file-access.base';
 import { AlbumData } from '../../data/entities/album-data';
+import { ApplicationPaths } from '../../common/application/application-paths';
+import { SettingsBase } from '../../common/settings/settings.base';
+import { SettingsMock } from '../../testing/settings-mock';
+import { ArtistModel } from '../artist/artist-model';
+import { Logger } from '../../common/logger';
+import { ArtistServiceBase } from '../artist/artist.service.base';
 
 describe('AlbumService', () => {
+    let artistServiceMock: IMock<ArtistServiceBase>;
     let trackRepositoryMock: IMock<TrackRepositoryBase>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
-    let fileAccessMock: IMock<FileAccessBase>;
-    let service: AlbumService;
+    let applicationPathsMock: IMock<ApplicationPaths>;
+    let settingsMock: SettingsMock;
+    let loggerMock: IMock<Logger>;
 
     beforeEach(() => {
+        artistServiceMock = Mock.ofType<ArtistServiceBase>();
         trackRepositoryMock = Mock.ofType<TrackRepositoryBase>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
-        fileAccessMock = Mock.ofType<FileAccessBase>();
-        service = new AlbumService(trackRepositoryMock.object, translatorServiceMock.object, fileAccessMock.object);
+        applicationPathsMock = Mock.ofType<ApplicationPaths>();
+        settingsMock = new SettingsMock();
+        loggerMock = Mock.ofType<Logger>();
     });
+
+    function createService(): AlbumService {
+        return new AlbumService(
+            artistServiceMock.object,
+            trackRepositoryMock.object,
+            translatorServiceMock.object,
+            applicationPathsMock.object,
+            settingsMock,
+            loggerMock.object,
+        );
+    }
 
     describe('constructor', () => {
         it('should create', () => {
-            // Arrange
-
             // Act
+            const service: AlbumService = createService();
 
             // Assert
             expect(service).toBeDefined();
@@ -34,7 +54,8 @@ describe('AlbumService', () => {
     describe('getAllAlbums', () => {
         it('should return an empty collection if no albumData is found in the database', () => {
             // Arrange
-            trackRepositoryMock.setup((x) => x.getAllAlbumData()).returns(() => undefined);
+            trackRepositoryMock.setup((x) => x.getAllAlbumData('')).returns(() => undefined);
+            const service: AlbumService = createService();
 
             // Act
             const albums: AlbumModel[] = service.getAllAlbums();
@@ -51,13 +72,15 @@ describe('AlbumService', () => {
             albumData2.albumKey = 'Album key 2';
             const albumDatas: AlbumData[] = [albumData1, albumData2];
 
-            trackRepositoryMock.setup((x) => x.getAllAlbumData()).returns(() => albumDatas);
+            trackRepositoryMock.setup((x) => x.getAllAlbumData('')).returns(() => albumDatas);
+
+            const service: AlbumService = createService();
 
             // Act
             const returnedAlbums: AlbumModel[] = service.getAllAlbums();
 
             // Assert
-            trackRepositoryMock.verify((x) => x.getAllAlbumData(), Times.exactly(1));
+            trackRepositoryMock.verify((x) => x.getAllAlbumData(''), Times.exactly(1));
             expect(returnedAlbums.length).toEqual(2);
             expect(returnedAlbums[0].albumKey).toEqual('Album key 1');
             expect(returnedAlbums[1].albumKey).toEqual('Album key 2');
@@ -73,13 +96,22 @@ describe('AlbumService', () => {
             albumData2.albumKey = 'Album key 2';
             const albumDatas: AlbumData[] = [albumData1, albumData2];
 
-            trackRepositoryMock.setup((x) => x.getAlbumDataForTrackArtists(['Artist 1', 'Artist 2'])).returns(() => albumDatas);
+            trackRepositoryMock
+                .setup((x) => x.getAlbumDataForTrackArtists('', ['Source artist 1', 'Source artist 2']))
+                .returns(() => albumDatas);
+
+            const artist1: ArtistModel = new ArtistModel('Artist 1', translatorServiceMock.object);
+            const artist2: ArtistModel = new ArtistModel('Artist 2', translatorServiceMock.object);
+
+            artistServiceMock.setup((x) => x.getSourceArtists([artist1, artist2])).returns(() => ['Source artist 1', 'Source artist 2']);
+
+            const service: AlbumService = createService();
 
             // Act
-            const returnedAlbums: AlbumModel[] = service.getAlbumsForArtists(['Artist 1', 'Artist 2'], ArtistType.trackArtists);
+            const returnedAlbums: AlbumModel[] = service.getAlbumsForArtists([artist1, artist2], ArtistType.trackArtists);
 
             // Assert
-            trackRepositoryMock.verify((x) => x.getAlbumDataForTrackArtists(['Artist 1', 'Artist 2']), Times.exactly(1));
+            trackRepositoryMock.verify((x) => x.getAlbumDataForTrackArtists('', ['Source artist 1', 'Source artist 2']), Times.exactly(1));
             expect(returnedAlbums.length).toEqual(2);
             expect(returnedAlbums[0].albumKey).toEqual('Album key 1');
             expect(returnedAlbums[1].albumKey).toEqual('Album key 2');
@@ -93,13 +125,22 @@ describe('AlbumService', () => {
             albumData2.albumKey = 'Album key 2';
             const albumDatas: AlbumData[] = [albumData1, albumData2];
 
-            trackRepositoryMock.setup((x) => x.getAlbumDataForAlbumArtists(['Artist 1', 'Artist 2'])).returns(() => albumDatas);
+            trackRepositoryMock
+                .setup((x) => x.getAlbumDataForAlbumArtists('', ['Source artist 1', 'Source artist 2']))
+                .returns(() => albumDatas);
+
+            const artist1: ArtistModel = new ArtistModel('Artist 1', translatorServiceMock.object);
+            const artist2: ArtistModel = new ArtistModel('Artist 2', translatorServiceMock.object);
+
+            artistServiceMock.setup((x) => x.getSourceArtists([artist1, artist2])).returns(() => ['Source artist 1', 'Source artist 2']);
+
+            const service: AlbumService = createService();
 
             // Act
-            const returnedAlbums: AlbumModel[] = service.getAlbumsForArtists(['Artist 1', 'Artist 2'], ArtistType.albumArtists);
+            const returnedAlbums: AlbumModel[] = service.getAlbumsForArtists([artist1, artist2], ArtistType.albumArtists);
 
             // Assert
-            trackRepositoryMock.verify((x) => x.getAlbumDataForAlbumArtists(['Artist 1', 'Artist 2']), Times.exactly(1));
+            trackRepositoryMock.verify((x) => x.getAlbumDataForAlbumArtists('', ['Source artist 1', 'Source artist 2']), Times.exactly(1));
             expect(returnedAlbums.length).toEqual(2);
             expect(returnedAlbums[0].albumKey).toEqual('Album key 1');
             expect(returnedAlbums[1].albumKey).toEqual('Album key 2');
@@ -112,15 +153,26 @@ describe('AlbumService', () => {
             const albumData2: AlbumData = new AlbumData();
             albumData2.albumKey = 'Album key 2';
 
-            trackRepositoryMock.setup((x) => x.getAlbumDataForTrackArtists(['Artist 1', 'Artist 2'])).returns(() => [albumData1]);
-            trackRepositoryMock.setup((x) => x.getAlbumDataForAlbumArtists(['Artist 1', 'Artist 2'])).returns(() => [albumData2]);
+            trackRepositoryMock
+                .setup((x) => x.getAlbumDataForTrackArtists('', ['Source artist 1', 'Source artist 2']))
+                .returns(() => [albumData1]);
+            trackRepositoryMock
+                .setup((x) => x.getAlbumDataForAlbumArtists('', ['Source artist 1', 'Source artist 2']))
+                .returns(() => [albumData2]);
+
+            const artist1: ArtistModel = new ArtistModel('Artist 1', translatorServiceMock.object);
+            const artist2: ArtistModel = new ArtistModel('Artist 2', translatorServiceMock.object);
+
+            artistServiceMock.setup((x) => x.getSourceArtists([artist1, artist2])).returns(() => ['Source artist 1', 'Source artist 2']);
+
+            const service: AlbumService = createService();
 
             // Act
-            const returnedAlbums: AlbumModel[] = service.getAlbumsForArtists(['Artist 1', 'Artist 2'], ArtistType.allArtists);
+            const returnedAlbums: AlbumModel[] = service.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists);
 
             // Assert
-            trackRepositoryMock.verify((x) => x.getAlbumDataForTrackArtists(['Artist 1', 'Artist 2']), Times.exactly(1));
-            trackRepositoryMock.verify((x) => x.getAlbumDataForAlbumArtists(['Artist 1', 'Artist 2']), Times.exactly(1));
+            trackRepositoryMock.verify((x) => x.getAlbumDataForTrackArtists('', ['Source artist 1', 'Source artist 2']), Times.exactly(1));
+            trackRepositoryMock.verify((x) => x.getAlbumDataForAlbumArtists('', ['Source artist 1', 'Source artist 2']), Times.exactly(1));
             expect(returnedAlbums.length).toEqual(2);
             expect(returnedAlbums[0].albumKey).toEqual('Album key 1');
             expect(returnedAlbums[1].albumKey).toEqual('Album key 2');
@@ -136,13 +188,15 @@ describe('AlbumService', () => {
             albumData2.albumKey = 'Album key 2';
             const albumDatas: AlbumData[] = [albumData1, albumData2];
 
-            trackRepositoryMock.setup((x) => x.getAlbumDataForGenres(['Genre 1', 'Genre 2'])).returns(() => albumDatas);
+            trackRepositoryMock.setup((x) => x.getAlbumDataForGenres('', ['Genre 1', 'Genre 2'])).returns(() => albumDatas);
+
+            const service: AlbumService = createService();
 
             // Act
             const returnedAlbums: AlbumModel[] = service.getAlbumsForGenres(['Genre 1', 'Genre 2']);
 
             // Assert
-            trackRepositoryMock.verify((x) => x.getAlbumDataForGenres(['Genre 1', 'Genre 2']), Times.exactly(1));
+            trackRepositoryMock.verify((x) => x.getAlbumDataForGenres('', ['Genre 1', 'Genre 2']), Times.exactly(1));
             expect(returnedAlbums.length).toEqual(2);
             expect(returnedAlbums[0].albumKey).toEqual('Album key 1');
             expect(returnedAlbums[1].albumKey).toEqual('Album key 2');

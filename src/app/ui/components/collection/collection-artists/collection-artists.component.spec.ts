@@ -24,7 +24,7 @@ import { TrackModel } from '../../../../services/track/track-model';
 import { AlbumData } from '../../../../data/entities/album-data';
 import { Track } from '../../../../data/entities/track';
 import { TrackModels } from '../../../../services/track/track-models';
-import { Constants } from '../../../../common/application/constants';
+import { ApplicationPaths } from '../../../../common/application/application-paths';
 
 describe('CollectionArtistsComponent', () => {
     let searchServiceMock: IMock<SearchServiceBase>;
@@ -43,6 +43,7 @@ describe('CollectionArtistsComponent', () => {
     let dateTimeMock: IMock<DateTime>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
     let fileAccessMock: IMock<FileAccess>;
+    let applicationPathsMock: IMock<ApplicationPaths>;
 
     let selectedArtistsChangedMock: Subject<string[]>;
     let selectedArtistsChangedMock$: Observable<string[]>;
@@ -81,24 +82,18 @@ describe('CollectionArtistsComponent', () => {
     }
 
     function createArtistModel(artistName: string): ArtistModel {
-        const artistModel: ArtistModel = new ArtistModel(artistName, translatorServiceMock.object);
-
-        return artistModel;
+        return new ArtistModel(artistName, translatorServiceMock.object);
     }
 
     function createAlbumModel(albumKey: string): AlbumModel {
         const albumData: AlbumData = new AlbumData();
         albumData.albumKey = albumKey;
-        const albumModel: AlbumModel = new AlbumModel(albumData, translatorServiceMock.object, fileAccessMock.object);
-
-        return albumModel;
+        return new AlbumModel(albumData, translatorServiceMock.object, applicationPathsMock.object);
     }
 
     function createTrackModel(path: string): TrackModel {
         const track: Track = new Track(path);
-        const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
-
-        return trackModel;
+        return new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsStub);
     }
 
     function createTrackModels(tracks: TrackModel[]): TrackModels {
@@ -124,6 +119,7 @@ describe('CollectionArtistsComponent', () => {
         settingsStub = { artistsLeftPaneWidthPercent: 25, artistsRightPaneWidthPercent: 25 };
         schedulerMock = Mock.ofType<Scheduler>();
         loggerMock = Mock.ofType<Logger>();
+        applicationPathsMock = Mock.ofType<ApplicationPaths>();
 
         dateTimeMock = Mock.ofType<DateTime>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
@@ -300,8 +296,7 @@ describe('CollectionArtistsComponent', () => {
             // Arrange
             const component: CollectionArtistsComponent = createComponent();
             const track: TrackModel = createTrackModel('path1');
-            const trackModels: TrackModels = createTrackModels([track]);
-            component.tracks = trackModels;
+            component.tracks = createTrackModels([track]);
 
             // Act
             component.ngOnDestroy();
@@ -438,9 +433,7 @@ describe('CollectionArtistsComponent', () => {
 
             const album1: AlbumModel = createAlbumModel('albumKey1');
             const album2: AlbumModel = createAlbumModel('albumKey2');
-            albumServiceMock
-                .setup((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.allArtists))
-                .returns(() => [album1, album2]);
+            albumServiceMock.setup((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists)).returns(() => [album1, album2]);
 
             const component: CollectionArtistsComponent = createComponent();
 
@@ -448,7 +441,7 @@ describe('CollectionArtistsComponent', () => {
             await component.ngOnInit();
 
             // Assert
-            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.allArtists), Times.once());
+            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists), Times.once());
             albumServiceMock.verify((x) => x.getAllAlbums(), Times.never());
             expect(component.albums.length).toEqual(2);
             expect(component.albums[0]).toEqual(album1);
@@ -464,9 +457,7 @@ describe('CollectionArtistsComponent', () => {
             artistsPersisterMock.setup((x) => x.getSelectedArtists([artist1, artist2])).returns(() => [artist1, artist2]);
 
             const album1: AlbumModel = createAlbumModel('albumKey1');
-            albumServiceMock
-                .setup((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.trackArtists))
-                .returns(() => [album1]);
+            albumServiceMock.setup((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.trackArtists)).returns(() => [album1]);
 
             const component: CollectionArtistsComponent = createComponent();
 
@@ -474,7 +465,7 @@ describe('CollectionArtistsComponent', () => {
             await component.ngOnInit();
 
             // Assert
-            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.trackArtists), Times.once());
+            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.trackArtists), Times.once());
             albumServiceMock.verify((x) => x.getAllAlbums(), Times.never());
             expect(component.albums.length).toEqual(1);
             expect(component.albums[0]).toEqual(album1);
@@ -489,9 +480,7 @@ describe('CollectionArtistsComponent', () => {
             artistsPersisterMock.setup((x) => x.getSelectedArtists([artist1, artist2])).returns(() => [artist1, artist2]);
 
             const album1: AlbumModel = createAlbumModel('albumKey1');
-            albumServiceMock
-                .setup((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.albumArtists))
-                .returns(() => [album1]);
+            albumServiceMock.setup((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.albumArtists)).returns(() => [album1]);
 
             const component: CollectionArtistsComponent = createComponent();
 
@@ -499,7 +488,7 @@ describe('CollectionArtistsComponent', () => {
             await component.ngOnInit();
 
             // Assert
-            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.albumArtists), Times.once());
+            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.albumArtists), Times.once());
             albumServiceMock.verify((x) => x.getAllAlbums(), Times.never());
             expect(component.albums.length).toEqual(1);
             expect(component.albums[0]).toEqual(album1);
@@ -547,17 +536,13 @@ describe('CollectionArtistsComponent', () => {
 
             const album1: AlbumModel = createAlbumModel('albumKey1');
             const album2: AlbumModel = createAlbumModel('albumKey2');
-            albumServiceMock
-                .setup((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.allArtists))
-                .returns(() => [album1, album2]);
+            albumServiceMock.setup((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists)).returns(() => [album1, album2]);
             albumsPersisterMock.setup((x) => x.getSelectedAlbums([album1, album2])).returns(() => []);
 
             const track1: TrackModel = createTrackModel('path1');
             const track2: TrackModel = createTrackModel('path2');
             const trackModels: TrackModels = createTrackModels([track1, track2]);
-            trackServiceMock
-                .setup((x) => x.getTracksForArtists([artist1.name, artist2.name], ArtistType.allArtists))
-                .returns(() => trackModels);
+            trackServiceMock.setup((x) => x.getTracksForArtists([artist1, artist2], ArtistType.allArtists)).returns(() => trackModels);
 
             const component: CollectionArtistsComponent = createComponent();
 
@@ -565,7 +550,7 @@ describe('CollectionArtistsComponent', () => {
             await component.ngOnInit();
 
             // Assert
-            trackServiceMock.verify((x) => x.getTracksForArtists([artist1.name, artist2.name], ArtistType.allArtists), Times.once());
+            trackServiceMock.verify((x) => x.getTracksForArtists([artist1, artist2], ArtistType.allArtists), Times.once());
             trackServiceMock.verify((x) => x.getTracksForAlbums(It.isAny()), Times.never());
             trackServiceMock.verify((x) => x.getVisibleTracks(), Times.never());
             expect(component.tracks.tracks.length).toEqual(2);
@@ -615,9 +600,7 @@ describe('CollectionArtistsComponent', () => {
 
             const album1: AlbumModel = createAlbumModel('albumKey1');
             const album2: AlbumModel = createAlbumModel('albumKey2');
-            albumServiceMock
-                .setup((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.allArtists))
-                .returns(() => [album1, album2]);
+            albumServiceMock.setup((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists)).returns(() => [album1, album2]);
             albumsPersisterMock.setup((x) => x.getSelectedAlbums([album1, album2])).returns(() => [album1, album2]);
 
             const track1: TrackModel = createTrackModel('path1');
@@ -718,23 +701,19 @@ describe('CollectionArtistsComponent', () => {
 
             const album1: AlbumModel = createAlbumModel('albumKey1');
             const album2: AlbumModel = createAlbumModel('albumKey2');
-            albumServiceMock
-                .setup((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.allArtists))
-                .returns(() => [album1, album2]);
+            albumServiceMock.setup((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists)).returns(() => [album1, album2]);
 
             const component: CollectionArtistsComponent = createComponent();
 
             await component.ngOnInit();
             albumServiceMock.reset();
-            albumServiceMock
-                .setup((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.allArtists))
-                .returns(() => [album1, album2]);
+            albumServiceMock.setup((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists)).returns(() => [album1, album2]);
 
             // Act
             selectedArtistsChangedMock.next([artist1.name, artist2.name]);
 
             // Assert
-            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1.name, artist2.name], ArtistType.allArtists), Times.once());
+            albumServiceMock.verify((x) => x.getAlbumsForArtists([artist1, artist2], ArtistType.allArtists), Times.once());
             albumServiceMock.verify((x) => x.getAllAlbums(), Times.never());
             expect(component.albums.length).toEqual(2);
             expect(component.albums[0]).toEqual(album1);
@@ -789,9 +768,7 @@ describe('CollectionArtistsComponent', () => {
             const track1: TrackModel = createTrackModel('path1');
             const track2: TrackModel = createTrackModel('path2');
             const trackModels: TrackModels = createTrackModels([track1, track2]);
-            trackServiceMock
-                .setup((x) => x.getTracksForArtists([artist1.name, artist2.name], ArtistType.allArtists))
-                .returns(() => trackModels);
+            trackServiceMock.setup((x) => x.getTracksForArtists([artist1, artist2], ArtistType.allArtists)).returns(() => trackModels);
 
             const component: CollectionArtistsComponent = createComponent();
 
@@ -801,7 +778,7 @@ describe('CollectionArtistsComponent', () => {
             selectedArtistsChangedMock.next([artist1.name, artist2.name]);
 
             // Assert
-            trackServiceMock.verify((x) => x.getTracksForArtists([artist1.name, artist2.name], ArtistType.allArtists), Times.once());
+            trackServiceMock.verify((x) => x.getTracksForArtists([artist1, artist2], ArtistType.allArtists), Times.once());
             trackServiceMock.verify((x) => x.getTracksForAlbums(It.isAny()), Times.never());
             trackServiceMock.verify((x) => x.getVisibleTracks(), Times.never());
             expect(component.tracks.tracks.length).toEqual(2);

@@ -1,21 +1,25 @@
 import { Observable, Subject } from 'rxjs';
 import { IMock, Mock } from 'typemoq';
 import { PlaybackInformationComponent } from './playback-information.component';
-import { PlaybackInformationServiceBase } from '../../../services/playback-information/playback-information.service.base';
-import { MetadataServiceBase } from '../../../services/metadata/metadata.service.base';
 import { Scheduler } from '../../../common/scheduling/scheduler';
 import { DateTime } from '../../../common/date-time';
 import { TranslatorServiceBase } from '../../../services/translator/translator.service.base';
 import { PlaybackInformation } from '../../../services/playback-information/playback-information';
 import { TrackModel } from '../../../services/track/track-model';
 import { Track } from '../../../data/entities/track';
+import { SettingsMock } from '../../../testing/settings-mock';
+import { PlaybackInformationService } from '../../../services/playback-information/playback-information.service';
+import { MetadataService } from '../../../services/metadata/metadata.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('PlaybackInformationComponent', () => {
-    let playbackInformationServiceMock: IMock<PlaybackInformationServiceBase>;
-    let metadataServiceMock: IMock<MetadataServiceBase>;
+    let playbackInformationServiceMock: IMock<PlaybackInformationService>;
+    let metadataServiceMock: IMock<MetadataService>;
     let schedulerMock: IMock<Scheduler>;
     let dateTimeMock: IMock<DateTime>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
+    let settingsMock: any;
 
     let playbackInformationService_PlayingNextTrack: Subject<PlaybackInformation>;
     let playbackInformationService_PlayingPreviousTrack: Subject<PlaybackInformation>;
@@ -37,13 +41,14 @@ describe('PlaybackInformationComponent', () => {
         track.rating = rating;
         track.love = love;
 
-        return new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+        return new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsMock);
     }
 
     beforeEach(() => {
-        playbackInformationServiceMock = Mock.ofType<PlaybackInformationServiceBase>();
-        metadataServiceMock = Mock.ofType<MetadataServiceBase>();
+        playbackInformationServiceMock = Mock.ofType<PlaybackInformationService>();
+        metadataServiceMock = Mock.ofType<MetadataService>();
         schedulerMock = Mock.ofType<Scheduler>();
+        settingsMock = new SettingsMock();
 
         dateTimeMock = Mock.ofType<DateTime>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
@@ -326,7 +331,7 @@ describe('PlaybackInformationComponent', () => {
             const track1: Track = new Track('/home/user/Music/track1.mp3');
             track1.artists = 'My artist';
             track1.trackTitle = 'My title';
-            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
 
             playbackInformationServiceMock
                 .setup((x) => x.getCurrentPlaybackInformationAsync())
@@ -346,7 +351,7 @@ describe('PlaybackInformationComponent', () => {
             const track1: Track = new Track('/home/user/Music/track1.mp3');
             track1.artists = 'My artist';
             track1.trackTitle = 'My title';
-            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
 
             playbackInformationServiceMock
                 .setup((x) => x.getCurrentPlaybackInformationAsync())
@@ -370,7 +375,7 @@ describe('PlaybackInformationComponent', () => {
             const track1: Track = new Track('/home/user/Music/track1.mp3');
             track1.artists = 'My artist';
             track1.trackTitle = 'My title';
-            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
 
             playbackInformationServiceMock
                 .setup((x) => x.getCurrentPlaybackInformationAsync())
@@ -394,7 +399,7 @@ describe('PlaybackInformationComponent', () => {
             const track1: Track = new Track('/home/user/Music/track1.mp3');
             track1.artists = 'My artist';
             track1.trackTitle = 'My title';
-            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel1: TrackModel = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
 
             playbackInformationServiceMock
                 .setup((x) => x.getCurrentPlaybackInformationAsync())

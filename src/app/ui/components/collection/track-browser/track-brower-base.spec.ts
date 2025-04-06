@@ -1,7 +1,6 @@
 import { IMock, It, Mock, Times } from 'typemoq';
 import { AddToPlaylistMenu } from '../../add-to-playlist-menu';
 import { TrackBrowserBase } from './track-brower-base';
-import { PlaybackServiceBase } from '../../../../services/playback/playback.service.base';
 import { DialogServiceBase } from '../../../../services/dialog/dialog.service.base';
 import { ContextMenuOpener } from '../../context-menu-opener';
 import { MouseSelectionWatcher } from '../../mouse-selection-watcher';
@@ -12,9 +11,13 @@ import { DesktopBase } from '../../../../common/io/desktop.base';
 import { Track } from '../../../../data/entities/track';
 import { TrackModel } from '../../../../services/track/track-model';
 import { DateTime } from '../../../../common/date-time';
+import { SettingsMock } from '../../../../testing/settings-mock';
+import { PlaybackService } from '../../../../services/playback/playback.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('TrackBrowserBase', () => {
-    let playbackServiceMock: IMock<PlaybackServiceBase>;
+    let playbackServiceMock: IMock<PlaybackService>;
     let dialogServiceMock: IMock<DialogServiceBase>;
     let addToPlaylistMenuMock: IMock<AddToPlaylistMenu>;
     let contextMenuOpenerMock: IMock<ContextMenuOpener>;
@@ -23,6 +26,7 @@ describe('TrackBrowserBase', () => {
     let collectionServiceMock: IMock<CollectionServiceBase>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
     let desktopMock: IMock<DesktopBase>;
+    let settingsMock: any;
 
     let track1: Track;
     let track2: Track;
@@ -30,7 +34,7 @@ describe('TrackBrowserBase', () => {
     let trackModel2: TrackModel;
 
     beforeEach(() => {
-        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
+        playbackServiceMock = Mock.ofType<PlaybackService>();
         dialogServiceMock = Mock.ofType<DialogServiceBase>();
         addToPlaylistMenuMock = Mock.ofType<AddToPlaylistMenu>();
         contextMenuOpenerMock = Mock.ofType<ContextMenuOpener>();
@@ -39,6 +43,7 @@ describe('TrackBrowserBase', () => {
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         collectionServiceMock = Mock.ofType<CollectionServiceBase>();
         desktopMock = Mock.ofType<DesktopBase>();
+        settingsMock = new SettingsMock();
 
         translatorServiceMock.setup((x) => x.getAsync('delete-song')).returns(() => Promise.resolve('delete-song'));
         translatorServiceMock.setup((x) => x.getAsync('confirm-delete-song')).returns(() => Promise.resolve('confirm-delete-song'));
@@ -65,8 +70,8 @@ describe('TrackBrowserBase', () => {
 
         const dateTimeMock: IMock<DateTime> = Mock.ofType<DateTime>();
 
-        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object);
-        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object);
+        trackModel1 = new TrackModel(track1, dateTimeMock.object, translatorServiceMock.object, settingsMock);
+        trackModel2 = new TrackModel(track2, dateTimeMock.object, translatorServiceMock.object, settingsMock);
     });
 
     function create(): TrackBrowserBase {

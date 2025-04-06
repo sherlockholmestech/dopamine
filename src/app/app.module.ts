@@ -13,7 +13,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSortModule } from '@angular/material/sort';
 import { MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions, MatTooltipModule } from '@angular/material/tooltip';
 import { BrowserModule, HammerModule } from '@angular/platform-browser';
@@ -31,10 +30,7 @@ import { LastfmApi } from './common/api/lastfm/lastfm.api';
 import { AlbumKeyGenerator } from './data/album-key-generator';
 import { DatabaseFactory } from './data/database-factory';
 import { DatabaseMigrator } from './data/database-migrator';
-import { AlbumArtworkRepository } from './data/repositories/album-artwork-repository';
 import { FolderRepository } from './data/repositories/folder-repository';
-import { FolderTrackRepository } from './data/repositories/folder-track-repository';
-import { RemovedTrackRepository } from './data/repositories/removed-track-repository';
 import { TrackRepository } from './data/repositories/track-repository';
 import { DateTime } from './common/date-time';
 import { GuidFactory } from './common/guid.factory';
@@ -46,7 +42,6 @@ import { DocumentProxy } from './common/io/document-proxy';
 import { FileAccess } from './common/io/file-access';
 import { IpcProxy } from './common/io/ipc-proxy';
 import { LogViewer } from './common/io/log-viewer';
-import { MediaSessionProxy } from './common/io/media-session-proxy';
 import { TranslateServiceProxy } from './common/io/translate-service-proxy';
 import { Logger } from './common/logger';
 import { MathExtensions } from './common/math-extensions';
@@ -54,9 +49,6 @@ import { FileMetadataFactory } from './common/metadata/file-metadata.factory';
 import { MetadataPatcher } from './common/metadata/metadata-patcher';
 import { MimeTypes } from './common/metadata/mime-types';
 import { NativeElementProxy } from './common/native-element-proxy';
-import { ArtistOrdering } from './common/ordering/artist-ordering';
-import { GenreOrdering } from './common/ordering/genre-ordering';
-import { TrackOrdering } from './common/ordering/track-ordering';
 import { Scheduler } from './common/scheduling/scheduler';
 import { SemanticZoomHeaderAdder } from './common/semantic-zoom-header-adder';
 import { SettingsBase } from './common/settings/settings.base';
@@ -122,7 +114,7 @@ import { LogoFullComponent } from './ui/components/logo-full/logo-full.component
 import { LogoSmallComponent } from './ui/components/logo-small/logo-small.component';
 import { LoveComponent } from './ui/components/love/love.component';
 import { MainMenuComponent } from './ui/components/main-menu/main-menu.component';
-import { ManageAlbumCoversComponent } from './ui/components/manage-collection/manage-album-covers/manage-album-covers.component';
+import { ManageAlbumsComponent } from './ui/components/manage-collection/manage-albums/manage-albums.component';
 import { ManageCollectionComponent } from './ui/components/manage-collection/manage-collection.component';
 import { ManageMusicComponent } from './ui/components/manage-collection/manage-music/manage-music.component';
 import { ManageRefreshComponent } from './ui/components/manage-collection/manage-refresh/manage-refresh.component';
@@ -147,7 +139,6 @@ import { BehaviorSettingsComponent } from './ui/components/settings/behavior-set
 import { OnlineSettingsComponent } from './ui/components/settings/online-settings/online-settings.component';
 import { SettingsComponent } from './ui/components/settings/settings.component';
 import { SliderComponent } from './ui/components/slider/slider.component';
-import { SnackBarComponent } from './ui/components/snack-bar/snack-bar.component';
 import { StepIndicatorComponent } from './ui/components/step-indicator/step-indicator.component';
 import { ThemeSwitcherComponent } from './ui/components/theme-switcher/theme-switcher.component';
 import { VolumeControlComponent } from './ui/components/volume-control/volume-control.component';
@@ -171,8 +162,6 @@ import { SubfolderNamePipe } from './ui/pipes/subfolder-name.pipe';
 import { SubfoldersFilterPipe } from './ui/pipes/subfolders-filter.pipe';
 import { TracksFilterPipe } from './ui/pipes/tracks-filter.pipe';
 import { ZeroToBlankPipe } from './ui/pipes/zero-to-blank.pipe';
-import { AlbumArtworkCacheIdFactory } from './services/album-artwork-cache/album-artwork-cache-id-factory';
-import { AlbumArtworkCacheService } from './services/album-artwork-cache/album-artwork-cache.service';
 import { AlbumService } from './services/album/album-service';
 import { AppearanceService } from './services/appearance/appearance.service';
 import { DefaultThemesCreator } from './services/appearance/default-themes-creator';
@@ -182,41 +171,15 @@ import { ArtistInformationService } from './services/artist-information/artist-i
 import { ArtistService } from './services/artist/artist.service';
 import { CollectionService } from './services/collection/collection.service';
 import { DialogService } from './services/dialog/dialog.service';
-import { DiscordService } from './services/discord/discord.service';
-import { PresenceUpdater } from './services/discord/presence-updater';
 import { ElectronService } from './services/electron.service';
 import { FileService } from './services/file/file.service';
 import { FolderService } from './services/folder/folder.service';
 import { GenreService } from './services/genre/genre.service';
-import { AlbumArtworkAdder } from './services/indexing/album-artwork-adder';
-import { AlbumArtworkGetter } from './services/indexing/album-artwork-getter';
-import { AlbumArtworkIndexer } from './services/indexing/album-artwork-indexer';
-import { AlbumArtworkRemover } from './services/indexing/album-artwork-remover';
-import { CollectionChecker } from './services/indexing/collection-checker';
-import { DirectoryWalker } from './services/indexing/directory-walker';
-import { EmbeddedAlbumArtworkGetter } from './services/indexing/embedded-album-artwork-getter';
-import { ExternalAlbumArtworkGetter } from './services/indexing/external-album-artwork-getter';
-import { ExternalArtworkPathGetter } from './services/indexing/external-artwork-path-getter';
-import { IndexablePathFetcher } from './services/indexing/indexable-path-fetcher';
 import { IndexingService } from './services/indexing/indexing.service';
-import { OnlineAlbumArtworkGetter } from './services/indexing/online-album-artwork-getter';
-import { TrackAdder } from './services/indexing/track-adder';
-import { TrackFieldCreator } from './services/indexing/track-field-creator';
-import { TrackIndexer } from './services/indexing/track-indexer';
-import { TrackRemover } from './services/indexing/track-remover';
-import { TrackUpdater } from './services/indexing/track-updater';
-import { TrackVerifier } from './services/indexing/track-verifier';
-import { MediaSessionService } from './services/media-session/media-session.service';
 import { CachedAlbumArtworkGetter } from './services/metadata/cached-album-artwork-getter';
-import { MetadataService } from './services/metadata/metadata.service';
 import { NavigationService } from './services/navigation/navigation.service';
 import { NowPlayingNavigationService } from './services/now-playing-navigation/now-playing-navigation.service';
 import { PlaybackIndicationService } from './services/playback-indication/playback-indication.service';
-import { PlaybackInformationService } from './services/playback-information/playback-information.service';
-import { AudioPlayer } from './services/playback/audio-player';
-import { PlaybackService } from './services/playback/playback.service';
-import { ProgressUpdater } from './services/playback/progress-updater';
-import { Queue } from './services/playback/queue';
 import { PlaylistFolderModelFactory } from './services/playlist-folder/playlist-folder-model-factory';
 import { PlaylistFolderService } from './services/playlist-folder/playlist-folder.service';
 import { PlaylistDecoder } from './services/playlist/playlist-decoder';
@@ -226,7 +189,6 @@ import { PlaylistService } from './services/playlist/playlist.service';
 import { ScrobblingService } from './services/scrobbling/scrobbling.service';
 import { SearchService } from './services/search/search.service';
 import { SemanticZoomService } from './services/semantic-zoom/semantic-zoom.service';
-import { SnackBarService } from './services/snack-bar/snack-bar.service';
 import { TracksColumnsOrdering } from './services/track-columns/tracks-columns-ordering';
 import { TracksColumnsService } from './services/track-columns/tracks-columns.service';
 import { TrackModelFactory } from './services/track/track-model-factory';
@@ -241,7 +203,6 @@ import { OnlineLyricsGetter } from './services/lyrics/online-lyrics-getter';
 import { IntegrationTestRunner } from './testing/integration-test-runner';
 import { EventListenerService } from './services/event-listener/event-listener.service';
 import { Desktop } from './common/io/desktop';
-import { AudioPlayerBase } from './services/playback/audio-player.base';
 import { EventListenerServiceBase } from './services/event-listener/event-listener.service.base';
 import { LyricsServiceBase } from './services/lyrics/lyrics.service.base';
 import { ArtistInformationServiceBase } from './services/artist-information/artist-information.service.base';
@@ -256,40 +217,29 @@ import { AppearanceServiceBase } from './services/appearance/appearance.service.
 import { PlaylistFolderServiceBase } from './services/playlist-folder/playlist-folder.service.base';
 import { PlaylistServiceBase } from './services/playlist/playlist.service.base';
 import { SearchServiceBase } from './services/search/search.service.base';
-import { MetadataServiceBase } from './services/metadata/metadata.service.base';
-import { MediaSessionServiceBase } from './services/media-session/media-session.service.base';
-import { PlaybackInformationServiceBase } from './services/playback-information/playback-information.service.base';
 import { PlaybackIndicationServiceBase } from './services/playback-indication/playback-indication.service.base';
-import { DiscordServiceBase } from './services/discord/discord.service.base';
 import { CollectionServiceBase } from './services/collection/collection.service.base';
 import { AlbumServiceBase } from './services/album/album-service.base';
 import { TrackServiceBase } from './services/track/track.service.base';
 import { GenreServiceBase } from './services/genre/genre.service.base';
 import { ArtistServiceBase } from './services/artist/artist.service.base';
 import { DialogServiceBase } from './services/dialog/dialog.service.base';
-import { PlaybackServiceBase } from './services/playback/playback.service.base';
-import { SnackBarServiceBase } from './services/snack-bar/snack-bar.service.base';
 import { UpdateServiceBase } from './services/update/update.service.base';
 import { TranslatorServiceBase } from './services/translator/translator.service.base';
 import { IndexingServiceBase } from './services/indexing/indexing.service.base';
 import { NavigationServiceBase } from './services/navigation/navigation.service.base';
-import { AlbumArtworkCacheServiceBase } from './services/album-artwork-cache/album-artwork-cache.service.base';
 import { ApplicationServiceBase } from './services/application/application.service.base';
 import { AZLyricsApi } from './common/api/lyrics/a-z-lyrics.api';
 import { ChartLyricsApi } from './common/api/lyrics/chart-lyrics.api';
 import { WebSearchLyricsApi } from './common/api/lyrics/web-search-lyrics/web-search-lyrics.api';
 import { WebSearchApi } from './common/api/lyrics/web-search-lyrics/web-search.api';
 import { ArtistsFilterPipe } from './ui/pipes/artists-filter.pipe';
-import { AlbumArtworkRepositoryBase } from './data/repositories/album-artwork-repository.base';
-import { FolderTrackRepositoryBase } from './data/repositories/folder-track-repository.base';
 import { TrackRepositoryBase } from './data/repositories/track-repository.base';
-import { RemovedTrackRepositoryBase } from './data/repositories/removed-track-repository.base';
 import { FolderRepositoryBase } from './data/repositories/folder-repository.base';
 import { DatabaseMigratorBase } from './data/database-migrator.base';
 import { ApplicationBase } from './common/io/application.base';
 import { IpcProxyBase } from './common/io/ipc-proxy.base';
 import { TranslateServiceProxyBase } from './common/io/translate-service-proxy.base';
-import { MediaSessionProxyBase } from './common/io/media-session-proxy.base';
 import { DesktopBase } from './common/io/desktop.base';
 import { FileAccessBase } from './common/io/file-access.base';
 import { FileMetadataFactoryBase } from './common/metadata/file-metadata.factory.base';
@@ -322,6 +272,29 @@ import { IconTextButtonComponent } from './ui/components/controls/icon-text-butt
 import { BigIconButtonComponent } from './ui/components/controls/big-icon-button/big-icon-button.component';
 import { ToggleSwitchComponent } from './ui/components/controls/toggle-switch/toggle-switch.component';
 import { IconButtonComponent } from './ui/components/controls/icon-button/icon-button.component';
+import { NotificationBarComponent } from './ui/components/notification-bar/notification-bar.component';
+import { NotificationServiceBase } from './services/notification/notification.service.base';
+import { NotificationService } from './services/notification/notification.service';
+import { TrackFiller } from './services/indexing/track-filler';
+import { TrackFieldCreator } from './services/indexing/track-field-creator';
+import { AlbumArtworkGetter } from './services/indexing/album-artwork-getter';
+import { EmbeddedAlbumArtworkGetter } from './services/indexing/embedded-album-artwork-getter';
+import { OnlineAlbumArtworkGetter } from './services/indexing/online-album-artwork-getter';
+import { ExternalAlbumArtworkGetter } from './services/indexing/external-album-artwork-getter';
+import { ExternalArtworkPathGetter } from './services/indexing/external-artwork-path-getter';
+import { AlbumArtworkRepositoryBase } from './data/repositories/album-artwork-repository.base';
+import { AlbumArtworkRepository } from './data/repositories/album-artwork-repository';
+import { AlbumArtworkCacheService } from './services/album-artwork-cache/album-artwork-cache.service';
+import { AlbumArtworkCacheServiceBase } from './services/album-artwork-cache/album-artwork-cache.service.base';
+import { QueuedTrackRepositoryBase } from './data/repositories/queued-track-repository.base';
+import { QueuedTrackRepository } from './data/repositories/queued-track-repository';
+import { TextIconSecondaryButtonComponent } from './ui/components/controls/text-icon-secondary-button/text-icon-secondary-button.component';
+import { CoverPlayerComponent } from './ui/components/mini-players/cover-player/cover-player.component';
+import { SwitchPlayerButtonComponent } from './ui/components/switch-player-button/switch-player-button.component';
+import { CoverPlayerPlaybackQueueComponent } from './ui/components/mini-players/cover-player/cover-player-playback-queue/cover-player-playback-queue.component';
+import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { CoverPlayerVolumeControlComponent } from './ui/components/mini-players/cover-player/cover-player-volume-control/cover-player-volume-control.component';
+import { VolumeIconComponent } from './ui/components/volume-icon/volume-icon.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -380,7 +353,7 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         ManageCollectionComponent,
         ManageMusicComponent,
         ManageRefreshComponent,
-        ManageAlbumCoversComponent,
+        ManageAlbumsComponent,
         LoadingComponent,
         MainMenuComponent,
         BackButtonComponent,
@@ -392,11 +365,11 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         BehaviorSettingsComponent,
         AboutComponent,
         ComponentsComponent,
-        SnackBarComponent,
         CollectionFoldersComponent,
         CollectionPlaybackPaneComponent,
         VolumeControlComponent,
         SliderComponent,
+        SwitchPlayerButtonComponent,
         FolderNamePipe,
         SubfolderNamePipe,
         FormatTrackNumberPipe,
@@ -471,6 +444,12 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         BigIconButtonComponent,
         ToggleSwitchComponent,
         IconButtonComponent,
+        TextIconSecondaryButtonComponent,
+        NotificationBarComponent,
+        CoverPlayerComponent,
+        CoverPlayerPlaybackQueueComponent,
+        CoverPlayerVolumeControlComponent,
+        VolumeIconComponent,
     ],
     imports: [
         BrowserAnimationsModule,
@@ -481,12 +460,12 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         MatInputModule,
         MatSelectModule,
         MatTooltipModule,
-        MatSnackBarModule,
         MatRippleModule,
         MatDialogModule,
         MatMenuModule,
         MatDividerModule,
         MatSortModule,
+        MatBottomSheetModule,
         DragDropModule,
         HammerModule,
         FormsModule,
@@ -512,33 +491,15 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         },
         ElectronService,
         DatabaseFactory,
-        TrackIndexer,
-        DirectoryWalker,
-        TrackRemover,
-        TrackUpdater,
-        TrackAdder,
-        TrackVerifier,
         FileMetadataFactory,
-        TrackFieldCreator,
         AlbumKeyGenerator,
         MimeTypes,
-        AlbumArtworkCacheIdFactory,
         ImageProcessor,
-        AlbumArtworkGetter,
-        ExternalAlbumArtworkGetter,
-        EmbeddedAlbumArtworkGetter,
-        OnlineAlbumArtworkGetter,
         CachedAlbumArtworkGetter,
-        AlbumArtworkIndexer,
-        AlbumArtworkAdder,
-        AlbumArtworkRemover,
-        ExternalArtworkPathGetter,
         LastfmApi,
         Logger,
         Hacks,
         Shuffler,
-        ProgressUpdater,
-        Queue,
         MathExtensions,
         PathValidator,
         AlbumRowsGetter,
@@ -552,11 +513,7 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         WebSearchLyricsApi,
         WebSearchApi,
         MetadataPatcher,
-        ArtistOrdering,
-        GenreOrdering,
-        TrackOrdering,
         TracksColumnsOrdering,
-        PresenceUpdater,
         SemanticZoomHeaderAdder,
         DefaultThemesCreator,
         ArtistsPersister,
@@ -570,8 +527,6 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         FoldersPersister,
         PlaylistFoldersPersister,
         FolderTracksPersister,
-        CollectionChecker,
-        IndexablePathFetcher,
         TextSanitizer,
         ContextMenuOpener,
         PlaylistFolderModelFactory,
@@ -595,32 +550,33 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         IntegrationTestRunner,
         AudioVisualizer,
         OnlineArtistImageGetter,
+        TrackFiller,
+        TrackFieldCreator,
+        AlbumArtworkGetter,
+        EmbeddedAlbumArtworkGetter,
+        ExternalAlbumArtworkGetter,
+        OnlineAlbumArtworkGetter,
+        ExternalArtworkPathGetter,
         { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: CustomTooltipDefaults },
         { provide: FileAccessBase, useClass: FileAccess },
-        { provide: AlbumArtworkRepositoryBase, useClass: AlbumArtworkRepository },
-        { provide: RemovedTrackRepositoryBase, useClass: RemovedTrackRepository },
-        { provide: FolderTrackRepositoryBase, useClass: FolderTrackRepository },
         { provide: TrackRepositoryBase, useClass: TrackRepository },
         { provide: FolderRepositoryBase, useClass: FolderRepository },
+        { provide: AlbumArtworkRepositoryBase, useClass: AlbumArtworkRepository },
+        { provide: QueuedTrackRepositoryBase, useClass: QueuedTrackRepository },
         { provide: ApplicationServiceBase, useClass: ApplicationService },
-        { provide: AlbumArtworkCacheServiceBase, useClass: AlbumArtworkCacheService },
         { provide: NavigationServiceBase, useClass: NavigationService },
         { provide: IndexingServiceBase, useClass: IndexingService },
+        { provide: AlbumArtworkCacheServiceBase, useClass: AlbumArtworkCacheService },
         { provide: TranslatorServiceBase, useClass: TranslatorService },
         { provide: UpdateServiceBase, useClass: UpdateService },
-        { provide: SnackBarServiceBase, useClass: SnackBarService },
-        { provide: PlaybackServiceBase, useClass: PlaybackService },
+        { provide: NotificationServiceBase, useClass: NotificationService },
         { provide: DialogServiceBase, useClass: DialogService },
         { provide: ArtistServiceBase, useClass: ArtistService },
         { provide: GenreServiceBase, useClass: GenreService },
         { provide: TrackServiceBase, useClass: TrackService },
         { provide: AlbumServiceBase, useClass: AlbumService },
         { provide: CollectionServiceBase, useClass: CollectionService },
-        { provide: DiscordServiceBase, useClass: DiscordService },
         { provide: PlaybackIndicationServiceBase, useClass: PlaybackIndicationService },
-        { provide: PlaybackInformationServiceBase, useClass: PlaybackInformationService },
-        { provide: MediaSessionServiceBase, useClass: MediaSessionService },
-        { provide: MetadataServiceBase, useClass: MetadataService },
         { provide: SearchServiceBase, useClass: SearchService },
         { provide: PlaylistServiceBase, useClass: PlaylistService },
         { provide: PlaylistFolderServiceBase, useClass: PlaylistFolderService },
@@ -637,14 +593,12 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         { provide: LyricsServiceBase, useClass: LyricsService },
         { provide: EventListenerServiceBase, useClass: EventListenerService },
         { provide: AudioVisualizerServiceBase, useClass: AudioVisualizerService },
-        { provide: AudioPlayerBase, useClass: AudioPlayer },
         { provide: SettingsBase, useClass: Settings },
         { provide: DatabaseMigratorBase, useClass: DatabaseMigrator },
         { provide: SchedulerBase, useClass: Scheduler },
         { provide: ApplicationBase, useClass: Application },
         { provide: IpcProxyBase, useClass: IpcProxy },
         { provide: TranslateServiceProxyBase, useClass: TranslateServiceProxy },
-        { provide: MediaSessionProxyBase, useClass: MediaSessionProxy },
         { provide: DesktopBase, useClass: Desktop },
         { provide: FileMetadataFactoryBase, useClass: FileMetadataFactory },
         {

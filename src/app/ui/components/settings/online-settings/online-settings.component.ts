@@ -2,10 +2,10 @@ import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { PromiseUtils } from '../../../../common/utils/promise-utils';
 import { SignInState } from '../../../../services/scrobbling/sign-in-state';
-import { DiscordServiceBase } from '../../../../services/discord/discord.service.base';
 import { ScrobblingServiceBase } from '../../../../services/scrobbling/scrobbling.service.base';
-import { SnackBarServiceBase } from '../../../../services/snack-bar/snack-bar.service.base';
 import { SettingsBase } from '../../../../common/settings/settings.base';
+import { NotificationServiceBase } from '../../../../services/notification/notification.service.base';
+import { DiscordService } from '../../../../services/discord/discord.service';
 
 @Component({
     selector: 'app-online-settings',
@@ -19,9 +19,9 @@ export class OnlineSettingsComponent implements OnInit, OnDestroy {
     private subscription: Subscription = new Subscription();
 
     public constructor(
-        private discordService: DiscordServiceBase,
+        public discordService: DiscordService,
         private scrobblingService: ScrobblingServiceBase,
-        private snackBarService: SnackBarServiceBase,
+        private notificationService: NotificationServiceBase,
         public settings: SettingsBase,
     ) {}
 
@@ -55,7 +55,7 @@ export class OnlineSettingsComponent implements OnInit, OnDestroy {
                 this._signInState = signInState;
 
                 if (signInState === SignInState.Error) {
-                    PromiseUtils.noAwait(this.snackBarService.lastFmLoginFailedAsync());
+                    PromiseUtils.noAwait(this.notificationService.lastFmLoginFailedAsync());
                 }
             }),
         );
@@ -63,13 +63,12 @@ export class OnlineSettingsComponent implements OnInit, OnDestroy {
         this._signInState = this.scrobblingService.signInState;
     }
 
-    public get enableDiscordRichPresence(): boolean {
-        return this.settings.enableDiscordRichPresence;
+    public get downloadLyricsOnline(): boolean {
+        return this.settings.downloadLyricsOnline;
     }
 
-    public set enableDiscordRichPresence(v: boolean) {
-        this.settings.enableDiscordRichPresence = v;
-        this.discordService.setRichPresence(v);
+    public set downloadLyricsOnline(v: boolean) {
+        this.settings.downloadLyricsOnline = v;
     }
 
     public get enableLastFmScrobbling(): boolean {

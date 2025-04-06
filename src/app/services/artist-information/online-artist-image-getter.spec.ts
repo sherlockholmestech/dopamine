@@ -3,6 +3,8 @@ import { IMock, Mock, Times } from 'typemoq';
 import { ImageProcessor } from '../../common/image-processor';
 import { FanartApi } from '../../common/api/fanart/fanart.api';
 
+jest.mock('jimp', () => ({ exec: jest.fn() }));
+
 describe('OnlineArtistImageGetter', () => {
     let imageProcessorMock: IMock<ImageProcessor>;
     let fanartApiMock: IMock<FanartApi>;
@@ -50,7 +52,9 @@ describe('OnlineArtistImageGetter', () => {
             imageProcessorMock
                 .setup((x) => x.convertOnlineImageToBufferAsync('thumbnailLink'))
                 .returns(() => Promise.resolve(artistImageAsBuffer));
-            imageProcessorMock.setup((x) => x.resizeImage(artistImageAsBuffer, 300, 300, 80)).returns(() => resizedArtistImageAsBuffer);
+            imageProcessorMock
+                .setup((x) => x.toResizedJpegBufferAsync(artistImageAsBuffer, 300, 300, 80))
+                .returns(() => Promise.resolve(resizedArtistImageAsBuffer));
             imageProcessorMock.setup((x) => x.convertBufferToImageUrl(resizedArtistImageAsBuffer)).returns(() => 'imageUrl');
 
             const service: OnlineArtistImageGetter = createSut();
@@ -61,7 +65,7 @@ describe('OnlineArtistImageGetter', () => {
             // Assert
             fanartApiMock.verify((x) => x.getArtistThumbnailAsync('musicBrainzId'), Times.once());
             imageProcessorMock.verify((x) => x.convertOnlineImageToBufferAsync('thumbnailLink'), Times.once());
-            imageProcessorMock.verify((x) => x.resizeImage(artistImageAsBuffer, 300, 300, 80), Times.once());
+            imageProcessorMock.verify((x) => x.toResizedJpegBufferAsync(artistImageAsBuffer, 300, 300, 80), Times.once());
             imageProcessorMock.verify((x) => x.convertBufferToImageUrl(resizedArtistImageAsBuffer), Times.once());
             expect(artistImage).toEqual('imageUrl');
         });

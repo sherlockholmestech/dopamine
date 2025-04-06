@@ -2,20 +2,24 @@ import { IMock, It, Mock, Times } from 'typemoq';
 import { LoveComponent } from './love.component';
 import { AppearanceServiceBase } from '../../../services/appearance/appearance.service.base';
 import { ScrobblingServiceBase } from '../../../services/scrobbling/scrobbling.service.base';
-import { MetadataServiceBase } from '../../../services/metadata/metadata.service.base';
 import { DialogServiceBase } from '../../../services/dialog/dialog.service.base';
 import { TranslatorServiceBase } from '../../../services/translator/translator.service.base';
 import { DateTime } from '../../../common/date-time';
 import { Track } from '../../../data/entities/track';
 import { TrackModel } from '../../../services/track/track-model';
+import { SettingsMock } from '../../../testing/settings-mock';
+import { MetadataService } from '../../../services/metadata/metadata.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('LoveComponent', () => {
     let appearanceServiceMock: IMock<AppearanceServiceBase>;
     let scrobblingServiceMock: IMock<ScrobblingServiceBase>;
-    let metadataServiceMock: IMock<MetadataServiceBase>;
+    let metadataServiceMock: IMock<MetadataService>;
     let dialogServiceMock: IMock<DialogServiceBase>;
     let dateTimeMock: IMock<DateTime>;
     let translatorServiceMock: IMock<TranslatorServiceBase>;
+    let settingsMock: any;
 
     function createComponent(): LoveComponent {
         return new LoveComponent(
@@ -28,12 +32,13 @@ describe('LoveComponent', () => {
     }
 
     beforeEach(() => {
-        metadataServiceMock = Mock.ofType<MetadataServiceBase>();
+        metadataServiceMock = Mock.ofType<MetadataService>();
         scrobblingServiceMock = Mock.ofType<ScrobblingServiceBase>();
         dialogServiceMock = Mock.ofType<DialogServiceBase>();
         dateTimeMock = Mock.ofType<DateTime>();
         translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
         appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
+        settingsMock = new SettingsMock();
 
         translatorServiceMock.setup((x) => x.getAsync('save-love-error')).returns(() => Promise.resolve('save-love-error'));
     });
@@ -42,7 +47,7 @@ describe('LoveComponent', () => {
         const track: Track = new Track('Path');
         track.love = love;
 
-        return new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+        return new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsMock);
     }
 
     describe('constructor', () => {
@@ -121,7 +126,7 @@ describe('LoveComponent', () => {
         it('should set and get track', () => {
             // Arrange
             const track: Track = new Track('Path');
-            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsMock);
             const loveComponent: LoveComponent = createComponent();
 
             // Act
@@ -137,7 +142,7 @@ describe('LoveComponent', () => {
             // Arrange
             const track: Track = new Track('Path');
             track.love = 0;
-            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsMock);
             const loveComponent: LoveComponent = createComponent();
             loveComponent.track = trackModel;
 
@@ -152,7 +157,7 @@ describe('LoveComponent', () => {
             // Arrange
             const track: Track = new Track('Path');
             track.love = 1;
-            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsMock);
             const loveComponent: LoveComponent = createComponent();
             loveComponent.track = trackModel;
 
@@ -167,7 +172,7 @@ describe('LoveComponent', () => {
             // Arrange
             const track: Track = new Track('Path');
             track.love = -1;
-            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsMock);
             const loveComponent: LoveComponent = createComponent();
             loveComponent.track = trackModel;
 
@@ -182,7 +187,7 @@ describe('LoveComponent', () => {
             // Arrange
             const track: Track = new Track('Path');
             track.love = 6;
-            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+            const trackModel: TrackModel = new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, settingsMock);
             const loveComponent: LoveComponent = createComponent();
             loveComponent.track = trackModel;
 

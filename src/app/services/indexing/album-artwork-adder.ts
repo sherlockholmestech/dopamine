@@ -7,26 +7,31 @@ import { IFileMetadata } from '../../common/metadata/i-file-metadata';
 import { AlbumArtworkCacheId } from '../album-artwork-cache/album-artwork-cache-id';
 import { AlbumArtworkGetter } from './album-artwork-getter';
 import { AlbumArtworkCacheServiceBase } from '../album-artwork-cache/album-artwork-cache.service.base';
-import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
 import { AlbumArtworkRepositoryBase } from '../../data/repositories/album-artwork-repository.base';
 import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
 import { FileMetadataFactoryBase } from '../../common/metadata/file-metadata.factory.base';
+import { NotificationServiceBase } from '../notification/notification.service.base';
+import { SettingsBase } from '../../common/settings/settings.base';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AlbumArtworkAdder {
     public constructor(
         private albumArtworkCacheService: AlbumArtworkCacheServiceBase,
         private albumArtworkRepository: AlbumArtworkRepositoryBase,
         private trackRepository: TrackRepositoryBase,
         private fileMetadataFactory: FileMetadataFactoryBase,
-        private snackbarService: SnackBarServiceBase,
+        private notificationService: NotificationServiceBase,
         private logger: Logger,
         private albumArtworkGetter: AlbumArtworkGetter,
+        private settings: SettingsBase,
     ) {}
 
     public async addAlbumArtworkForTracksThatNeedAlbumArtworkIndexingAsync(): Promise<void> {
         try {
-            const albumDataThatNeedsIndexing: AlbumData[] = this.trackRepository.getAlbumDataThatNeedsIndexing() ?? [];
+            const albumKeyIndex = this.settings.albumKeyIndex;
+            
+            const albumDataThatNeedsIndexing: AlbumData[] =
+                this.trackRepository.getAlbumDataThatNeedsIndexing(albumKeyIndex) ?? [];
 
             if (albumDataThatNeedsIndexing.length === 0) {
                 this.logger.info(
@@ -46,15 +51,14 @@ export class AlbumArtworkAdder {
 
             const numberOfAlbumArtwork: number = this.albumArtworkRepository.getNumberOfAlbumArtwork();
 
-            // TODO: remove this when album artwork fetching is async
-            // For now, as a workaround, we only show this notification the 1st time indexing runs.
+            // Only show this notification the 1st time indexing runs.
             if (numberOfAlbumArtwork === 0) {
-                await this.snackbarService.updatingAlbumArtworkAsync();
+                await this.notificationService.updatingAlbumArtworkAsync();
             }
 
             for (const albumData of albumDataThatNeedsIndexing) {
                 try {
-                    await this.addAlbumArtworkAsync(albumData.albumKey);
+                    await this.addAlbumArtworkAsync(albumKeyIndex, albumData.albumKey);
                 } catch (e: unknown) {
                     this.logger.error(
                         e,
@@ -74,8 +78,8 @@ export class AlbumArtworkAdder {
         }
     }
 
-    private async addAlbumArtworkAsync(albumKey: string): Promise<void> {
-        const track: Track | undefined = this.trackRepository.getLastModifiedTrackForAlbumKeyAsync(albumKey);
+    private async addAlbumArtworkAsync(albumKeyIndex:string, albumKey: string): Promise<void> {
+        const track: Track | undefined = this.trackRepository.getLastModifiedTrackForAlbumKeyAsync(albumKeyIndex, albumKey);
 
         if (track == undefined) {
             return;

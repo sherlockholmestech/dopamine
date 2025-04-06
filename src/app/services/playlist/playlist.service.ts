@@ -16,29 +16,42 @@ import { PlaylistFileManager } from './playlist-file-manager';
 import { PlaylistModel } from './playlist-model';
 import { PlaylistServiceBase } from './playlist.service.base';
 import { TrackServiceBase } from '../track/track.service.base';
-import { SnackBarServiceBase } from '../snack-bar/snack-bar.service.base';
 import { FileAccessBase } from '../../common/io/file-access.base';
 import { CollectionUtils } from '../../common/utils/collections-utils';
 import { FileValidator } from '../../common/validation/file-validator';
+import { NotificationServiceBase } from '../notification/notification.service.base';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Constants } from '../../common/application/constants';
+import { PlaylistUpdateInfo } from './playlist-update-info';
+import { PromiseUtils } from '../../common/utils/promise-utils';
+import {SettingsBase} from "../../common/settings/settings.base";
+
 @Injectable()
 export class PlaylistService implements PlaylistServiceBase {
     private _playlistsParentFolderPath: string = '';
     private _activePlaylistFolder: PlaylistFolderModel = this.playlistFolderModelFactory.createDefault();
     private playlistsChanged: Subject<void> = new Subject();
     private playlistTracksChanged: Subject<void> = new Subject();
+    private delayedUpdatePlaylistFile: Subject<PlaylistUpdateInfo> = new Subject<PlaylistUpdateInfo>();
+    private _isUpdatingPlaylistFile: boolean = false;
 
     public constructor(
         private trackService: TrackServiceBase,
-        private snackBarService: SnackBarServiceBase,
+        private notificationService: NotificationServiceBase,
         private playlistFolderModelFactory: PlaylistFolderModelFactory,
         private playlistFileManager: PlaylistFileManager,
         private playlistDecoder: PlaylistDecoder,
         private trackModelFactory: TrackModelFactory,
         private fileValidator: FileValidator,
         private fileAccess: FileAccessBase,
+        private settings: SettingsBase,
         private logger: Logger,
     ) {
         this.initialize();
+    }
+
+    public get isUpdatingPlaylistFile(): boolean {
+        return this._isUpdatingPlaylistFile;
     }
 
     public get playlistsParentFolderPath(): string {
@@ -65,8 +78,7 @@ export class PlaylistService implements PlaylistServiceBase {
             throw new Error('artistsToAdd is undefined');
         }
 
-        const artistNames: string[] = artistsToAdd.map((x) => x.name);
-        const tracks: TrackModels = this.trackService.getTracksForArtists(artistNames, ArtistType.allArtists);
+        const tracks: TrackModels = this.trackService.getTracksForArtists(artistsToAdd, ArtistType.allArtists);
         await this.addTracksToPlaylistAsync(playlistPath, playlistName, tracks.tracks);
     }
 
@@ -113,9 +125,9 @@ export class PlaylistService implements PlaylistServiceBase {
             }
 
             if (tracksToAdd.length === 1) {
-                await this.snackBarService.singleTrackAddedToPlaylistAsync(playlistName);
+                await this.notificationService.singleTrackAddedToPlaylistAsync(playlistName);
             } else {
-                await this.snackBarService.multipleTracksAddedToPlaylistAsync(playlistName, tracksToAdd.length);
+                await this.notificationService.multipleTracksAddedToPlaylistAsync(playlistName, tracksToAdd.length);
             }
         } catch (e: unknown) {
             this.logger.error(e, `Could not add tracks to playlist '${playlistPath}'`, 'PlaylistService', 'addTracksToPlaylist');
@@ -253,6 +265,12 @@ export class PlaylistService implements PlaylistServiceBase {
     private initialize(): void {
         this._playlistsParentFolderPath = this.playlistFileManager.playlistsParentFolderPath;
         this.playlistFileManager.ensurePlaylistsParentFolderExists(this._playlistsParentFolderPath);
+
+        this.delayedUpdatePlaylistFile
+            .pipe(debounceTime(Constants.playlistsSaveDelayMilliseconds))
+            .subscribe((playlistUpdateInfo: PlaylistUpdateInfo) => {
+                PromiseUtils.noAwait(this.updatePlaylistFileAsync(playlistUpdateInfo.playlistPath, playlistUpdateInfo.tracks));
+            });
     }
 
     private async decodePlaylistAsync(playlistPath: string): Promise<TrackModel[]> {
@@ -265,10 +283,13 @@ export class PlaylistService implements PlaylistServiceBase {
             this.logger.error(e, `Could not decode playlist with path='${playlistPath}'`, 'PlaylistService', 'decodePlaylistAsync');
             throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
+        
+        
+        const albumKeyIndex = this.settings.albumKeyIndex;
 
         for (const playlistEntry of playlistEntries) {
             if (this.fileValidator.isPlayableAudioFile(playlistEntry.decodedPath)) {
-                const track: TrackModel = await this.trackModelFactory.createFromFileAsync(playlistEntry.decodedPath);
+                const track: TrackModel = await this.trackModelFactory.createFromFileAsync(playlistEntry.decodedPath, albumKeyIndex);
                 tracks.push(track);
             }
         }
@@ -289,8 +310,8 @@ export class PlaylistService implements PlaylistServiceBase {
             return;
         }
 
-        // TODO: delay
-        await this.updateTracksInPlaylistAsync(tracks[0].playlistPath, tracks);
+        this._isUpdatingPlaylistFile = true;
+        this.delayedUpdatePlaylistFile.next(new PlaylistUpdateInfo(tracks[0].playlistPath, tracks));
     }
 
     private areTrackFromSinglePlaylist(tracks: TrackModel[]): boolean {
@@ -299,14 +320,17 @@ export class PlaylistService implements PlaylistServiceBase {
         return uniquePlaylistPaths.size === 1;
     }
 
-    public async updateTracksInPlaylistAsync(playlistPath: string, tracks: TrackModel[]): Promise<void> {
+    private async updatePlaylistFileAsync(playlistPath: string, tracks: TrackModel[]): Promise<void> {
         try {
-            for (const path of tracks.map((x) => x.path)) {
-                await this.fileAccess.replaceTextInFileAsync(playlistPath, path);
-            }
+            await this.fileAccess.replaceMultiLineTextInFileAsync(
+                playlistPath,
+                tracks.map((x) => x.path),
+            );
         } catch (e: unknown) {
-            this.logger.error(e, `Could not update tracks in playlist '${playlistPath}'`, 'PlaylistService', 'updateTracksInPlaylistAsync');
+            this.logger.error(e, `Could not update tracks in playlist '${playlistPath}'`, 'PlaylistService', 'updatePlaylistFileAsync');
             throw new Error(e instanceof Error ? e.message : 'Unknown error');
+        } finally {
+            this._isUpdatingPlaylistFile = false;
         }
     }
 }

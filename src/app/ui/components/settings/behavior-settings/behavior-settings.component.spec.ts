@@ -1,20 +1,39 @@
 import { IMock, Mock } from 'typemoq';
 import { BehaviorSettingsComponent } from './behavior-settings.component';
-import { MediaSessionServiceBase } from '../../../../services/media-session/media-session.service.base';
+import { MediaSessionService } from '../../../../services/media-session/media-session.service';
 import { SettingsBase } from '../../../../common/settings/settings.base';
 import { TrayServiceBase } from '../../../../services/tray/tray.service.base';
+import { DialogServiceBase } from '../../../../services/dialog/dialog.service.base';
+import { TranslatorServiceBase } from '../../../../services/translator/translator.service.base';
+import { Logger } from '../../../../common/logger';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('BehaviorSettingsComponent', () => {
     let component: BehaviorSettingsComponent;
     let trayServiceMock: IMock<TrayServiceBase>;
-    let mediaSessionServiceMock: IMock<MediaSessionServiceBase>;
+    let mediaSessionServiceMock: IMock<MediaSessionService>;
+    let dialogServiceMock: IMock<DialogServiceBase>;
+    let translatorServiceMock: IMock<TranslatorServiceBase>;
     let settingsMock: IMock<SettingsBase>;
+    let loggerMock: IMock<Logger>;
 
     beforeEach(() => {
         settingsMock = Mock.ofType<SettingsBase>();
         trayServiceMock = Mock.ofType<TrayServiceBase>();
-        mediaSessionServiceMock = Mock.ofType<MediaSessionServiceBase>();
-        component = new BehaviorSettingsComponent(trayServiceMock.object, mediaSessionServiceMock.object, settingsMock.object);
+        mediaSessionServiceMock = Mock.ofType<MediaSessionService>();
+        dialogServiceMock = Mock.ofType<DialogServiceBase>();
+        translatorServiceMock = Mock.ofType<TranslatorServiceBase>();
+        loggerMock = Mock.ofType<Logger>();
+
+        component = new BehaviorSettingsComponent(
+            trayServiceMock.object,
+            mediaSessionServiceMock.object,
+            dialogServiceMock.object,
+            translatorServiceMock.object,
+            settingsMock.object,
+            loggerMock.object,
+        );
     });
 
     describe('constructor', () => {

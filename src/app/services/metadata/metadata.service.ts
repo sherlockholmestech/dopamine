@@ -9,14 +9,13 @@ import { StringUtils } from '../../common/utils/string-utils';
 import { AlbumArtworkGetter } from '../indexing/album-artwork-getter';
 import { TrackModel } from '../track/track-model';
 import { CachedAlbumArtworkGetter } from './cached-album-artwork-getter';
-import { MetadataServiceBase } from './metadata.service.base';
 import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
 import { FileAccessBase } from '../../common/io/file-access.base';
 import { FileMetadataFactoryBase } from '../../common/metadata/file-metadata.factory.base';
 import { SettingsBase } from '../../common/settings/settings.base';
 
-@Injectable()
-export class MetadataService implements MetadataServiceBase {
+@Injectable({ providedIn: 'root' })
+export class MetadataService {
     private ratingSaved: Subject<TrackModel> = new Subject();
     private loveSaved: Subject<TrackModel> = new Subject();
 
@@ -47,7 +46,9 @@ export class MetadataService implements MetadataServiceBase {
 
                 if (coverArt != undefined && coverArt.length > 0) {
                     if (maximumSize > 0) {
-                        coverArt = this.imageProcessor.resizeImage(coverArt, maximumSize, maximumSize, 80);
+                        coverArt = await this.imageProcessor.toResizedJpegBufferAsync(coverArt, maximumSize, maximumSize, 80);
+                    } else {
+                        coverArt = await this.imageProcessor.toJpegBufferAsync(coverArt, 80);
                     }
 
                     return this.imageProcessor.convertBufferToImageUrl(coverArt);
@@ -94,5 +95,9 @@ export class MetadataService implements MetadataServiceBase {
             this.logger.error(e, 'Could not save love', 'MetadataService', 'saveTrackRatingAsync');
             throw new Error(e instanceof Error ? e.message : 'Unknown error');
         }
+    }
+
+    public getAlbumArtworkPath(albumKey: string): string {
+        return this.cachedAlbumArtworkGetter.getCachedAlbumArtworkPath(albumKey);
     }
 }

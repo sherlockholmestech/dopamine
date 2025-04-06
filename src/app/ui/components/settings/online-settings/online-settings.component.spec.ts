@@ -1,15 +1,17 @@
 import { Observable, Subject } from 'rxjs';
 import { IMock, Mock, Times } from 'typemoq';
 import { OnlineSettingsComponent } from './online-settings.component';
-import { DiscordServiceBase } from '../../../../services/discord/discord.service.base';
 import { ScrobblingServiceBase } from '../../../../services/scrobbling/scrobbling.service.base';
-import { SnackBarServiceBase } from '../../../../services/snack-bar/snack-bar.service.base';
 import { SignInState } from '../../../../services/scrobbling/sign-in-state';
+import { NotificationServiceBase } from '../../../../services/notification/notification.service.base';
+import { DiscordService } from '../../../../services/discord/discord.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('OnlineSettingsComponent', () => {
-    let discordServiceMock: IMock<DiscordServiceBase>;
+    let discordServiceMock: IMock<DiscordService>;
     let scrobblingServiceMock: IMock<ScrobblingServiceBase>;
-    let snackBarServiceMock: IMock<SnackBarServiceBase>;
+    let notificationServiceMock: IMock<NotificationServiceBase>;
     let settingsStub: any;
 
     let scrobblingServiceMock_signInStateChanged: Subject<SignInState>;
@@ -21,20 +23,20 @@ describe('OnlineSettingsComponent', () => {
         return new OnlineSettingsComponent(
             discordServiceMock.object,
             scrobblingServiceMock.object,
-            snackBarServiceMock.object,
+            notificationServiceMock.object,
             settingsStub,
         );
     }
 
     function createComponentFromScrobblingServiceStub(scrobblingServiceStub: any): OnlineSettingsComponent {
-        return new OnlineSettingsComponent(discordServiceMock.object, scrobblingServiceStub, snackBarServiceMock.object, settingsStub);
+        return new OnlineSettingsComponent(discordServiceMock.object, scrobblingServiceStub, notificationServiceMock.object, settingsStub);
     }
 
     beforeEach(() => {
-        discordServiceMock = Mock.ofType<DiscordServiceBase>();
+        discordServiceMock = Mock.ofType<DiscordService>();
         scrobblingServiceMock = Mock.ofType<ScrobblingServiceBase>();
-        snackBarServiceMock = Mock.ofType<SnackBarServiceBase>();
-        settingsStub = { enableDiscordRichPresence: true, enableLastFmScrobbling: true };
+        notificationServiceMock = Mock.ofType<NotificationServiceBase>();
+        settingsStub = { enableDiscordRichPresence: true, enableLastFmScrobbling: true, downloadLyricsOnline: true };
 
         scrobblingServiceMock_signInStateChanged = new Subject();
         scrobblingServiceMock_signInStateChanged$ = scrobblingServiceMock_signInStateChanged.asObservable();
@@ -60,6 +62,16 @@ describe('OnlineSettingsComponent', () => {
 
             // Assert
             expect(component.signInState).toEqual(SignInState.SignedOut);
+        });
+
+        it('should define discordService', () => {
+            // Arrange
+
+            // Act
+            const component: OnlineSettingsComponent = createComponent();
+
+            // Assert
+            expect(component.discordService).toBeDefined();
         });
     });
 
@@ -101,7 +113,7 @@ describe('OnlineSettingsComponent', () => {
             await flushPromises();
 
             // Assert
-            snackBarServiceMock.verify((x) => x.lastFmLoginFailedAsync(), Times.once());
+            notificationServiceMock.verify((x) => x.lastFmLoginFailedAsync(), Times.once());
         });
 
         it('should not tell the user that sign in failed when signed in', async () => {
@@ -115,7 +127,7 @@ describe('OnlineSettingsComponent', () => {
             await flushPromises();
 
             // Assert
-            snackBarServiceMock.verify((x) => x.lastFmLoginFailedAsync(), Times.never());
+            notificationServiceMock.verify((x) => x.lastFmLoginFailedAsync(), Times.never());
         });
 
         it('should not tell the user that sign in failed when signed out', async () => {
@@ -129,7 +141,7 @@ describe('OnlineSettingsComponent', () => {
             await flushPromises();
 
             // Assert
-            snackBarServiceMock.verify((x) => x.lastFmLoginFailedAsync(), Times.never());
+            notificationServiceMock.verify((x) => x.lastFmLoginFailedAsync(), Times.never());
         });
     });
 
@@ -183,49 +195,27 @@ describe('OnlineSettingsComponent', () => {
         });
     });
 
-    describe('enableDiscordRichPresence', () => {
-        it('should get enableDiscordRichPresence from the settings', () => {
+    describe('downloadLyricsOnline', () => {
+        it('should get downloadLyricsOnline from the settings', () => {
             // Arrange
             const component: OnlineSettingsComponent = createComponent();
 
             // Act
-            const enableDiscordRichPresenceFromSettings: boolean = component.enableDiscordRichPresence;
+            const downloadLyricsOnlineFromSettings: boolean = component.downloadLyricsOnline;
 
             // Assert
-            expect(enableDiscordRichPresenceFromSettings).toBeTruthy();
+            expect(downloadLyricsOnlineFromSettings).toBeTruthy();
         });
 
-        it('should set enableDiscordRichPresence to true when true', () => {
+        it('should save downloadLyricsOnline to the settings', () => {
             // Arrange
             const component: OnlineSettingsComponent = createComponent();
 
             // Act
-            component.enableDiscordRichPresence = true;
+            component.downloadLyricsOnline = false;
 
             // Assert
-            discordServiceMock.verify((x) => x.setRichPresence(true), Times.once());
-        });
-
-        it('should set enableDiscordRichPresence to false when false', () => {
-            // Arrange
-            const component: OnlineSettingsComponent = createComponent();
-
-            // Act
-            component.enableDiscordRichPresence = false;
-
-            // Assert
-            discordServiceMock.verify((x) => x.setRichPresence(false), Times.once());
-        });
-
-        it('should save enableDiscordRichPresence to the settings', () => {
-            // Arrange
-            const component: OnlineSettingsComponent = createComponent();
-
-            // Act
-            component.enableDiscordRichPresence = false;
-
-            // Assert
-            expect(settingsStub.enableDiscordRichPresence).toBeFalsy();
+            expect(settingsStub.downloadLyricsOnline).toBeFalsy();
         });
     });
 

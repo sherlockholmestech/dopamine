@@ -22,6 +22,11 @@
     color: white;
 }
 
+.window-frame__trafficlights{
+    width: 70px;
+    flex: 0 0 70px;
+}
+
 .window-frame__overlay {
     position: absolute;
     top: 0;
@@ -40,6 +45,16 @@
     align-items: stretch;
     justify-content: stretch;
     max-height: calc(100vh - $titlebar-height);
+    width: 100vw;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.window-frame__content__with__notification__bar {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    max-height: calc(100vh - $titlebar-height - var(--notification-bar-correction));
     width: 100vw;
     overflow-y: auto;
     overflow-x: hidden;

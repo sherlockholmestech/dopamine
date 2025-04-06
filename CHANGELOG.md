@@ -3,15 +3,219 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0-preview.23] - 2024-01-07
+## [3.0.0-preview.38] - 2024-12-29
+
+### Fixed
+
+-   Fixed more problems with Discord Rich Presence
+-   Fixed unexpected resume when skipping while paused
+-   Fixed audio not playing when starting from double-clicking a file in file manager in mini player mode
+-   Fixed a bug where any image residing in the same directory as the audio file was used as cover art
+
+## [3.0.0-preview.37] - 2024-12-09
+
+### Fixed
+
+-   Fixed problems with Discord Rich Presence
+
+## [3.0.0-preview.36] - 2024-12-08
+
+### Changed
+
+-   Updated Bulgarian translation
+-   Updated Italian translation
+-   Updated Russian translation
+-   Updated Simplified Chinese translation
+-   Updated Vietnamese translation
+
+### Fixed
+
+-   Fixed many issues with gapless playback
+-   Fixed Windows media overlay disappearing after a few seconds
+-   Fixed skipping multiple songs causing a crash
+
+## [3.0.0-preview.35] - 2024-10-20
+
+### Added
+
+-   Added gapless playback
+-   Added back support for .tiff cover images after having to break it in order to fix other problems
+-   Added Italian translation
+
+### Fixed
+
+-   Fixed missing tray icons on all operating systems
+-   Fixed slow performance on folders screen when opening folders containing a lot of files
+-   Fixed sorting of songs by album when there are more than 9 songs in a multi-disc album
+-   Fixed albums being shown under the wrong artist due to splitting of artists on separators
+-   Fixed problems while transitioning between full and cover player on macOS
+
+## [3.0.0-preview.34] - 2024-09-21
+
+### Added
+
+-   Adds a new macOS icon (Thank you https://github.com/VisualisationExpo)
+-   Adds macOS traffic lights support (Thank you https://github.com/fr-eed)
+
+### Changed
+
+-   Updated Bulgarian translation
+-   Updated Simplified Chinese translation
+
+### Fixed
+
+-   Loss of responsiveness when using large collections
+-   Albums can break off mid-cover on specific window sizes
+-   Playlists only wrap into multiple rows after a mouse click
+-   Artists and genres semantic scroll alignment is not always correct
+-   Multiple indexing issues (including unnecessary splitting of albums)
+-   Hanging of UI (white screen) at startup while loading persisted queue
+-   Missing newlines in lyrics
+-   Application close behaviour on macOS has been improved
+-   Double-clicked files are not being played in macOS
+-   Selecting "Open with" on multiple files only plays one file in Windows
+
+## [3.0.0-preview.33] - 2024-09-03
+
+### Added
+
+-   Adds a mini player
+
+### Changed
+
+-   Updated Russian translation
+-   Updated Swedish translation
+-   Updated Vietnamese translation
+
+### Fixed
+
+-   Fixes problems with saving rating to MP3 files
+
+## [3.0.0-preview.32] - 2024-08-25
+
+### Added
+
+-   It is now possible to split multiple artists by customizable symbols like "ft." or "feat."
+
+### Changed
+
+-   Updated Brazilian Portuguese translation
+-   Updated Swedish translation
+
+### Fixed
+
+-   Fixes application crash caused by a bug when reading album artist from .wav files
+-   Fixes incorrect start position when starting songs by double-click in file explorer
+
+## [3.0.0-preview.31] - 2024-08-11
+
+### Fixed
+
+-   Fixes application crash when using Bulgarian translation
+
+## [3.0.0-preview.30] - 2024-08-05
+
+### Added
+
+-   When moving songs inside playlists, the playlist song order is now remembered after a restart.
+
+### Changed
+
+-   Updated Bulgarian translation
+-   Updated Vietnamese translation
+
+## [3.0.0-preview.29] - 2024-08-04
+
+### Added
+
+-   The playback state (queue, playing song, playback progress) are now remembered after a restart together with loop and shuffle state
+
+### Changed
+
+-   Updated Croatian translation
+-   Updated Vietnamese translation
+
+### Fixed
+
+-   Fixed a crash that can occur when indexing album covers on Linux
+
+## [3.0.0-preview.28] - 2024-07-27
+
+### Added
+
+-   Added option to follow the album cover color
+-   Added option to remember playback controls (loop, shuffle) after a restart
+
+### Changed
+
+-   Improved loop one button
+
+## [3.0.0-preview.27] - 2024-07-08
+
+### Added
+
+-   Added album grouping settings
+
+### Changed
+
+-   Updated Swedish translation
+
+### Fixed
+
+-   When no playlist folder is selected, creating a playlist does nothing.
+
+## [3.0.0-preview.26] - 2024-06-30
+
+### Added
+
+-   Added a setting to toggle downloading of online lyrics
+
+### Changed
+
+-   Updated Simplified Chinese translation
+-   Updated Russian translation
+
+### Fixed
+
+-   .tiff cover images don't load
+-   Pressing 'Space' key when editing Playlist toggles play
+-   Files don't play if they contain '?' in file name or path
+-   Sorting is not alphanumeric (1, 10, 2 instead of 1, 2, 10)
+-   Javascript error when closing Dopamine while it is indexing
+-   Search does not work in 'Genres' tab
+
+## [3.0.0-preview.25] - 2024-03-01
+
+### Changed
+
+-   Updated Russian translation
+
+### Fixed
+
+-   Albums are indexed even if they have been indexed before
+-   Album artwork indexing is much slower since preview 24
+-   Right-clicking anywhere on the collection UI reacts slowly
+-   Indexing notification is not always displayed
+
+## [3.0.0-preview.24] - 2024-02-23
+
+### Added
+
+-   Added Farsi translation
+-   Added Polish translation
 
 ### Changed
 
 -   Modernized the user interface
+-   Updated Brazilian Portuguese translation
+-   Updated Vietnamese translation
 
 ### Fixed
 
 -   Semantic scroll on Artists and Genres pages doesn't work
+-   Star ratings are reset to zero after a collection refresh
+-   Songs containing multiple `#` in their path cannot be played
+-   Indexing is slow since last previews
 
 ## [3.0.0-preview.23] - 2024-01-01
 

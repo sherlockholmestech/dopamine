@@ -2,18 +2,18 @@ import { IMock, Mock, Times } from 'typemoq';
 import { CollectionComponent } from './collection.component';
 import { AppearanceServiceBase } from '../../../services/appearance/appearance.service.base';
 import { SettingsBase } from '../../../common/settings/settings.base';
-import { PlaybackServiceBase } from '../../../services/playback/playback.service.base';
-import { SearchServiceBase } from '../../../services/search/search.service.base';
 import { AudioVisualizer } from '../../../services/playback/audio-visualizer';
 import { DocumentProxy } from '../../../common/io/document-proxy';
 import { CollectionNavigationService } from '../../../services/collection-navigation/collection-navigation.service';
+import { PlaybackService } from '../../../services/playback/playback.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('CollectionComponent', () => {
     let appearanceServiceMock: IMock<AppearanceServiceBase>;
     let collectionNavigationServiceMock: IMock<CollectionNavigationService>;
     let settingsMock: IMock<SettingsBase>;
-    let playbackServiceMock: IMock<PlaybackServiceBase>;
-    let searchServiceMock: IMock<SearchServiceBase>;
+    let playbackServiceMock: IMock<PlaybackService>;
     let audioVisualizerMock: IMock<AudioVisualizer>;
     let documentProxyMock: IMock<DocumentProxy>;
 
@@ -25,7 +25,6 @@ describe('CollectionComponent', () => {
             collectionNavigationServiceMock.object,
             settingsMock.object,
             playbackServiceMock.object,
-            searchServiceMock.object,
             audioVisualizerMock.object,
             documentProxyMock.object,
         );
@@ -37,7 +36,6 @@ describe('CollectionComponent', () => {
             collectionNavigationServiceStub,
             settingsMock.object,
             playbackServiceMock.object,
-            searchServiceMock.object,
             audioVisualizerMock.object,
             documentProxyMock.object,
         );
@@ -47,8 +45,7 @@ describe('CollectionComponent', () => {
         appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
         collectionNavigationServiceMock = Mock.ofType<CollectionNavigationService>();
         settingsMock = Mock.ofType<SettingsBase>();
-        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
-        searchServiceMock = Mock.ofType<SearchServiceBase>();
+        playbackServiceMock = Mock.ofType<PlaybackService>();
         audioVisualizerMock = Mock.ofType<AudioVisualizer>();
         documentProxyMock = Mock.ofType<DocumentProxy>();
     });
@@ -114,12 +111,12 @@ describe('CollectionComponent', () => {
     });
 
     describe('handleKeyboardEvent', () => {
-        it('should toggle playback when space is pressed and while not searching', () => {
+        it('should toggle playback when space is pressed outside of an input element', () => {
             // Arrange
             const keyboardEventMock: IMock<KeyboardEvent> = Mock.ofType<KeyboardEvent>();
             keyboardEventMock.setup((x) => x.type).returns(() => 'keyup');
+            keyboardEventMock.setup((x) => x.target).returns(() => document.createElement('div'));
             keyboardEventMock.setup((x) => x.key).returns(() => ' ');
-            searchServiceMock.setup((x) => x.isSearching).returns(() => false);
             const component: CollectionComponent = createComponent();
 
             // Act
@@ -129,12 +126,12 @@ describe('CollectionComponent', () => {
             playbackServiceMock.verify((x) => x.togglePlayback(), Times.once());
         });
 
-        it('should not toggle playback when space is pressed and while searching', () => {
+        it('should not toggle playback when space is pressed inside an input element', () => {
             // Arrange
             const keyboardEventMock: IMock<KeyboardEvent> = Mock.ofType<KeyboardEvent>();
             keyboardEventMock.setup((x) => x.type).returns(() => 'keyup');
+            keyboardEventMock.setup((x) => x.target).returns(() => document.createElement('input'));
             keyboardEventMock.setup((x) => x.key).returns(() => ' ');
-            searchServiceMock.setup((x) => x.isSearching).returns(() => true);
             const component: CollectionComponent = createComponent();
 
             // Act
@@ -148,6 +145,7 @@ describe('CollectionComponent', () => {
             // Arrange
             const keyboardEventMock: IMock<KeyboardEvent> = Mock.ofType<KeyboardEvent>();
             keyboardEventMock.setup((x) => x.type).returns(() => 'keyup');
+            keyboardEventMock.setup((x) => x.target).returns(() => document.createElement('div'));
             keyboardEventMock.setup((x) => x.key).returns(() => 'a');
             const component: CollectionComponent = createComponent();
 

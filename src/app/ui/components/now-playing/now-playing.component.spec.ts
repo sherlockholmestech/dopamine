@@ -3,8 +3,7 @@ import { IMock, Mock, Times } from 'typemoq';
 import { NowPlayingComponent } from './now-playing.component';
 import { AppearanceServiceBase } from '../../../services/appearance/appearance.service.base';
 import { NavigationServiceBase } from '../../../services/navigation/navigation.service.base';
-import { MetadataServiceBase } from '../../../services/metadata/metadata.service.base';
-import { PlaybackServiceBase } from '../../../services/playback/playback.service.base';
+import { PlaybackService } from '../../../services/playback/playback.service';
 import { SearchServiceBase } from '../../../services/search/search.service.base';
 import { NowPlayingNavigationServiceBase } from '../../../services/now-playing-navigation/now-playing-navigation.service.base';
 import { PlaybackStarted } from '../../../services/playback/playback-started';
@@ -14,12 +13,15 @@ import { SchedulerBase } from '../../../common/scheduling/scheduler.base';
 import { AudioVisualizer } from '../../../services/playback/audio-visualizer';
 import { DocumentProxy } from '../../../common/io/document-proxy';
 import { SettingsBase } from '../../../common/settings/settings.base';
+import { MetadataService } from '../../../services/metadata/metadata.service';
+
+jest.mock('jimp', () => ({ exec: jest.fn() }));
 
 describe('NowPlayingComponent', () => {
     let appearanceServiceMock: IMock<AppearanceServiceBase>;
     let navigationServiceMock: IMock<NavigationServiceBase>;
-    let metadataServiceMock: IMock<MetadataServiceBase>;
-    let playbackServiceMock: IMock<PlaybackServiceBase>;
+    let metadataServiceMock: IMock<MetadataService>;
+    let playbackServiceMock: IMock<PlaybackService>;
     let searchServiceMock: IMock<SearchServiceBase>;
     let nowPlayingNavigationServiceMock: IMock<NowPlayingNavigationServiceBase>;
     let schedulerMock: IMock<SchedulerBase>;
@@ -40,7 +42,6 @@ describe('NowPlayingComponent', () => {
             navigationServiceMock.object,
             metadataServiceMock.object,
             playbackServiceMock.object,
-            searchServiceMock.object,
             nowPlayingNavigationServiceMock.object,
             schedulerMock.object,
             audioVisualizerMock.object,
@@ -52,9 +53,8 @@ describe('NowPlayingComponent', () => {
     beforeEach(() => {
         appearanceServiceMock = Mock.ofType<AppearanceServiceBase>();
         navigationServiceMock = Mock.ofType<NavigationServiceBase>();
-        metadataServiceMock = Mock.ofType<MetadataServiceBase>();
-        playbackServiceMock = Mock.ofType<PlaybackServiceBase>();
-        searchServiceMock = Mock.ofType<SearchServiceBase>();
+        metadataServiceMock = Mock.ofType<MetadataService>();
+        playbackServiceMock = Mock.ofType<PlaybackService>();
         nowPlayingNavigationServiceMock = Mock.ofType<NowPlayingNavigationServiceBase>();
         schedulerMock = Mock.ofType<SchedulerBase>();
         audioVisualizerMock = Mock.ofType<AudioVisualizer>();
@@ -634,12 +634,12 @@ describe('NowPlayingComponent', () => {
     });
 
     describe('handleKeyboardEvent', () => {
-        it('should toggle playback when space is pressed and while not searching', () => {
+        it('should toggle playback when space is pressed outside of an input element', () => {
             // Arrange
             const keyboardEventMock: IMock<KeyboardEvent> = Mock.ofType<KeyboardEvent>();
             keyboardEventMock.setup((x) => x.type).returns(() => 'keyup');
+            keyboardEventMock.setup((x) => x.target).returns(() => document.createElement('div'));
             keyboardEventMock.setup((x) => x.key).returns(() => ' ');
-            searchServiceMock.setup((x) => x.isSearching).returns(() => false);
             const component: NowPlayingComponent = createComponent();
 
             // Act
@@ -649,12 +649,12 @@ describe('NowPlayingComponent', () => {
             playbackServiceMock.verify((x) => x.togglePlayback(), Times.once());
         });
 
-        it('should not toggle playback when space is pressed and while searching', () => {
+        it('should not toggle playback when space is pressed inside an input element', () => {
             // Arrange
             const keyboardEventMock: IMock<KeyboardEvent> = Mock.ofType<KeyboardEvent>();
             keyboardEventMock.setup((x) => x.type).returns(() => 'keyup');
+            keyboardEventMock.setup((x) => x.target).returns(() => document.createElement('input'));
             keyboardEventMock.setup((x) => x.key).returns(() => ' ');
-            searchServiceMock.setup((x) => x.isSearching).returns(() => true);
             const component: NowPlayingComponent = createComponent();
 
             // Act
@@ -668,6 +668,7 @@ describe('NowPlayingComponent', () => {
             // Arrange
             const keyboardEventMock: IMock<KeyboardEvent> = Mock.ofType<KeyboardEvent>();
             keyboardEventMock.setup((x) => x.type).returns(() => 'keyup');
+            keyboardEventMock.setup((x) => x.target).returns(() => document.createElement('div'));
             keyboardEventMock.setup((x) => x.key).returns(() => 'a');
             const component: NowPlayingComponent = createComponent();
 

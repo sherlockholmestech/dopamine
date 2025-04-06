@@ -1,5 +1,6 @@
 <div class="window-frame">
     <div class="window-frame__titlebar theme-header-background">
+        <div *ngIf="appearanceService.needsTrafficLightMargin" class="window-frame__trafficlights"></div>
         <app-back-button class="m-2"></app-back-button>
         <app-sub-menu>
             <app-sub-menu-item [page]="0" [selectedPage]="this.page" (click)="this.setPage(0)">
@@ -9,14 +10,16 @@
                 {{ 'refresh' | translate }}
             </app-sub-menu-item>
             <app-sub-menu-item [page]="2" [selectedPage]="this.page" (click)="this.setPage(2)">
-                {{ 'album-covers' | translate }}
+                {{ 'albums' | translate }}
             </app-sub-menu-item>
         </app-sub-menu>
         <div class="window-frame__dragarea"></div>
-        <app-main-menu class="main-menu"> </app-main-menu>
-        <app-window-controls *ngIf="!appearanceService.windowHasNativeTitleBar"></app-window-controls>
+        <app-main-menu></app-main-menu>
+        <app-switch-player-button></app-switch-player-button>
+        <app-window-controls *ngIf="appearanceService.needsCustomWindowControls"></app-window-controls>
     </div>
-    <div class="window-frame__content">
+    <app-notification-bar></app-notification-bar>
+    <div class="window-frame__content__with__notification__bar">
         <!-- Music -->
         <app-manage-music *ngIf="this.leftToRight(0)" [@enterLeftToRight]></app-manage-music>
         <app-manage-music *ngIf="this.rightToLeft(0)" [@enterRightToLeft]></app-manage-music>
@@ -24,7 +27,7 @@
         <app-manage-refresh *ngIf="this.leftToRight(1)" [@enterLeftToRight]></app-manage-refresh>
         <app-manage-refresh *ngIf="this.rightToLeft(1)" [@enterRightToLeft]></app-manage-refresh>
         <!-- Album-covers -->
-        <app-manage-album-covers *ngIf="this.leftToRight(2)" [@enterLeftToRight]></app-manage-album-covers>
-        <app-manage-album-covers *ngIf="this.rightToLeft(2)" [@enterRightToLeft]></app-manage-album-covers>
+        <app-manage-albums *ngIf="this.leftToRight(2)" [@enterLeftToRight]></app-manage-albums>
+        <app-manage-albums *ngIf="this.rightToLeft(2)" [@enterRightToLeft]></app-manage-albums>
     </div>
 </div>

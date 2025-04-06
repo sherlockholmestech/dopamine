@@ -3,6 +3,7 @@ import { DateTime } from '../../common/date-time';
 import { TrackModel } from './track-model';
 import { TranslatorServiceBase } from '../translator/translator.service.base';
 import { Track } from '../../data/entities/track';
+import { SettingsMock } from '../../testing/settings-mock';
 
 describe('TrackModel', () => {
     let track: Track;
@@ -20,7 +21,9 @@ describe('TrackModel', () => {
         track.trackTitle = 'Track title';
         track.artists = ';Artist 1;;Artist 2;';
         track.genres = ';Genre 1;;Genre 2;';
-        track.albumKey = 'albumKey1';
+        track.albumKey = 'albumKey';
+        track.albumKey2 = 'albumKey2';
+        track.albumKey3 = 'albumKey3';
         track.albumTitle = 'Album title';
         track.albumArtists = ';Album artist 1;;Album artist 2;';
         track.duration = 45648713213;
@@ -39,8 +42,8 @@ describe('TrackModel', () => {
         translatorServiceMock.setup((x) => x.get('unknown-genre')).returns(() => 'Unknown genre');
     });
 
-    function createTrackModel(): TrackModel {
-        return new TrackModel(track, dateTimeMock.object, translatorServiceMock.object);
+    function createTrackModel(albumKeyIndex: string): TrackModel {
+        return new TrackModel(track, dateTimeMock.object, translatorServiceMock.object, albumKeyIndex);
     }
 
     describe('constructor', () => {
@@ -48,7 +51,7 @@ describe('TrackModel', () => {
             // Arrange
 
             // Act
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Assert
             expect(trackModel).toBeDefined();
@@ -58,7 +61,7 @@ describe('TrackModel', () => {
             // Arrange
 
             // Act
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Assert
             expect(trackModel.isPlaying).toBeFalsy();
@@ -68,7 +71,7 @@ describe('TrackModel', () => {
             // Arrange
 
             // Act
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Assert
             expect(trackModel.isSelected).toBeFalsy();
@@ -78,7 +81,7 @@ describe('TrackModel', () => {
             // Arrange
 
             // Act
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Assert
             expect(trackModel.showHeader).toBeFalsy();
@@ -88,7 +91,7 @@ describe('TrackModel', () => {
             // Arrange
 
             // Act
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Assert
             expect(trackModel.playlistPath).toEqual('');
@@ -98,7 +101,7 @@ describe('TrackModel', () => {
     describe('id', () => {
         it('should return the track TrackID', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const id: number = trackModel.id;
@@ -111,7 +114,7 @@ describe('TrackModel', () => {
     describe('path', () => {
         it('should return the track path', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const path: string = trackModel.path;
@@ -124,7 +127,7 @@ describe('TrackModel', () => {
     describe('fileName', () => {
         it('should return the track file name', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const path: string = trackModel.fileName;
@@ -137,7 +140,7 @@ describe('TrackModel', () => {
     describe('number', () => {
         it('should return the track number', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const number: number = trackModel.number;
@@ -150,7 +153,7 @@ describe('TrackModel', () => {
     describe('discNumber', () => {
         it('should return the track discNumber', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const discNumber: number = trackModel.discNumber;
@@ -163,7 +166,7 @@ describe('TrackModel', () => {
     describe('discCount', () => {
         it('should return the track discCount', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const discCount: number = trackModel.discCount;
@@ -176,7 +179,7 @@ describe('TrackModel', () => {
     describe('year', () => {
         it('should return the track year', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const year: number = trackModel.year;
@@ -190,7 +193,7 @@ describe('TrackModel', () => {
         it('should return track title if it is not empty and not undefined', () => {
             // Arrange
             track.trackTitle = 'The track title';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const title: string = trackModel.title;
@@ -202,7 +205,7 @@ describe('TrackModel', () => {
         it('should return track fileName if track title is undefined', () => {
             // Arrange
             track.trackTitle = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const title: string = trackModel.title;
@@ -214,7 +217,7 @@ describe('TrackModel', () => {
         it('should return track fileName if track title is empty', () => {
             // Arrange
             track.trackTitle = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const title: string = trackModel.title;
@@ -227,7 +230,7 @@ describe('TrackModel', () => {
     describe('sortableTitle', () => {
         it('should return the track title in lowercase', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const sortableTitle: string = trackModel.sortableTitle;
@@ -241,7 +244,7 @@ describe('TrackModel', () => {
         it('should return "Unknown artist" if track artists is undefined', () => {
             // Arrange
             track.artists = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -253,7 +256,7 @@ describe('TrackModel', () => {
         it('should return "Unknown artist" if track artists is empty', () => {
             // Arrange
             track.artists = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -265,7 +268,7 @@ describe('TrackModel', () => {
         it('should return "Unknown artist" if track artists contains only one empty artist', () => {
             // Arrange
             track.artists = ';;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -277,7 +280,7 @@ describe('TrackModel', () => {
         it('should return the artist if track artists contains only one artist', () => {
             // Arrange
             track.artists = ';Artist 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -289,7 +292,7 @@ describe('TrackModel', () => {
         it('should return all artists separated by a comma if track artists contains multiple artists', () => {
             // Arrange
             track.artists = ';Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -301,7 +304,7 @@ describe('TrackModel', () => {
         it('should not return empty artists', () => {
             // Arrange
             track.artists = ';Artist 1;;;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -313,7 +316,7 @@ describe('TrackModel', () => {
         it('should not return space artists', () => {
             // Arrange
             track.artists = ';Artist 1;; ;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -325,7 +328,7 @@ describe('TrackModel', () => {
         it('should not return double space artists', () => {
             // Arrange
             track.artists = ';Artist 1;;  ;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -333,11 +336,11 @@ describe('TrackModel', () => {
             // Assert
             expect(artists).toEqual('Artist 1, Artist 3');
         });
-        
+
         it('should return multiple artists without double space', () => {
             // Arrange
             track.artists = ';Artist 1; Artist 2;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.artists;
@@ -351,7 +354,7 @@ describe('TrackModel', () => {
         it('should return an empty array if track artists is undefined', () => {
             // Arrange
             track.artists = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -363,7 +366,7 @@ describe('TrackModel', () => {
         it('should return an empty array if track artists is empty', () => {
             // Arrange
             track.artists = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -375,7 +378,7 @@ describe('TrackModel', () => {
         it('should return an empty array if track artists contains only one empty artist', () => {
             // Arrange
             track.artists = ';;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -387,7 +390,7 @@ describe('TrackModel', () => {
         it('should return an array containing the artist if track artists contains only one artist', () => {
             // Arrange
             track.artists = ';Artist 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -399,7 +402,7 @@ describe('TrackModel', () => {
         it('should return an array containing all artists if track artists contains multiple artists', () => {
             // Arrange
             track.artists = ';Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -411,7 +414,7 @@ describe('TrackModel', () => {
         it('should not return empty artists', () => {
             // Arrange
             track.artists = ';Artist 1;;;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -423,7 +426,7 @@ describe('TrackModel', () => {
         it('should not return space artists', () => {
             // Arrange
             track.artists = ';Artist 1;; ;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -435,7 +438,7 @@ describe('TrackModel', () => {
         it('should not return double space artists', () => {
             // Arrange
             track.artists = ';Artist 1;;  ;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawArtists: string[] = trackModel.rawArtists;
@@ -449,7 +452,7 @@ describe('TrackModel', () => {
         it('should return an empty string if track artists is undefined', () => {
             // Arrange
             track.artists = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -461,7 +464,7 @@ describe('TrackModel', () => {
         it('should return an empty string if track artists is empty', () => {
             // Arrange
             track.artists = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -473,7 +476,7 @@ describe('TrackModel', () => {
         it('should return an empty string if track artists contains only one empty artist', () => {
             // Arrange
             track.artists = ';;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -485,7 +488,7 @@ describe('TrackModel', () => {
         it('should return the artist if track artists contains only one artist', () => {
             // Arrange
             track.artists = ';Artist 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -497,7 +500,7 @@ describe('TrackModel', () => {
         it('should return the first artist if track artists contains multiple artists', () => {
             // Arrange
             track.artists = ';Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -509,7 +512,7 @@ describe('TrackModel', () => {
         it('should return the first non-empty artist', () => {
             // Arrange
             track.artists = ';;;Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -521,7 +524,7 @@ describe('TrackModel', () => {
         it('should return the first non-space artist', () => {
             // Arrange
             track.artists = '; ;;Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -533,7 +536,7 @@ describe('TrackModel', () => {
         it('should return the first non-double space artist', () => {
             // Arrange
             track.artists = ';   ;;Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawFirstArtist: string = trackModel.rawFirstArtist;
@@ -547,7 +550,7 @@ describe('TrackModel', () => {
         it('should return "Unknown genre" if track genres is undefined', () => {
             // Arrange
             track.genres = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -559,7 +562,7 @@ describe('TrackModel', () => {
         it('should return "Unknown genre" if track genres is empty', () => {
             // Arrange
             track.genres = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -571,7 +574,7 @@ describe('TrackModel', () => {
         it('should return "Unknown genre" if track genre contains only one empty genr', () => {
             // Arrange
             track.genres = ';;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -583,7 +586,7 @@ describe('TrackModel', () => {
         it('should return the genre if track genres contains only one genre', () => {
             // Arrange
             track.genres = ';Genre 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -595,7 +598,7 @@ describe('TrackModel', () => {
         it('should return all genres separated by a comma if track genres contains multiple genres', () => {
             // Arrange
             track.genres = ';Genre 1;;Genre 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -607,7 +610,7 @@ describe('TrackModel', () => {
         it('should not return empty genres', () => {
             // Arrange
             track.genres = ';Genre 1;;;;Genre 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -619,7 +622,7 @@ describe('TrackModel', () => {
         it('should not return space genres', () => {
             // Arrange
             track.genres = ';Genre 1;; ;;Genre 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -631,7 +634,7 @@ describe('TrackModel', () => {
         it('should not return double space genres', () => {
             // Arrange
             track.genres = ';Genre 1;;  ;;Genre 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.genres;
@@ -642,16 +645,37 @@ describe('TrackModel', () => {
     });
 
     describe('albumKey', () => {
-        it('should return the track albumKey', () => {
+        it('should return the track albumKey if albumKeyIndex is ""', () => {
             // Arrange
-            const expectedAlbumKey: string = 'albumKey1';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumKey: string = trackModel.albumKey;
 
             // Assert
-            expect(albumKey).toEqual(expectedAlbumKey);
+            expect(albumKey).toEqual('albumKey');
+        });
+
+        it('should return the track albumKey2 if albumKeyIndex is "2"', () => {
+            // Arrange
+            const trackModel: TrackModel = createTrackModel('2');
+
+            // Act
+            const albumKey: string = trackModel.albumKey;
+
+            // Assert
+            expect(albumKey).toEqual('albumKey2');
+        });
+
+        it('should return the track albumKey3 if albumKeyIndex is "3"', () => {
+            // Arrange
+            const trackModel: TrackModel = createTrackModel('3');
+
+            // Act
+            const albumKey: string = trackModel.albumKey;
+
+            // Assert
+            expect(albumKey).toEqual('albumKey3');
         });
     });
 
@@ -659,7 +683,7 @@ describe('TrackModel', () => {
         it('should return "Unknown album" if the track album title is undefined', () => {
             // Arrange
             track.albumTitle = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumTitle: string = trackModel.albumTitle;
@@ -671,7 +695,7 @@ describe('TrackModel', () => {
         it('should return "Unknown album" if the track album title is empty', () => {
             // Arrange
             track.albumTitle = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumTitle: string = trackModel.albumTitle;
@@ -683,7 +707,7 @@ describe('TrackModel', () => {
         it('should return "Unknown album" if the track album title is whitespace', () => {
             // Arrange
             track.albumTitle = ' ';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumTitle: string = trackModel.albumTitle;
@@ -694,7 +718,7 @@ describe('TrackModel', () => {
 
         it('should return the track album title if the track has an album title', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumTitle: string = trackModel.albumTitle;
@@ -708,7 +732,7 @@ describe('TrackModel', () => {
         it('should return an empty string if the track album title is undefined', () => {
             // Arrange
             track.albumTitle = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawAlbumTitle: string = trackModel.rawAlbumTitle;
@@ -720,7 +744,7 @@ describe('TrackModel', () => {
         it('should return an empty string if the track album title is empty', () => {
             // Arrange
             track.albumTitle = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawAlbumTitle: string = trackModel.rawAlbumTitle;
@@ -732,7 +756,7 @@ describe('TrackModel', () => {
         it('should return an empty string if the track album title is whitespace', () => {
             // Arrange
             track.albumTitle = ' ';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawAlbumTitle: string = trackModel.rawAlbumTitle;
@@ -743,7 +767,7 @@ describe('TrackModel', () => {
 
         it('should return the track album title if the track has an album title', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rawAlbumTitle: string = trackModel.albumTitle;
@@ -756,7 +780,7 @@ describe('TrackModel', () => {
     describe('albumTitle', () => {
         it('should return the track album title in lowercase if the track has an album title', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const sortableAlbumTitle: string = trackModel.sortableAlbumTitle;
@@ -770,7 +794,7 @@ describe('TrackModel', () => {
         it('should return the album artist if the track has only 1 album artist', () => {
             // Arrange
             track.albumArtists = ';Album artist 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumArtists: string = trackModel.albumArtists;
@@ -782,7 +806,7 @@ describe('TrackModel', () => {
         it('should return all album artists separated by a comma if the track has multiple album artists', () => {
             // Arrange
             track.albumArtists = ';Album artist 1;;Album artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumArtists: string = trackModel.albumArtists;
@@ -795,7 +819,7 @@ describe('TrackModel', () => {
             // Arrange
             track.albumArtists = '';
             track.artists = ';Artist 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumArtists: string = trackModel.albumArtists;
@@ -808,7 +832,7 @@ describe('TrackModel', () => {
             // Arrange
             track.albumArtists = '';
             track.artists = ';Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumArtists: string = trackModel.albumArtists;
@@ -821,7 +845,7 @@ describe('TrackModel', () => {
             // Arrange
             track.albumArtists = '';
             track.artists = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const albumArtists: string = trackModel.albumArtists;
@@ -834,7 +858,7 @@ describe('TrackModel', () => {
             // Arrange
             track.albumArtists = '';
             track.artists = ';Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const sortableAlbumArtists: string = trackModel.sortableAlbumArtists;
@@ -847,7 +871,7 @@ describe('TrackModel', () => {
     describe('durationInMilliseconds', () => {
         it('should return the track duration in milliseconds', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const durationInMilliseconds: number = trackModel.durationInMilliseconds;
@@ -860,7 +884,7 @@ describe('TrackModel', () => {
     describe('fileSizeInBytes', () => {
         it('should return the track file size in bytes', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const fileSizeInBytes: number = trackModel.fileSizeInBytes;
@@ -873,7 +897,7 @@ describe('TrackModel', () => {
     describe('playCount', () => {
         it('should return the track play count', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const playCount: number = trackModel.playCount;
@@ -886,7 +910,7 @@ describe('TrackModel', () => {
     describe('skipCount', () => {
         it('should return the track skip count', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const skipCount: number = trackModel.skipCount;
@@ -899,7 +923,7 @@ describe('TrackModel', () => {
     describe('rating', () => {
         it('should return the track rating', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const rating: number = trackModel.rating;
@@ -910,7 +934,7 @@ describe('TrackModel', () => {
 
         it('should set the track rating', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             trackModel.rating = 2;
@@ -924,7 +948,7 @@ describe('TrackModel', () => {
     describe('love', () => {
         it('should return the track love', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const love: number = trackModel.love;
@@ -935,7 +959,7 @@ describe('TrackModel', () => {
 
         it('should set the track love', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             trackModel.love = 1;
@@ -949,7 +973,7 @@ describe('TrackModel', () => {
     describe('increasePlayCount', () => {
         it('should increase the track play count by 1', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             trackModel.increasePlayCountAndDateLastPlayed();
@@ -962,7 +986,7 @@ describe('TrackModel', () => {
     describe('increaseSkipCount', () => {
         it('should increase the track skip count by 1', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             trackModel.increaseSkipCount();
@@ -975,7 +999,7 @@ describe('TrackModel', () => {
     describe('dateLastPlayed', () => {
         it('should return the track date last played', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const dateLastPlayed: number = trackModel.dateLastPlayed;
@@ -988,7 +1012,7 @@ describe('TrackModel', () => {
     describe('dateAdded', () => {
         it('should return the track date added', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const dateAdded: number = trackModel.dateAdded;
@@ -1001,7 +1025,7 @@ describe('TrackModel', () => {
     describe('sortableTitle', () => {
         it('Should return the track title in sortable form if there is a track title', () => {
             // Arrange
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const sortableTitle: string = trackModel.sortableTitle;
@@ -1013,7 +1037,7 @@ describe('TrackModel', () => {
         it('Should return the track file name in sortable form if there is no track title', () => {
             // Arrange
             track.trackTitle = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const sortableTitle: string = trackModel.sortableTitle;
@@ -1027,7 +1051,7 @@ describe('TrackModel', () => {
         it('should return "unknown artist" if track artists is undefined', () => {
             // Arrange
             track.artists = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1039,7 +1063,7 @@ describe('TrackModel', () => {
         it('should return "unknown artist" if track artists is empty', () => {
             // Arrange
             track.artists = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1051,7 +1075,7 @@ describe('TrackModel', () => {
         it('should return "unknown artist" if track artists contains only one empty artist', () => {
             // Arrange
             track.artists = ';;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1063,7 +1087,7 @@ describe('TrackModel', () => {
         it('should return the artist in sortable form if track artists contains only one artist', () => {
             // Arrange
             track.artists = ';Artist 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1075,7 +1099,7 @@ describe('TrackModel', () => {
         it('should return all artists in sortable form separated by a comma if track artists contains multiple artists', () => {
             // Arrange
             track.artists = ';Artist 1;;Artist 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1087,7 +1111,7 @@ describe('TrackModel', () => {
         it('should not return empty artists', () => {
             // Arrange
             track.artists = ';Artist 1;;;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1099,7 +1123,7 @@ describe('TrackModel', () => {
         it('should not return space artists', () => {
             // Arrange
             track.artists = ';Artist 1;; ;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1111,7 +1135,7 @@ describe('TrackModel', () => {
         it('should not return double space artists', () => {
             // Arrange
             track.artists = ';Artist 1;;  ;;Artist 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const artists: string = trackModel.sortableArtists;
@@ -1125,7 +1149,7 @@ describe('TrackModel', () => {
         it('should return "unknown genre" if track genres is undefined', () => {
             // Arrange
             track.genres = undefined;
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;
@@ -1137,7 +1161,7 @@ describe('TrackModel', () => {
         it('should return "unknown genre" if track genres is empty', () => {
             // Arrange
             track.genres = '';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;
@@ -1149,7 +1173,7 @@ describe('TrackModel', () => {
         it('should return "unknown genre" if track genre contains only one empty genre', () => {
             // Arrange
             track.genres = ';;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;
@@ -1161,7 +1185,7 @@ describe('TrackModel', () => {
         it('should return the genre in sortable form if track genres contains only one genre', () => {
             // Arrange
             track.genres = ';Genre 1;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;
@@ -1173,7 +1197,7 @@ describe('TrackModel', () => {
         it('should return all genres in sortable form separated by a comma if track genres contains multiple genres', () => {
             // Arrange
             track.genres = ';Genre 1;;Genre 2;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;
@@ -1185,7 +1209,7 @@ describe('TrackModel', () => {
         it('should not return empty genres', () => {
             // Arrange
             track.genres = ';Genre 1;;;;Genre 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;
@@ -1197,7 +1221,7 @@ describe('TrackModel', () => {
         it('should not return space genres', () => {
             // Arrange
             track.genres = ';Genre 1;; ;;Genre 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;
@@ -1209,7 +1233,7 @@ describe('TrackModel', () => {
         it('should not return double space genres', () => {
             // Arrange
             track.genres = ';Genre 1;;  ;;Genre 3;';
-            const trackModel: TrackModel = createTrackModel();
+            const trackModel: TrackModel = createTrackModel('');
 
             // Act
             const genres: string = trackModel.sortableGenres;

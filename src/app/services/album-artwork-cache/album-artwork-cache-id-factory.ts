@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { GuidFactory } from '../../common/guid.factory';
 import { AlbumArtworkCacheId } from './album-artwork-cache-id';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AlbumArtworkCacheIdFactory {
     public constructor(private guidFactory: GuidFactory) {}
 

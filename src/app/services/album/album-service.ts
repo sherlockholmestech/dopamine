@@ -5,59 +5,110 @@ import { AlbumModel } from './album-model';
 import { TranslatorServiceBase } from '../translator/translator.service.base';
 import { AlbumServiceBase } from './album-service.base';
 import { TrackRepositoryBase } from '../../data/repositories/track-repository.base';
-import { FileAccessBase } from '../../common/io/file-access.base';
+import { ApplicationPaths } from '../../common/application/application-paths';
+import { SettingsBase } from '../../common/settings/settings.base';
+import { ArtistModel } from '../artist/artist-model';
+import { Timer } from '../../common/scheduling/timer';
+import { Logger } from '../../common/logger';
+import { ArtistServiceBase } from '../artist/artist.service.base';
 
 @Injectable()
 export class AlbumService implements AlbumServiceBase {
     public constructor(
+        private artistService: ArtistServiceBase,
         private trackRepository: TrackRepositoryBase,
         private translatorService: TranslatorServiceBase,
-        private fileAccess: FileAccessBase,
+        private applicationPaths: ApplicationPaths,
+        private settings: SettingsBase,
+        private logger: Logger,
     ) {}
 
     public getAllAlbums(): AlbumModel[] {
-        const albumDatas: AlbumData[] = this.trackRepository.getAllAlbumData() ?? [];
+        const timer = new Timer();
+        timer.start();
 
-        return this.createAlbumsFromAlbumData(albumDatas);
+        const albumDatas: AlbumData[] = this.trackRepository.getAllAlbumData(this.settings.albumKeyIndex) ?? [];
+        const albums: AlbumModel[] = this.createAlbumsFromAlbumData(albumDatas);
+
+        timer.stop();
+
+        this.logger.info(`Finished getting all albums. Time required: ${timer.elapsedMilliseconds} ms`, 'AlbumService', 'getAllAlbums');
+
+        return albums;
     }
 
-    public getAlbumsForArtists(artists: string[], artistType: ArtistType): AlbumModel[] {
+    public getAlbumsForArtists(artists: ArtistModel[], artistType: ArtistType): AlbumModel[] {
+        const timer = new Timer();
+        timer.start();
+
         const albumDatas: AlbumData[] = [];
 
-        if (artistType === ArtistType.trackArtists || artistType === ArtistType.allArtists) {
-            const trackArtistsAlbumDatas: AlbumData[] = this.trackRepository.getAlbumDataForTrackArtists(artists) ?? [];
+        const sourceArtists: string[] = this.artistService.getSourceArtists(artists);
 
-            for (const albumData of trackArtistsAlbumDatas) {
-                albumDatas.push(albumData);
-            }
+        const albumKeyIndex = this.settings.albumKeyIndex;
+
+        if (artistType === ArtistType.trackArtists || artistType === ArtistType.allArtists) {
+            this.addAlbumsForTrackOrAllArtists(albumKeyIndex, sourceArtists, albumDatas);
         }
 
         if (artistType === ArtistType.albumArtists || artistType === ArtistType.allArtists) {
-            const albumArtistsAlbumDatas: AlbumData[] = this.trackRepository.getAlbumDataForAlbumArtists(artists) ?? [];
-
-            for (const albumData of albumArtistsAlbumDatas) {
-                // Avoid adding a track twice
-                // TODO: can this be done better?
-                if (!albumDatas.map((x) => x.albumKey).includes(albumData.albumKey)) {
-                    albumDatas.push(albumData);
-                }
-            }
+            this.addAlbumsForAlbumOrAllArtists(albumKeyIndex, sourceArtists, albumDatas);
         }
 
-        return this.createAlbumsFromAlbumData(albumDatas);
+        const albums: AlbumModel[] = this.createAlbumsFromAlbumData(albumDatas);
+
+        timer.stop();
+
+        this.logger.info(
+            `Finished getting albums for artists. Time required: ${timer.elapsedMilliseconds} ms`,
+            'AlbumService',
+            'getAlbumsForArtists',
+        );
+
+        return albums;
     }
 
     public getAlbumsForGenres(genres: string[]): AlbumModel[] {
-        const albumDatas: AlbumData[] = this.trackRepository.getAlbumDataForGenres(genres) ?? [];
+        const timer = new Timer();
+        timer.start();
 
-        return this.createAlbumsFromAlbumData(albumDatas);
+        const albumDatas: AlbumData[] = this.trackRepository.getAlbumDataForGenres(this.settings.albumKeyIndex, genres) ?? [];
+        const albums: AlbumModel[] = this.createAlbumsFromAlbumData(albumDatas);
+
+        timer.stop();
+
+        this.logger.info(
+            `Finished getting albums for genres. Time required: ${timer.elapsedMilliseconds} ms`,
+            'AlbumService',
+            'getAlbumsForGenres',
+        );
+
+        return albums;
+    }
+
+    private addAlbumsForTrackOrAllArtists(albumKeyIndex: string, artists: string[], albumDatas: AlbumData[]): void {
+        const trackArtistsAlbumDatas: AlbumData[] = this.trackRepository.getAlbumDataForTrackArtists(albumKeyIndex, artists) ?? [];
+
+        for (const albumData of trackArtistsAlbumDatas) {
+            albumDatas.push(albumData);
+        }
+    }
+
+    private addAlbumsForAlbumOrAllArtists(albumKeyIndex: string, artists: string[], albumDatas: AlbumData[]): void {
+        const albumArtistsAlbumDatas: AlbumData[] = this.trackRepository.getAlbumDataForAlbumArtists(albumKeyIndex, artists) ?? [];
+
+        for (const albumData of albumArtistsAlbumDatas) {
+            // Avoid adding a track twice
+            // TODO: can this be done better?
+            if (!albumDatas.map((x) => x.albumKey).includes(albumData.albumKey)) {
+                albumDatas.push(albumData);
+            }
+        }
     }
 
     private createAlbumsFromAlbumData(albumDatas: AlbumData[]): AlbumModel[] {
         if (albumDatas != undefined) {
-            const albums: AlbumModel[] = albumDatas.map((x) => new AlbumModel(x, this.translatorService, this.fileAccess));
-
-            return albums;
+            return albumDatas.map((x) => new AlbumModel(x, this.translatorService, this.applicationPaths));
         }
 
         return [];
