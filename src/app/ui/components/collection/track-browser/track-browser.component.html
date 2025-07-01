@@ -5,17 +5,15 @@
             <div *ngIf="this.tracks.numberOfTracks === 1">{{ 'track' | translate }}</div>
             <div *ngIf="this.tracks.numberOfTracks !== 1">{{ 'tracks' | translate }}</div>
         </div>
-        <div class="pointer" (click)="toggleTrackOrder()">
-            <div class="secondary-text" *ngIf="this.selectedTrackOrder === trackOrderEnum.byTrackTitleAscending">
-                {{ 'by-track-title-ascending' | translate }}
-            </div>
-            <div class="secondary-text" *ngIf="this.selectedTrackOrder === trackOrderEnum.byTrackTitleDescending">
-                {{ 'by-track-title-descending' | translate }}
-            </div>
-            <div class="secondary-text" *ngIf="this.selectedTrackOrder === trackOrderEnum.byAlbum">
-                {{ 'by-album' | translate }}
-            </div>
-        </div>
+        <app-iterable-menu
+            *ngIf="this.showOrdering"
+            [tooltipKey]="'choose-order'"
+            [currentItem]="selectedTrackOrder"
+            [items]="trackOrders"
+            [itemKeyFn]="trackOrderKey"
+            [applyItemFn]="applyTrackOrder"
+        >
+        </app-iterable-menu>
     </div>
     <cdk-virtual-scroll-viewport class="flex-grow mt-3" itemSize="46">
         <div *cdkVirtualFor="let track of this.orderedTracks" (mousedown)="setSelectedTracks($event, track)">
@@ -47,7 +45,6 @@
         <button mat-menu-item [matMenuTriggerFor]="addToPlaylistContextMenu">
             <span>{{ 'add-to-playlist' | translate }}</span>
         </button>
-        <mat-divider></mat-divider>
         <button mat-menu-item (click)="onAddToQueueAsync()">
             <span>{{ 'add-to-playback-queue' | translate }}</span>
         </button>
@@ -56,6 +53,9 @@
             <span>{{ 'show-in-folder' | translate }}</span>
         </button>
         <mat-divider></mat-divider>
+        <button mat-menu-item (click)="onEdit()">
+            <span>{{ 'edit' | translate }}</span>
+        </button>
         <button mat-menu-item (click)="onDeleteAsync()">
             <span>{{ 'delete' | translate }}</span>
         </button>

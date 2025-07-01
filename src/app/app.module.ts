@@ -175,7 +175,6 @@ import { ElectronService } from './services/electron.service';
 import { FileService } from './services/file/file.service';
 import { FolderService } from './services/folder/folder.service';
 import { GenreService } from './services/genre/genre.service';
-import { IndexingService } from './services/indexing/indexing.service';
 import { CachedAlbumArtworkGetter } from './services/metadata/cached-album-artwork-getter';
 import { NavigationService } from './services/navigation/navigation.service';
 import { NowPlayingNavigationService } from './services/now-playing-navigation/now-playing-navigation.service';
@@ -186,7 +185,6 @@ import { PlaylistDecoder } from './services/playlist/playlist-decoder';
 import { PlaylistFileManager } from './services/playlist/playlist-file-manager';
 import { PlaylistModelFactory } from './services/playlist/playlist-model-factory';
 import { PlaylistService } from './services/playlist/playlist.service';
-import { ScrobblingService } from './services/scrobbling/scrobbling.service';
 import { SearchService } from './services/search/search.service';
 import { SemanticZoomService } from './services/semantic-zoom/semantic-zoom.service';
 import { TracksColumnsOrdering } from './services/track-columns/tracks-columns-ordering';
@@ -207,7 +205,6 @@ import { EventListenerServiceBase } from './services/event-listener/event-listen
 import { LyricsServiceBase } from './services/lyrics/lyrics.service.base';
 import { ArtistInformationServiceBase } from './services/artist-information/artist-information.service.base';
 import { NowPlayingNavigationServiceBase } from './services/now-playing-navigation/now-playing-navigation.service.base';
-import { ScrobblingServiceBase } from './services/scrobbling/scrobbling.service.base';
 import { TracksColumnsServiceBase } from './services/track-columns/tracks-columns.service.base';
 import { SemanticZoomServiceBase } from './services/semantic-zoom/semantic-zoom.service.base';
 import { TrayServiceBase } from './services/tray/tray.service.base';
@@ -226,7 +223,7 @@ import { ArtistServiceBase } from './services/artist/artist.service.base';
 import { DialogServiceBase } from './services/dialog/dialog.service.base';
 import { UpdateServiceBase } from './services/update/update.service.base';
 import { TranslatorServiceBase } from './services/translator/translator.service.base';
-import { IndexingServiceBase } from './services/indexing/indexing.service.base';
+import { IndexingService } from './services/indexing/indexing.service';
 import { NavigationServiceBase } from './services/navigation/navigation.service.base';
 import { ApplicationServiceBase } from './services/application/application.service.base';
 import { AZLyricsApi } from './common/api/lyrics/a-z-lyrics.api';
@@ -295,6 +292,9 @@ import { CoverPlayerPlaybackQueueComponent } from './ui/components/mini-players/
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { CoverPlayerVolumeControlComponent } from './ui/components/mini-players/cover-player/cover-player-volume-control/cover-player-volume-control.component';
 import { VolumeIconComponent } from './ui/components/volume-icon/volume-icon.component';
+import { EditTracksDialogComponent } from './ui/components/dialogs/edit-tracks-dialog/edit-tracks-dialog.component';
+import { InfoDialogComponent } from './ui/components/dialogs/info-dialog/info-dialog.component';
+import { IterableMenuComponent } from './ui/components/common/iterable-menu.component';
 
 export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
     return new TranslateHttpLoader(http, './assets/i18n/', '.json');
@@ -348,6 +348,7 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         ConfirmationDialogComponent,
         InputDialogComponent,
         ErrorDialogComponent,
+        InfoDialogComponent,
         LicenseDialogComponent,
         EditColumnsDialogComponent,
         ManageCollectionComponent,
@@ -450,6 +451,8 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         CoverPlayerPlaybackQueueComponent,
         CoverPlayerVolumeControlComponent,
         VolumeIconComponent,
+        EditTracksDialogComponent,
+        IterableMenuComponent,
     ],
     imports: [
         BrowserAnimationsModule,
@@ -557,6 +560,7 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         ExternalAlbumArtworkGetter,
         OnlineAlbumArtworkGetter,
         ExternalArtworkPathGetter,
+        IndexingService,
         { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: CustomTooltipDefaults },
         { provide: FileAccessBase, useClass: FileAccess },
         { provide: TrackRepositoryBase, useClass: TrackRepository },
@@ -565,7 +569,6 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         { provide: QueuedTrackRepositoryBase, useClass: QueuedTrackRepository },
         { provide: ApplicationServiceBase, useClass: ApplicationService },
         { provide: NavigationServiceBase, useClass: NavigationService },
-        { provide: IndexingServiceBase, useClass: IndexingService },
         { provide: AlbumArtworkCacheServiceBase, useClass: AlbumArtworkCacheService },
         { provide: TranslatorServiceBase, useClass: TranslatorService },
         { provide: UpdateServiceBase, useClass: UpdateService },
@@ -586,7 +589,6 @@ export function appInitializerFactory(translate: TranslateService, injector: Inj
         { provide: TrayServiceBase, useClass: TrayService },
         { provide: SemanticZoomServiceBase, useClass: SemanticZoomService },
         { provide: TracksColumnsServiceBase, useClass: TracksColumnsService },
-        { provide: ScrobblingServiceBase, useClass: ScrobblingService },
         { provide: NowPlayingNavigationServiceBase, useClass: NowPlayingNavigationService },
         { provide: ArtistInformationServiceBase, useClass: ArtistInformationService },
         { provide: WelcomeServiceBase, useClass: WelcomeService },

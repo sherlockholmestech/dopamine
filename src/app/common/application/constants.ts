@@ -5,6 +5,7 @@ export class Constants {
     public static readonly logFileName: string = 'Dopamine.log';
 
     public static readonly languages: Language[] = [
+        new Language('ar', 'Arabic', 'العربية', true),
         new Language('bg', 'Bulgarian', 'български', true),
         new Language('cs', 'Czech', 'Čeština', false),
         new Language('de', 'German', 'Deutsch', false),
@@ -23,6 +24,7 @@ export class Constants {
         new Language('ku', 'Kurdish', 'Kurdî', false),
         new Language('ru', 'Russian', 'русский', true),
         new Language('sv', 'Swedish', 'Svenska', false),
+        new Language('tr', 'Turkish', 'Türkçe', false),
         new Language('vi', 'Vietnamese', 'Tiếng Việt', false),
         new Language('zh-CN', 'Simplified Chinese', '简体中文', true),
         new Language('zh-TW', 'Traditional Chinese', '繁體中文', true),
@@ -62,6 +64,9 @@ export class Constants {
         'folder.png',
         'folder.jpg',
         'folder.jpeg',
+        'albumart.png',
+        'albumart.jpg',
+        'albumart.jpeg',
         '%filename%.png',
         '%filename%.jpg',
         '%filename%.jpeg',

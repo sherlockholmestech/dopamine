@@ -3,7 +3,63 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0-preview.38] - 2024-12-29
+## [3.0.0-preview.40] - 2025-06-29
+
+### Added
+
+-   Added Arabic translation
+
+### Changed
+
+-   Images now have round corners
+-   Updated the Russian translation
+-   Updated the Spanish translation
+
+### Fixed
+
+-   Fixed a bug where artists that are separated by a semicolon ';' were not indexed correctly
+-   Fixed a bug where the folders screen had an empty sorting button
+-   Fixed a bug where it was not possible to remove a folder that is not displayed in the collection
+-   Fixed a bug where changing the album grouping settings had no effect on the collection
+
+## [3.0.0-preview.39] - 2025-06-21
+
+### Added
+
+-   Added Ctrl-F shortcut to focus the search bar and ESC to clear it
+-   Added support for cover art images that have file name albumart.jpg, albumart.jpeg or albumart.png
+-   Added Turkish translation
+
+### Changed
+
+-   Slightly improved the look of the mini player
+-   Improved scaling of text on Now Playing screen for smaller screens
+-   Order selections are now menus instead of toggle buttons
+-   Updated the Brazilian Portuguese translation
+-   Updated the Spanish translation
+-   Updated the Turkish translation
+-   Updated the Vietnamese translation
+
+### Fixed
+
+-   Fixed an issue where a random song would start playing after the queue ended when using gapless playback.
+-   Fixed an issue where album lists were not refreshed after a search returned no results.
+-   Fixed an issue where progress was not reset to 0 when playback has finished
+-   Fixed an issue where a track that is longer than 4 minutes was scrobbled to Last.fm immediately after it started playing
+-   Fixed some sizing issues on the "Folders" screen
+-   Fixed search problems
+
+## [3.0.0-preview.38] - 2025-05-29
+
+### Added
+
+-   Added tagging support
+
+### Changed
+
+-   Updated Simplified Brazilian Portuguese translation
+-   Updated Simplified Russian translation
+-   Updated Simplified Spanish translation
 
 ### Fixed
 

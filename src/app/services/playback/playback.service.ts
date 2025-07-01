@@ -628,10 +628,28 @@ export class PlaybackService {
 
     public stopUpdatingProgress(): void {
         this.pauseUpdatingProgress();
-        this.progressChanged.next(new PlaybackProgress(0, 0));
+        this._progress = new PlaybackProgress(0, 0);
+        this.progressChanged.next(this._progress);
     }
 
     public pauseUpdatingProgress(): void {
         this._shouldReportProgress = false;
+    }
+
+    public updateQueueTracks(tracks: Track[]): void {
+        const tracksInQueue: TrackModel[] = this.queue.tracks.filter((qt) => tracks.map((t) => t.path).includes(qt.path));
+
+        for (const trackInQueue of tracksInQueue) {
+            const trackToSet = tracks.find((t) => t.path === trackInQueue.path);
+
+            if (trackToSet) {
+                trackInQueue.setTrack(trackToSet);
+
+                if (this.currentTrack && this.currentTrack.path === trackInQueue.path) {
+                    this.currentTrack = trackInQueue;
+                    // this.playbackStarted.next(new PlaybackStarted(trackInQueue, false));
+                }
+            }
+        }
     }
 }
